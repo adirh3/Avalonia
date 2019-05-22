@@ -56,7 +56,7 @@ namespace Avalonia.Controls
         private Size _clientSize;
         private ILayoutManager _layoutManager;
         
-        public IFocusManager FocusManager { get; } = new FocusManager();
+        public IFocusManager FocusManager { get; private set; }
 
         /// <summary>
         /// Initializes static members of the <see cref="TopLevel"/> class.
@@ -89,7 +89,7 @@ namespace Avalonia.Controls
                 throw new InvalidOperationException(
                     "Could not create window implementation: maybe no windowing subsystem was initialized?");
             }
-
+            FocusManager = new FocusManager(this);
             PlatformImpl = impl;
 
             dependencyResolver = dependencyResolver ?? AvaloniaLocator.Current;

@@ -25,10 +25,9 @@ namespace Avalonia.Input
         /// <summary>
         /// Initializes a new instance of the <see cref="FocusManager"/> class.
         /// </summary>
-        public FocusManager()
+        public FocusManager(InputElement root)
         {
-            InputElement.PointerPressedEvent.AddClassHandler(
-                typeof(IInputElement),
+            root.AddHandler(InputElement.PointerPressedEvent,
                 new EventHandler<RoutedEventArgs>(OnPreviewPointerPressed),
                 RoutingStrategies.Tunnel);
         }
@@ -119,7 +118,7 @@ namespace Avalonia.Input
             InputModifiers modifiers = InputModifiers.None)
         {
             Contract.Requires<ArgumentNullException>(scope != null);
-
+            
             _focusScopes[scope] = element;
 
             if (Scope == scope)
@@ -203,7 +202,7 @@ namespace Avalonia.Input
         {
             var ev = (PointerPressedEventArgs)e;
 
-            if (sender == e.Source && ev.MouseButton == MouseButton.Left)
+            if (ev.MouseButton == MouseButton.Left)
             {
                 var element = (ev.Device?.Captured as IInputElement) ?? (e.Source as IInputElement);
 

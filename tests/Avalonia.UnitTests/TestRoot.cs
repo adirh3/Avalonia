@@ -19,6 +19,7 @@ namespace Avalonia.UnitTests
 
         public TestRoot()
         {
+            FocusManager = new FocusManager(this);
             Renderer = Mock.Of<IRenderer>();
         }
 
@@ -63,7 +64,7 @@ namespace Avalonia.UnitTests
         public IInputElement PointerOverElement { get; set; }
 
         public IMouseDevice MouseDevice { get; set; }
-        public IFocusManager FocusManager { get; } = new FocusManager();
+        public IFocusManager FocusManager { get; }
 
         public bool ShowAccessKeys { get; set; }
 
