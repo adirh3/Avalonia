@@ -231,7 +231,7 @@ namespace Avalonia.Input.UnitTests
                 root,
                 RawMouseEventType.Move,
                 p,
-                InputModifiers.None));
+                InputModifiers.None), null);
         }
 
         private void SetHit(Mock<IRenderer> renderer, IControl hit)

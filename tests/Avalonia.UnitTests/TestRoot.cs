@@ -63,6 +63,7 @@ namespace Avalonia.UnitTests
         public IInputElement PointerOverElement { get; set; }
 
         public IMouseDevice MouseDevice { get; set; }
+        public IFocusManager FocusManager { get; } = new FocusManager();
 
         public bool ShowAccessKeys { get; set; }
 

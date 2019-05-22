@@ -584,7 +584,6 @@ namespace Avalonia.Controls.UnitTests
         {
             using (UnitTestApplication.Start(TestServices.RealFocus))
             {
-                var focus = FocusManager.Instance;
                 var navigation = AvaloniaLocator.Current.GetService<IKeyboardNavigationHandler>();
                 var data = CreateTestTreeData();
 
@@ -603,6 +602,7 @@ namespace Avalonia.Controls.UnitTests
                         Children = { target, button },
                     }
                 };
+                var focus = root.GetFocusManager();
 
                 CreateNodeDataTemplate(target);
                 ApplyTemplates(target);
@@ -613,13 +613,13 @@ namespace Avalonia.Controls.UnitTests
 
                 target.SelectedItem = item;
                 node.Focus();
-                Assert.Same(node, focus.Current);
+                Assert.Same(node, focus.FocusedElement);
 
-                navigation.Move(focus.Current, NavigationDirection.Next);
-                Assert.Same(button, focus.Current);
+                navigation.Move(focus.FocusedElement, NavigationDirection.Next);
+                Assert.Same(button, focus.FocusedElement);
 
-                navigation.Move(focus.Current, NavigationDirection.Next);
-                Assert.Same(node, focus.Current);
+                navigation.Move(focus.FocusedElement, NavigationDirection.Next);
+                Assert.Same(node, focus.FocusedElement);
             }
         }
 

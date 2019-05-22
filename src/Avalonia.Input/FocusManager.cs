@@ -20,6 +20,8 @@ namespace Avalonia.Input
         private readonly Dictionary<IFocusScope, IInputElement> _focusScopes =
             new Dictionary<IFocusScope, IInputElement>();
 
+        private IInputElement _focusedElement;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FocusManager"/> class.
         /// </summary>
@@ -32,15 +34,23 @@ namespace Avalonia.Input
         }
 
         /// <summary>
-        /// Gets the instance of the <see cref="IFocusManager"/>.
-        /// </summary>
-        public static IFocusManager Instance => AvaloniaLocator.Current.GetService<IFocusManager>();
-
-        /// <summary>
         /// Gets the currently focused <see cref="IInputElement"/>.
         /// </summary>
-        public IInputElement Current => KeyboardDevice.Instance?.FocusedElement;
+        public IInputElement FocusedElement
+        {
+            get => _focusedElement;
+            private set
+            {
+                _focusedElement = value;
+                FocusedElementChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
 
+        /// <summary>
+        /// Is triggered when FocusedElement is changed
+        /// </summary>
+        public event EventHandler FocusedElementChanged;
+        
         /// <summary>
         /// Gets the current focus scope.
         /// </summary>
@@ -72,10 +82,10 @@ namespace Avalonia.Input
                     SetFocusedElement(scope, control, method, modifiers);
                 }
             }
-            else if (Current != null)
+            else if (FocusedElement != null)
             {
                 // If control is null, set focus to the topmost focus scope.
-                foreach (var scope in GetFocusScopeAncestors(Current).Reverse().ToList())
+                foreach (var scope in GetFocusScopeAncestors(FocusedElement).Reverse().ToList())
                 {
                     IInputElement element;
 
@@ -114,7 +124,22 @@ namespace Avalonia.Input
 
             if (Scope == scope)
             {
-                KeyboardDevice.Instance?.SetFocusedElement(element, method, modifiers);
+                if (element != FocusedElement)
+                {
+                    var interactive = FocusedElement as IInteractive;
+                    FocusedElement = element;
+
+                    interactive?.RaiseEvent(new RoutedEventArgs {RoutedEvent = InputElement.LostFocusEvent,});
+
+                    interactive = element as IInteractive;
+
+                    interactive?.RaiseEvent(new GotFocusEventArgs
+                    {
+                        RoutedEvent = InputElement.GotFocusEvent,
+                        NavigationMethod = method,
+                        InputModifiers = modifiers,
+                    });
+                }
             }
         }
 

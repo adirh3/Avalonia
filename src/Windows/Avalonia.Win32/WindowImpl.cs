@@ -201,6 +201,7 @@ namespace Avalonia.Win32
         }
 
         public IMouseDevice MouseDevice => WindowsMouseDevice.Instance;
+        public IKeyboardDevice KeyboardDevice => WindowsKeyboardDevice.Instance;
 
         public WindowState WindowState
         {
