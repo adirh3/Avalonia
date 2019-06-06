@@ -490,40 +490,63 @@ namespace Avalonia.Controls.Primitives
                 if (select)
                 {
                     var mode = SelectionMode;
-                    var toggle = toggleModifier || (mode & SelectionMode.Toggle) != 0;
                     var multi = (mode & SelectionMode.Multiple) != 0;
-                    var range = multi && SelectedIndex != -1 && rangeModifier;
+                    var toggle = (toggleModifier || (mode & SelectionMode.Toggle) != 0);
+                    var range = multi && rangeModifier;
 
-                    if (!toggle && !range)
+                    if (range)
                     {
-                        SelectedIndex = index;
-                    }
-                    else if (multi && range)
-                    {
-                        SynchronizeItems(
-                            SelectedItems,
-                            GetRange(Items, SelectedIndex, index));
-                    }
-                    else
-                    {
-                        var item = ElementAt(Items, index);
-                        var i = SelectedItems.IndexOf(item);
-
-                        if (i != -1 && (!AlwaysSelected || SelectedItems.Count > 1))
+                        UpdateSelectedItems(() =>
                         {
-                            SelectedItems.Remove(item);
-                        }
-                        else
-                        {
-                            if (multi)
+                            var start = SelectedIndex != -1 ? SelectedIndex : 0;
+                            var items = GetRange(Items, start, index);
+                            var first = Math.Min(start, index);
+                            var last = Math.Max(start, index);
+                            
+                            foreach (var container in ItemContainerGenerator.Containers)
                             {
+                                MarkItemSelected(
+                                    container.Index,
+                                    container.Index >= first && container.Index <= last);
+                            }
+
+                            SynchronizeItems(SelectedItems, items);
+                        });
+                    }
+                    else if (multi && toggle)
+                    {
+                        UpdateSelectedItems(() =>
+                        {
+                            var item = ElementAt(Items, index);
+                            var existing = IndexOf(SelectedItems, item);
+
+                            if (existing == -1)
+                            {
+                                MarkItemSelected(index, true);
                                 SelectedItems.Add(item);
+                            }
+                            else if (SelectedIndex == index)
+                            {
+                                var newItem = SelectedItems
+                                    .Cast<object>()
+                                    .Where(x => !Equals(x, item))
+                                    .FirstOrDefault();
+                                SelectedItem = newItem;
                             }
                             else
                             {
-                                SelectedIndex = index;
+                                MarkItemSelected(index, false);
+                                SelectedItems.RemoveAt(existing);
                             }
-                        }
+                        });
+                    }
+                    else if (toggle)
+                    {
+                        SelectedIndex = (SelectedIndex == index) ? -1 : index;
+                    }
+                    else
+                    {
+                        SelectedIndex = index;
                     }
 
                     if (Presenter?.Panel != null)
@@ -630,17 +653,19 @@ namespace Avalonia.Controls.Primitives
         /// <param name="first">The index of the first item.</param>
         /// <param name="last">The index of the last item.</param>
         /// <returns>The items.</returns>
-        private static IEnumerable<object> GetRange(IEnumerable items, int first, int last)
+        private static IList<object> GetRange(IEnumerable items, int first, int last)
         {
             var list = (items as IList) ?? items.Cast<object>().ToList();
-            int step = first > last ? -1 : 1;
+            var step = first > last ? -1 : 1;
+            var result = new List<object>();
 
             for (int i = first; i != last; i += step)
             {
-                yield return list[i];
+                result.Add(list[i]);
             }
 
-            yield return list[last];
+            result.Add(list[last]);
+            return result;
         }
 
         /// <summary>
@@ -957,34 +982,42 @@ namespace Avalonia.Controls.Primitives
                     oldItem,
                     item);
 
-                try
+                UpdateSelectedItems(() =>
                 {
-                    _syncingSelectedItems = true;
                     _selectedItems.Clear();
 
                     if (index != -1)
                     {
                         _selectedItems.Add(item);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(
-                        LogArea.Property,
-                        this,
-                        "Error thrown setting SelectedItems: {Error}",
-                        ex);
-                }
-                finally
-                {
-                    _syncingSelectedItems = false;
-                }
+                });
 
                 var e = new SelectionChangedEventArgs(
                     SelectionChangedEvent,
                     index != -1 ? new[] { item } : Array.Empty<object>(),
                     oldIndex != -1 ? new[] { oldItem } : Array.Empty<object>());
                 RaiseEvent(e);
+            }
+        }
+
+        private void UpdateSelectedItems(Action action)
+        {
+            try
+            {
+                _syncingSelectedItems = true;
+                action();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(
+                    LogArea.Property,
+                    this,
+                    "Error thrown updating SelectedItems: {Error}",
+                    ex);
+            }
+            finally
+            {
+                _syncingSelectedItems = false;
             }
         }
 
