@@ -642,7 +642,7 @@ namespace Avalonia.Controls.UnitTests.Primitives
         }
 
         [Fact]
-        public void Should_Shift_Select_Correct_Item_When_Duplicate_Items_Are_Present()
+        public void Should_Shift_Select_Correct_Item_When_Duplicates_Are_Present()
         {
             var target = new ListBox
             {
@@ -654,6 +654,27 @@ namespace Avalonia.Controls.UnitTests.Primitives
             target.ApplyTemplate();
             target.Presenter.ApplyTemplate();
             _helper.Down((Interactive)target.Presenter.Panel.Children[3]);
+            _helper.Down((Interactive)target.Presenter.Panel.Children[5], modifiers: InputModifiers.Shift);
+
+            var panel = target.Presenter.Panel;
+
+            Assert.Equal(new[] { "Foo", "Bar", "Baz" }, target.SelectedItems);
+            Assert.Equal(new[] { 3, 4, 5 }, SelectedContainers(target));
+        }
+
+        [Fact]
+        public void Can_Shift_Select_All_Items_When_Duplicates_Are_Present()
+        {
+            var target = new ListBox
+            {
+                Template = Template(),
+                Items = new[] { "Foo", "Bar", "Baz", "Foo", "Bar", "Baz" },
+                SelectionMode = SelectionMode.Multiple,
+            };
+
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+            _helper.Down((Interactive)target.Presenter.Panel.Children[0]);
             _helper.Down((Interactive)target.Presenter.Panel.Children[5], modifiers: InputModifiers.Shift);
 
             var panel = target.Presenter.Panel;
