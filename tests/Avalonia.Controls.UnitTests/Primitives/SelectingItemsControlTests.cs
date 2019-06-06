@@ -536,6 +536,9 @@ namespace Avalonia.Controls.UnitTests.Primitives
                 SelectedIndex = 1,
             };
 
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+
             var called = false;
 
             target.SelectionChanged += (s, e) =>
@@ -545,8 +548,6 @@ namespace Avalonia.Controls.UnitTests.Primitives
                 called = true;
             };
 
-            target.ApplyTemplate();
-            target.Presenter.ApplyTemplate();
             target.SelectedIndex = -1;
 
             Assert.True(called);

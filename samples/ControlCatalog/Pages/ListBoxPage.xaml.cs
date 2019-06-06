@@ -12,7 +12,8 @@ namespace ControlCatalog.Pages
         public ListBoxPage()
         {
             this.InitializeComponent();
-            DataContext = Enumerable.Range(1, 10).Select(i => $"Item {i}" )
+            DataContext = Enumerable.Range(1, 10).Select(i => $"Item {i}")
+                .Concat(Enumerable.Range(1, 10).Select(i => $"Item {i}"))
                 .ToArray();
         }
 
