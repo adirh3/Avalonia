@@ -392,11 +392,7 @@ namespace Avalonia.Controls.Primitives
             {
                 if (i.ContainerControl != null && i.Item != null)
                 {
-                    var ms = MemberSelector;
-                    bool selected = ms == null ? 
-                        SelectedItems.Contains(i.Item) : 
-                        SelectedItems.OfType<object>().Any(v => Equals(ms.Select(v), i.Item));
-
+                    bool selected = _selection.Contains(i.Index);
                     MarkContainerSelected(i.ContainerControl, selected);
                 }
             }
@@ -429,9 +425,12 @@ namespace Avalonia.Controls.Primitives
                 var keymap = AvaloniaLocator.Current.GetService<PlatformHotkeyConfiguration>();
                 bool Match(List<KeyGesture> gestures) => gestures.Any(g => g.Matches(e));
 
-                if (this.SelectionMode == SelectionMode.Multiple && Match(keymap.SelectAll))
+                if (ItemCount > 0 &&
+                    Match(keymap.SelectAll) &&
+                    (((SelectionMode & SelectionMode.Multiple) != 0) ||
+                      (SelectionMode & SelectionMode.Toggle) != 0))
                 {
-                    SynchronizeItems(SelectedItems, Items?.Cast<object>());
+                    SynchronizeItems(SelectedItems, Items.Cast<object>());
                     e.Handled = true;
                 }
             }
@@ -497,12 +496,20 @@ namespace Avalonia.Controls.Primitives
 
                     if (range)
                     {
+                        var start = SelectedIndex != -1 ? SelectedIndex : 0;
+                        var first = Math.Min(start, index);
+                        var last = Math.Max(start, index);
+
+                        for (var i = first; i < last; ++i)
+                        {
+                            _selection.Add(i);
+                        }
+
+                        _selection.Add(last);
+
                         UpdateSelectedItems(() =>
                         {
-                            var start = SelectedIndex != -1 ? SelectedIndex : 0;
                             var items = GetRange(Items, start, index);
-                            var first = Math.Min(start, index);
-                            var last = Math.Max(start, index);
                             
                             foreach (var container in ItemContainerGenerator.Containers)
                             {
@@ -523,6 +530,7 @@ namespace Avalonia.Controls.Primitives
 
                             if (existing == -1)
                             {
+                                _selection.Add(index);
                                 MarkItemSelected(index, true);
                                 SelectedItems.Add(item);
                             }
@@ -536,6 +544,7 @@ namespace Avalonia.Controls.Primitives
                             }
                             else
                             {
+                                _selection.Remove(index);
                                 MarkItemSelected(index, false);
                                 SelectedItems.RemoveAt(existing);
                             }
@@ -616,34 +625,24 @@ namespace Avalonia.Controls.Primitives
         }
 
         /// <summary>
-        /// Makes a list of objects equal another.
+        /// Makes a list of objects equal another (though doesn't preserve order).
         /// </summary>
         /// <param name="items">The items collection.</param>
         /// <param name="desired">The desired items.</param>
         internal static void SynchronizeItems(IList items, IEnumerable<object> desired)
         {
-            var index = 0;
+            var list = items.Cast<object>().ToList();
+            var toRemove = list.Except(desired).ToList();
+            var toAdd = desired.Except(list).ToList();
 
-            foreach (object item in desired)
+            foreach(var i in toRemove)
             {
-                int itemIndex = items.IndexOf(item);
-
-                if (itemIndex == -1)
-                {
-                    items.Insert(index, item);
-                }
-                else if(itemIndex != index)
-                {
-                    items.RemoveAt(itemIndex);
-                    items.Insert(index, item);
-                }
-
-                ++index;
+                items.Remove(i);
             }
 
-            while (index < items.Count)
+            foreach (var i in toAdd)
             {
-                items.RemoveAt(items.Count - 1);
+                items.Add(i);
             }
         }
 
@@ -654,7 +653,7 @@ namespace Avalonia.Controls.Primitives
         /// <param name="first">The index of the first item.</param>
         /// <param name="last">The index of the last item.</param>
         /// <returns>The items.</returns>
-        private static IList<object> GetRange(IEnumerable items, int first, int last)
+        private static List<object> GetRange(IEnumerable items, int first, int last)
         {
             var list = (items as IList) ?? items.Cast<object>().ToList();
             var step = first > last ? -1 : 1;
@@ -959,7 +958,11 @@ namespace Avalonia.Controls.Primitives
                     }
                 }
 
-                MarkItemSelected(oldIndex, false);
+                foreach (var i in removed)
+                {
+                    MarkItemSelected(i, false);
+                }
+
                 MarkItemSelected(index, true);
 
                 RaisePropertyChanged(

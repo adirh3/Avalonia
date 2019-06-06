@@ -262,6 +262,28 @@ namespace Avalonia.Controls.UnitTests.Primitives
         }
 
         [Fact]
+        public void Setting_SelectedIndex_Should_Unmark_Previously_Selected_Containers()
+        {
+            var target = new TestSelector
+            {
+                Items = new[] { "foo", "bar", "baz" },
+                Template = Template(),
+            };
+
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+
+            target.SelectedItems.Add("foo");
+            target.SelectedItems.Add("bar");
+
+            Assert.Equal(new[] { 0, 1 }, SelectedContainers(target));
+
+            target.SelectedIndex = 2;
+
+            Assert.Equal(new[] { 2 }, SelectedContainers(target));
+        }
+
+        [Fact]
         public void Range_Select_Should_Select_Range()
         {
             var target = new TestSelector
@@ -335,6 +357,52 @@ namespace Avalonia.Controls.UnitTests.Primitives
             target.SelectRange(4);
 
             Assert.Equal(new[] { "baz", "qux", "qiz" }, target.SelectedItems.Cast<object>().ToList());
+        }
+
+        [Fact]
+        public void Setting_SelectedIndex_After_Range_Should_Unmark_Previously_Selected_Containers()
+        {
+            var target = new TestSelector
+            {
+                Items = new[] { "foo", "bar", "baz", "qux" },
+                Template = Template(),
+                SelectedIndex = 0,
+                SelectionMode = SelectionMode.Multiple,
+            };
+
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+
+            target.SelectRange(2);
+
+            Assert.Equal(new[] { 0, 1, 2 }, SelectedContainers(target));
+
+            target.SelectedIndex = 3;
+
+            Assert.Equal(new[] { 3 }, SelectedContainers(target));
+        }
+
+        [Fact]
+        public void Toggling_Selection_After_Range_Should_Work()
+        {
+            var target = new TestSelector
+            {
+                Items = new[] { "foo", "bar", "baz", "foo", "bar", "baz" },
+                Template = Template(),
+                SelectedIndex = 0,
+                SelectionMode = SelectionMode.Multiple,
+            };
+
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+
+            target.SelectRange(3);
+
+            Assert.Equal(new[] { 0, 1, 2, 3 }, SelectedContainers(target));
+
+            target.Toggle(4);
+
+            Assert.Equal(new[] { 0, 1, 2, 3, 4 }, SelectedContainers(target));
         }
 
         [Fact]
@@ -680,7 +748,7 @@ namespace Avalonia.Controls.UnitTests.Primitives
             var panel = target.Presenter.Panel;
 
             Assert.Equal(new[] { "Foo", "Bar", "Baz" }, target.SelectedItems);
-            Assert.Equal(new[] { 3, 4, 5 }, SelectedContainers(target));
+            Assert.Equal(new[] { 0, 1, 2, 3, 4, 5 }, SelectedContainers(target));
         }
 
         private IEnumerable<int> SelectedContainers(SelectingItemsControl target)
@@ -721,6 +789,11 @@ namespace Avalonia.Controls.UnitTests.Primitives
             public void SelectRange(int index)
             {
                 UpdateSelection(index, true, true);
+            }
+
+            public void Toggle(int index)
+            {
+                UpdateSelection(index, true, false, true);
             }
         }
 
