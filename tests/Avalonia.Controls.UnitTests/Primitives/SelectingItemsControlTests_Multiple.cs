@@ -10,6 +10,8 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Data;
 using Xunit;
 
@@ -17,6 +19,8 @@ namespace Avalonia.Controls.UnitTests.Primitives
 {
     public class SelectingItemsControlTests_Multiple
     {
+        private MouseTestHelper _helper = new MouseTestHelper();
+
         [Fact]
         public void Setting_SelectedIndex_Should_Add_To_SelectedItems()
         {
@@ -569,6 +573,27 @@ namespace Avalonia.Controls.UnitTests.Primitives
             Assert.True(called);
         }
 
+        [Fact]
+        public void Should_Ctrl_Select_Correct_Item_When_Duplicate_Items_Are_Present()
+        {
+            var target = new ListBox
+            {
+                Template = Template(),
+                Items = new[] { "Foo", "Bar", "Baz", "Foo", "Bar", "Baz" },
+                SelectionMode = SelectionMode.Multiple,
+            };
+
+            target.ApplyTemplate();
+            target.Presenter.ApplyTemplate();
+            _helper.Down((Interactive)target.Presenter.Panel.Children[3]);
+            _helper.Down((Interactive)target.Presenter.Panel.Children[4], modifiers: InputModifiers.Control);
+
+            var panel = target.Presenter.Panel;
+
+            Assert.Equal(new[] { "Foo", "Bar" }, target.SelectedItems);
+            Assert.True(panel.Children[3].Classes.Contains(":selected"));
+            Assert.True(panel.Children[4].Classes.Contains(":selected"));
+        }
 
         private FuncControlTemplate Template()
         {

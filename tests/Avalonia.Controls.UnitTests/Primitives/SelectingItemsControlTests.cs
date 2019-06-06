@@ -802,7 +802,7 @@ namespace Avalonia.Controls.UnitTests.Primitives
         }
 
         [Fact]
-        public void Should_Select_Apply_Selected_Pseudoclass_To_Correct_Item_When_Duplicate_Items_Are_Present()
+        public void Should_Apply_Selected_Pseudoclass_To_Correct_Item_When_Duplicate_Items_Are_Present()
         {
             var target = new ListBox
             {
