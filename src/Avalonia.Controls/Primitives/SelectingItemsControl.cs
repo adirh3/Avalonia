@@ -12,6 +12,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Logging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 
@@ -152,23 +153,8 @@ namespace Avalonia.Controls.Primitives
             {
                 if (_updateCount == 0)
                 {
-                    SetAndRaise(SelectedIndexProperty, ref _selectedIndex, (int val, ref int backing, Action<Action> notifyWrapper) =>
-                    {
-                        var old = backing;
-                        var effective = (val >= 0 && val < Items?.Cast<object>().Count()) ? val : -1;
-
-                        if (old != effective)
-                        {
-                            backing = effective;
-                            notifyWrapper(() =>
-                                RaisePropertyChanged(
-                                    SelectedIndexProperty,
-                                    old,
-                                    effective,
-                                    BindingPriority.LocalValue));
-                            SelectedItem = ElementAt(Items, effective);
-                        }
-                    }, value);
+                    var effective = (value >= 0 && value < ItemCount) ? value : -1;
+                    UpdateSelectedItem(effective);
                 }
                 else
                 {
@@ -192,41 +178,7 @@ namespace Avalonia.Controls.Primitives
             {
                 if (_updateCount == 0)
                 {
-                    SetAndRaise(SelectedItemProperty, ref _selectedItem, (object val, ref object backing, Action<Action> notifyWrapper) =>
-                    {
-                        var old = backing;
-                        var index = IndexOf(Items, val);
-                        var effective = index != -1 ? val : null;
-
-                        if (!object.Equals(effective, old))
-                        {
-                            backing = effective;
-
-                            notifyWrapper(() =>
-                                RaisePropertyChanged(
-                                    SelectedItemProperty,
-                                    old,
-                                    effective,
-                                    BindingPriority.LocalValue));
-
-                            SelectedIndex = index;
-
-                            if (effective != null)
-                            {
-                                if (SelectedItems.Count != 1 || SelectedItems[0] != effective)
-                                {
-                                    _syncingSelectedItems = true;
-                                    SelectedItems.Clear();
-                                    SelectedItems.Add(effective);
-                                    _syncingSelectedItems = false;
-                                }
-                            }
-                            else if (SelectedItems.Count > 0)
-                            {
-                                SelectedItems.Clear();
-                            }
-                        }
-                    }, value);
+                    UpdateSelectedItem(IndexOf(Items, value));
                 }
                 else
                 {
@@ -724,19 +676,14 @@ namespace Avalonia.Controls.Primitives
         private void LostSelection()
         {
             var items = Items?.Cast<object>();
+            var index = -1;
 
             if (items != null && AlwaysSelected)
             {
-                var index = Math.Min(SelectedIndex, items.Count() - 1);
-
-                if (index > -1)
-                {
-                    SelectedItem = items.ElementAt(index);
-                    return;
-                }
+                index = Math.Min(SelectedIndex, items.Count() - 1);
             }
 
-            SelectedIndex = -1;
+            SelectedIndex = index;
         }
 
         /// <summary>
@@ -810,6 +757,11 @@ namespace Avalonia.Controls.Primitives
         /// <param name="e">The event args.</param>
         private void SelectedItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_syncingSelectedItems)
+            {
+                return;
+            }
+
             var generator = ItemContainerGenerator;
             IList added = null;
             IList removed = null;
@@ -830,10 +782,7 @@ namespace Avalonia.Controls.Primitives
                 case NotifyCollectionChangedAction.Remove:
                     if (SelectedItems.Count == 0)
                     {
-                        if (!_syncingSelectedItems)
-                        {
-                            SelectedIndex = -1;
-                        }
+                        SelectedIndex = -1;
                     }
 
                     foreach (var item in e.OldItems)
@@ -867,7 +816,7 @@ namespace Avalonia.Controls.Primitives
                         SelectedItemsAdded(SelectedItems);
                         added = SelectedItems;
                     }
-                    else if (!_syncingSelectedItems)
+                    else
                     {
                         SelectedIndex = -1;
                     }
@@ -885,7 +834,7 @@ namespace Avalonia.Controls.Primitives
                         MarkItemSelected(item, true);
                     }
 
-                    if (SelectedItem != SelectedItems[0] && !_syncingSelectedItems)
+                    if (SelectedItem != SelectedItems[0])
                     {
                         var oldItem = SelectedItem;
                         var oldIndex = SelectedIndex;
@@ -967,6 +916,75 @@ namespace Avalonia.Controls.Primitives
             if (incc != null)
             {
                 incc.CollectionChanged -= SelectedItemsCollectionChanged;
+            }
+        }
+
+        /// <summary>
+        /// Updates the selection due to a change to <see cref="SelectedIndex"/> or
+        /// <see cref="SelectedItem"/>.
+        /// </summary>
+        /// <param name="index">The new selected index.</param>
+        private void UpdateSelectedItem(int index)
+        {
+            var oldIndex = _selectedIndex;
+            var oldItem = _selectedItem;
+
+            if (index == -1 && AlwaysSelected)
+            {
+                index = Math.Min(SelectedIndex, ItemCount - 1);
+            }
+
+            var item = ElementAt(Items, index);
+
+            _selectedIndex = index;
+            _selectedItem = item;
+
+            if (oldIndex != index)
+            {
+                MarkItemSelected(oldIndex, false);
+                MarkItemSelected(index, true);
+
+                RaisePropertyChanged(
+                    SelectedIndexProperty,
+                    oldIndex,
+                    index);
+            }
+
+            if (!Equals(item, oldItem))
+            {
+                RaisePropertyChanged(
+                    SelectedItemProperty,
+                    oldItem,
+                    item);
+
+                try
+                {
+                    _syncingSelectedItems = true;
+                    _selectedItems.Clear();
+
+                    if (index != -1)
+                    {
+                        _selectedItems.Add(item);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(
+                        LogArea.Property,
+                        this,
+                        "Error thrown setting SelectedItems: {Error}",
+                        ex);
+                }
+                finally
+                {
+                    _syncingSelectedItems = false;
+                }
+
+                var e = new SelectionChangedEventArgs(
+                    SelectionChangedEvent,
+                    index != -1 ? new[] { item } : Array.Empty<object>(),
+                    oldIndex != -1 ? new[] { oldItem } : Array.Empty<object>());
+                RaiseEvent(e);
             }
         }
 
