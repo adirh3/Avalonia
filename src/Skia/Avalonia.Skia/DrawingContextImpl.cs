@@ -17,7 +17,7 @@ namespace Avalonia.Skia
     /// <summary>
     /// Skia based drawing context.
     /// </summary>
-    internal class DrawingContextImpl : IDrawingContextImpl, ISkiaDrawingContextImpl, IDrawingContextWithAcrylicLikeSupport
+    public class DrawingContextImpl : IDrawingContextImpl, ISkiaDrawingContextImpl, IDrawingContextWithAcrylicLikeSupport
     {
         private IDisposable[] _disposables;
         private readonly Vector _dpi;

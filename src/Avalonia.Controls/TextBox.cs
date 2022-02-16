@@ -55,6 +55,9 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
             AvaloniaProperty.Register<TextBox, IBrush?>(nameof(SelectionBrushProperty));
 
+        public static readonly StyledProperty<bool> MatchHotKeysProperty =
+            AvaloniaProperty.Register<TextBox, bool>(nameof(MatchHotKeys), true);
+
         public static readonly StyledProperty<IBrush?> SelectionForegroundBrushProperty =
             AvaloniaProperty.Register<TextBox, IBrush?>(nameof(SelectionForegroundBrushProperty));
 
@@ -270,7 +273,13 @@ namespace Avalonia.Controls
             get => GetValue(PasswordCharProperty);
             set => SetValue(PasswordCharProperty, value);
         }
-
+        
+        public bool MatchHotKeys
+        {
+            get { return GetValue(MatchHotKeysProperty); }
+            set { SetValue(MatchHotKeysProperty, value); }
+        }    
+        
         public IBrush? SelectionBrush
         {
             get => GetValue(SelectionBrushProperty);
@@ -780,8 +789,9 @@ namespace Avalonia.Controls
 
             var keymap = AvaloniaLocator.Current.GetRequiredService<PlatformHotkeyConfiguration>();
 
-            bool Match(List<KeyGesture> gestures) => gestures.Any(g => g.Matches(e));
-            bool DetectSelection() => e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
+            bool Match(List<KeyGesture> gestures) => MatchHotKeys && gestures.Any(g => g.Matches(e));
+            bool DetectSelection() => MatchHotKeys && e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
+
 
             if (Match(keymap.SelectAll))
             {
@@ -898,7 +908,7 @@ namespace Avalonia.Controls
                 selection = true;
                 handled = true;
             }
-            else
+            else if (MatchHotKeys)
             {
                 bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers);
                 switch (e.Key)

@@ -25,6 +25,8 @@
         /// <summary>
         /// The window background is based on desktop wallpaper tint with a blur. This will only work on Windows 11 
         /// </summary>
-        Mica
+        MicaLight,
+        
+        MicaDark,
     }
 }

@@ -379,7 +379,8 @@ namespace Avalonia.Win32
             {
                 _blurHost?.SetBlur(transparencyLevel switch
                 {
-                    WindowTransparencyLevel.Mica => BlurEffect.Mica,
+                    WindowTransparencyLevel.MicaDark => BlurEffect.MicaDark,
+                    WindowTransparencyLevel.MicaLight => BlurEffect.MicaLight,
                     WindowTransparencyLevel.AcrylicBlur => BlurEffect.Acrylic,
                     WindowTransparencyLevel.Blur => BlurEffect.Acrylic,
                     _ => BlurEffect.None
@@ -478,17 +479,14 @@ namespace Avalonia.Win32
             var loop = AvaloniaLocator.Current.GetService<IRenderLoop>();
             var customRendererFactory = AvaloniaLocator.Current.GetService<IRendererFactory>();
 
-            if (customRendererFactory != null)
-                return customRendererFactory.Create(root, loop);
+            var renderer = customRendererFactory?.Create(root, loop);
+            if (renderer != null)
+                return renderer;
 
-            return Win32Platform.UseDeferredRendering 
-                ?  _isUsingComposition 
-                    ? new DeferredRenderer(root, loop)
-                    {
-                        RenderOnlyOnRenderThread = true
-                    } 
-                    : (IRenderer)new DeferredRenderer(root, loop, rendererLock: _rendererLock)
-                : new ImmediateRenderer(root);
+            return Win32Platform.UseDeferredRendering ?
+                _isUsingComposition ? new DeferredRenderer(root, loop) { RenderOnlyOnRenderThread = true }
+                : (IRenderer)new DeferredRenderer(root, loop, rendererLock: _rendererLock) :
+                new ImmediateRenderer(root);
         }
 
         public void Resize(Size value, PlatformResizeReason reason)
@@ -1279,6 +1277,7 @@ namespace Avalonia.Win32
         }
 
         double EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Scaling => RenderScaling;
+        float EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.CompositionPadding => _owner is TopLevel topLevel? topLevel.CompositionPadding: 0;
 
         IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle => Handle.Handle;
 

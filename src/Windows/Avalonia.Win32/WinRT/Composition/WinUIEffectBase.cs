@@ -5,7 +5,8 @@ using Avalonia.MicroCom;
 
 namespace Avalonia.Win32.WinRT.Composition
 {
-    abstract class WinUIEffectBase : WinRTInspectable, IGraphicsEffect,  IGraphicsEffectSource, IGraphicsEffectD2D1Interop
+    abstract class WinUIEffectBase : WinRTInspectable, IGraphicsEffect, IGraphicsEffectSource,
+        IGraphicsEffectD2D1Interop
     {
         private IGraphicsEffectSource[] _sources;
 
@@ -23,11 +24,12 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public void SetName(IntPtr name)
         {
-            
         }
 
         public abstract Guid EffectId { get; }
-        public unsafe void GetNamedPropertyMapping(IntPtr name, uint* index, GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping) =>
+
+        public unsafe void
+            GetNamedPropertyMapping(IntPtr name, uint* index, GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping) =>
             throw new COMException("Not supported", unchecked((int)0x80004001));
 
         public abstract uint PropertyCount { get; }
@@ -35,7 +37,7 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public IGraphicsEffectSource GetSource(uint index)
         {
-            if (_sources == null || index> _sources.Length)
+            if (_sources == null || index > _sources.Length)
                 throw new COMException("Invalid index", unchecked((int)0x80070057));
             return _sources[index];
         }
@@ -46,15 +48,76 @@ namespace Avalonia.Win32.WinRT.Composition
         {
             if (_sources == null)
                 return;
-            
+
             /*foreach(var s in _sources)
                 s.Dispose();*/
             _sources = null;
         }
     }
-    
+
+    class BlendEffect : WinUIEffectBase
+    {
+        private readonly int _mode;
+
+        public BlendEffect(int mode, params IGraphicsEffectSource[] _sources) : base(_sources)
+        {
+            _mode = mode;
+        }
+
+        public override Guid EffectId => D2DEffects.CLSID_D2D1Blend;
+        public override uint PropertyCount => 1;
+
+        public override IPropertyValue GetProperty(uint index)
+        {
+            if (index == 0)
+                return new WinRTPropertyValue((uint)_mode);
+            return null;
+        }
+    }
+
+    class OpacityEffect : WinUIEffectBase
+    {
+        private readonly float _opacity;
+
+        public OpacityEffect(float opacity, params IGraphicsEffectSource[] _sources) : base(_sources)
+        {
+            _opacity = opacity;
+        }
+
+        public override Guid EffectId => D2DEffects.CLSID_D2D1Opacity;
+        public override uint PropertyCount => 1;
+
+        public override IPropertyValue GetProperty(uint index)
+        {
+            if (index == 0)
+                return new WinRTPropertyValue(_opacity);
+            return null;
+        }
+    }
+
+    class ColorSourceEffect : WinUIEffectBase
+    {
+        private readonly float[] _color;
+
+        public ColorSourceEffect(float[] color)
+        {
+            _color = color;
+        }
+
+        public override Guid EffectId => D2DEffects.CLSID_D2D1Flood;
+        public override uint PropertyCount => 1;
+
+        public override IPropertyValue GetProperty(uint index)
+        {
+            if (index == 0)
+                return new WinRTPropertyValue(_color);
+            return null;
+        }
+    }
+
     class WinUIGaussianBlurEffect : WinUIEffectBase
     {
+
         public WinUIGaussianBlurEffect(IGraphicsEffectSource source) : base(source)
         {
         }
@@ -91,7 +154,7 @@ namespace Avalonia.Win32.WinRT.Composition
             switch ((D2D1GaussianBlurProp)index)
             {
                 case D2D1GaussianBlurProp.D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION:
-                    return new WinRTPropertyValue(30.0f);
+                    return new WinRTPropertyValue(30f);
 
                 case D2D1GaussianBlurProp.D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION:
                     return new WinRTPropertyValue((uint)D2D1_GAUSSIANBLUR_OPTIMIZATION
@@ -104,7 +167,7 @@ namespace Avalonia.Win32.WinRT.Composition
             return null;
         }
     }
-    
+
     class SaturationEffect : WinUIEffectBase
     {
         public SaturationEffect(IGraphicsEffectSource source) : base(source)

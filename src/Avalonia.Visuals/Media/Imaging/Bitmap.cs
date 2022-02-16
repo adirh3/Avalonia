@@ -79,7 +79,7 @@ namespace Avalonia.Media.Imaging
         /// Initializes a new instance of the <see cref="Bitmap"/> class.
         /// </summary>
         /// <param name="impl">A platform-specific bitmap implementation. Bitmap class takes the ownership.</param>
-        protected Bitmap(IBitmapImpl impl)
+        public Bitmap(IBitmapImpl impl)
         {
             PlatformImpl = RefCountable.Create(impl);
         }

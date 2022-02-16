@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Reactive.Disposables;
 using System.Threading;
+using Avalonia.Controls;
 using Avalonia.MicroCom;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Egl;
@@ -13,8 +14,10 @@ namespace Avalonia.Win32.WinRT.Composition
     {
         private EglContext _syncContext;
         private readonly object _pumpLock;
-        private readonly IVisual _micaVisual;
+        private readonly IVisual _micaDarkVisual;
+        private readonly IVisual _micaLightVisual;
         private readonly ICompositionRoundedRectangleGeometry _roundedRectangleGeometry;
+        private readonly float _backdropCornerRadius;
         private readonly IVisual _blurVisual;
         private ICompositionTarget _compositionTarget;
         private IVisual _contentVisual;
@@ -30,14 +33,16 @@ namespace Avalonia.Win32.WinRT.Composition
             object pumpLock,
             ICompositionTarget compositionTarget,
             ICompositionDrawingSurfaceInterop surfaceInterop,
-            IVisual contentVisual, IVisual blurVisual, IVisual micaVisual,
-            ICompositionRoundedRectangleGeometry roundedRectangleGeometry)
+            IVisual contentVisual, IVisual blurVisual, IVisual micaDarkVisual, IVisual micaLightVisual,
+            ICompositionRoundedRectangleGeometry roundedRectangleGeometry, float backdropCornerRadius)
         {
             _compositor = compositor.CloneReference();
             _syncContext = syncContext;
             _pumpLock = pumpLock;
-            _micaVisual = micaVisual;
+            _micaDarkVisual = micaDarkVisual;
+            _micaLightVisual = micaLightVisual;
             _roundedRectangleGeometry = roundedRectangleGeometry;
+            _backdropCornerRadius = backdropCornerRadius;
             _blurVisual = blurVisual.CloneReference();
             _compositionTarget = compositionTarget.CloneReference();
             _contentVisual = contentVisual.CloneReference();
@@ -45,7 +50,8 @@ namespace Avalonia.Win32.WinRT.Composition
         }
 
 
-        public void ResizeIfNeeded(PixelSize size)
+        public void ResizeIfNeeded(PixelSize size, double infoScaling, WindowState infoWindowState,
+            float infoCompositionPadding)
         {
             using (_syncContext.EnsureLocked())
             {
@@ -53,7 +59,26 @@ namespace Avalonia.Win32.WinRT.Composition
                 {
                     _surfaceInterop.Resize(new UnmanagedMethods.POINT { X = size.Width, Y = size.Height });
                     _contentVisual.SetSize(new Vector2(size.Width, size.Height));
-                    _roundedRectangleGeometry?.SetSize(new Vector2(size.Width, size.Height));
+                    float backdropPadding = infoWindowState == WindowState.Maximized ? 0 : infoCompositionPadding;
+                    var offset = (float)Math.Ceiling(backdropPadding * infoScaling);
+                    var sizeReduction = 2 * offset;
+
+                    float sizeWidth = size.Width - sizeReduction;
+                    float sizeHeight = size.Height - sizeReduction;
+                    if (sizeHeight > 0 && sizeWidth > 0)
+                    {
+                        _roundedRectangleGeometry?.SetSize(new Vector2(sizeWidth, sizeHeight));
+                        _roundedRectangleGeometry?.SetOffset(new Vector2(offset, offset));
+                    }
+                    else
+                    {
+                        _roundedRectangleGeometry?.SetSize(new Vector2(size.Width, size.Height));
+                        _roundedRectangleGeometry?.SetOffset(new Vector2(0, 0));
+                    }
+
+                    _roundedRectangleGeometry?.SetCornerRadius(infoWindowState == WindowState.Maximized ?
+                        Vector2.Zero :
+                        new Vector2((float)Math.Ceiling(_backdropCornerRadius * infoScaling)));
                     _size = size;
                 }
             }
@@ -63,7 +88,7 @@ namespace Avalonia.Win32.WinRT.Composition
         {
             if (!_syncContext.IsCurrent)
                 throw new InvalidOperationException();
-            
+
             var iid = IID_ID3D11Texture2D;
             void* pTexture;
             var off = _surfaceInterop.BeginDraw(null, &iid, &pTexture);
@@ -83,7 +108,8 @@ namespace Avalonia.Win32.WinRT.Composition
             using (_syncContext.EnsureLocked())
             {
                 _blurVisual.SetIsVisible(blurEffect == BlurEffect.Acrylic ? 1 : 0);
-                _micaVisual?.SetIsVisible(blurEffect == BlurEffect.Mica ? 1 : 0);
+                _micaDarkVisual?.SetIsVisible(blurEffect == BlurEffect.MicaDark ? 1 : 0);
+                _micaLightVisual?.SetIsVisible(blurEffect == BlurEffect.MicaLight ? 1 : 0);
             }
         }
 
@@ -92,7 +118,7 @@ namespace Avalonia.Win32.WinRT.Composition
             Monitor.Enter(_pumpLock);
             return Disposable.Create(() => Monitor.Exit(_pumpLock));
         }
-        
+
         public void Dispose()
         {
             if (_syncContext == null)

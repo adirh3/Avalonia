@@ -60,6 +60,24 @@ namespace ControlCatalog.Pages
 
             var addButton = this.FindControl<Button>("btnAdd");
             addButton.Click += (a, b) => collectionView3.AddNew();
+            var removeButton = this.FindControl<Button>("btnRemove");
+            removeButton.Click += (a, b) =>
+            {
+                
+                if (collectionView3.IsAddingNew)
+                    collectionView3.CommitNew();
+                if (collectionView3.IsEditingItem)
+                    collectionView3.CommitEdit();
+
+                if (!collectionView3.IsEditingItem && !collectionView3.IsAddingNew && dg3.SelectedIndex != -1)
+                {
+                    var selectedItemsCopy = new object[dg3.SelectedItems.Count];
+                    for (var i = 0; i < dg3.SelectedItems.Count; i++)
+                        selectedItemsCopy[i] = dg3.SelectedItems[i];
+
+                    foreach (object item in selectedItemsCopy) collectionView3.Remove(item);
+                }
+            };
         }
 
         private void Dg1_LoadingRow(object sender, DataGridRowEventArgs e)

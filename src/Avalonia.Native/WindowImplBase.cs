@@ -349,9 +349,7 @@ namespace Avalonia.Native
                 var loop = AvaloniaLocator.Current.GetService<IRenderLoop>();
                 var customRendererFactory = AvaloniaLocator.Current.GetService<IRendererFactory>();
 
-                if (customRendererFactory != null)
-                    return customRendererFactory.Create(root, loop);
-                return new DeferredRenderer(root, loop);
+                return customRendererFactory?.Create(root, loop) ?? new DeferredRenderer(root, loop);
             }
 
             return new ImmediateRenderer(root);

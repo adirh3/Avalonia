@@ -218,6 +218,9 @@ namespace Avalonia.X11
             }
 
             public double Scaling => _window.RenderScaling;
+            
+            public float CompositionPadding => 0;
+            public WindowState WindowState => _window.WindowState;
         }
 
         void UpdateMotifHints()

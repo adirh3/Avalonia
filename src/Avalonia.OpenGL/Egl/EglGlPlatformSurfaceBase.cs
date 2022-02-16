@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Controls;
 using Avalonia.OpenGL.Surfaces;
 
 namespace Avalonia.OpenGL.Egl
@@ -10,6 +11,9 @@ namespace Avalonia.OpenGL.Egl
             IntPtr Handle { get; }
             PixelSize Size { get; }
             double Scaling { get; }
+            
+            float CompositionPadding { get; }
+            WindowState WindowState { get; }
         }
 
         public abstract IGlPlatformSurfaceRenderTarget CreateGlRenderTarget();

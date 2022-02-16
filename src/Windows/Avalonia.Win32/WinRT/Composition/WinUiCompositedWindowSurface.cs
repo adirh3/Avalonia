@@ -17,7 +17,8 @@ namespace Avalonia.Win32.WinRT.Composition
         private IRef<WinUICompositedWindow> _window;
         private BlurEffect _blurEffect;
 
-        public WinUiCompositedWindowSurface(WinUICompositorConnection connection, IEglWindowGlPlatformSurfaceInfo info) : base()
+        public WinUiCompositedWindowSurface(WinUICompositorConnection connection, IEglWindowGlPlatformSurfaceInfo info)
+            : base()
         {
             _connection = connection;
             _egl = connection.Egl;
@@ -52,7 +53,7 @@ namespace Avalonia.Win32.WinRT.Composition
                 _egl = egl;
                 _window = window.Clone();
                 _info = info;
-                _window.Item.ResizeIfNeeded(_info.Size);
+                _window.Item.ResizeIfNeeded(_info.Size, _info.Scaling, _info.WindowState, _info.CompositionPadding);
             }
 
             public override IGlPlatformSurfaceRenderingSession BeginDraw()
@@ -66,13 +67,13 @@ namespace Avalonia.Win32.WinRT.Composition
                 {
                     if (_window?.Item == null)
                         throw new ObjectDisposedException(GetType().FullName);
-                    
+
                     var size = _info.Size;
                     transaction = _window.Item.BeginTransaction();
-                    _window.Item.ResizeIfNeeded(size);
+                    _window.Item.ResizeIfNeeded(size, _info.Scaling, _info.WindowState, _info.CompositionPadding);
                     texture = _window.Item.BeginDrawToTexture(out var offset);
 
-                    surface = ((AngleWin32EglDisplay) _egl.Display).WrapDirect3D11Texture(_egl,
+                    surface = ((AngleWin32EglDisplay)_egl.Display).WrapDirect3D11Texture(_egl,
                         texture.GetNativeIntPtr(),
                         offset.X, offset.Y, size.Width, size.Height);
 

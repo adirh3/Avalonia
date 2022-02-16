@@ -95,7 +95,7 @@ namespace Avalonia
         /// If set to null the brushes will be created using default settings (sharp corners)
         /// This can be useful when you need a rounded-corner blurred Windows 10 app, or borderless Windows 11 app
         /// </summary>
-        public float? CompositionBackdropCornerRadius { get; set; }
+        public float CompositionBackdropCornerRadius { get; set; }
     }
 }
 

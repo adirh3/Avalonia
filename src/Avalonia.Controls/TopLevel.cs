@@ -41,6 +41,13 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly DirectProperty<TopLevel, Size> ClientSizeProperty =
             AvaloniaProperty.RegisterDirect<TopLevel, Size>(nameof(ClientSize), o => o.ClientSize);
+        
+        /// <summary>
+        /// Defines the <see cref="ClientSize"/> property.
+        /// </summary>
+        public static readonly DirectProperty<TopLevel, float> CompositionPaddingProperty =
+            AvaloniaProperty.RegisterDirect<TopLevel, float>(nameof(CompositionPadding), o => o.CompositionPadding,
+                (o, v) => o.CompositionPadding = v);
 
         /// <summary>
         /// Defines the <see cref="FrameSize"/> property.
@@ -90,6 +97,7 @@ namespace Avalonia.Controls
         private WindowTransparencyLevel _actualTransparencyLevel;
         private ILayoutManager? _layoutManager;
         private Border? _transparencyFallbackBorder;
+        private float _compositionPadding;
 
         /// <summary>
         /// Initializes static members of the <see cref="TopLevel"/> class.
@@ -195,6 +203,15 @@ namespace Avalonia.Controls
             }
 
             impl.LostFocus += PlatformImpl_LostFocus;
+        }
+        
+        /// <summary>
+        /// Gets or sets the client size of the window.
+        /// </summary>
+        public float CompositionPadding
+        {
+            get { return _compositionPadding; }
+            set { SetAndRaise(CompositionPaddingProperty, ref _compositionPadding, value); }
         }
 
         /// <summary>

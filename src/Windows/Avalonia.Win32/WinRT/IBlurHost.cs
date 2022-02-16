@@ -4,10 +4,11 @@
     {
         None,
         Acrylic,
-        Mica
+        MicaDark,
+        MicaLight
     }
     
-    internal interface IBlurHost
+    public interface IBlurHost
     {
         void SetBlur(BlurEffect enable);
     }

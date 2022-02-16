@@ -181,7 +181,8 @@
                 <WindowTransparencyLevel>Transparent</WindowTransparencyLevel>
                 <WindowTransparencyLevel>Blur</WindowTransparencyLevel>
                 <WindowTransparencyLevel>AcrylicBlur</WindowTransparencyLevel>
-                <WindowTransparencyLevel>Mica</WindowTransparencyLevel>
+                <WindowTransparencyLevel>MicaLight</WindowTransparencyLevel>
+                <WindowTransparencyLevel>MicaDark</WindowTransparencyLevel>
               </ComboBox.Items>
             </ComboBox>
             <ComboBox HorizontalAlignment="Stretch"
