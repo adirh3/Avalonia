@@ -1,9 +1,11 @@
+using System;
 using System.Reactive.Linq;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Metadata;
 using Avalonia.Layout;
+using Avalonia.Utilities;
 
 namespace Avalonia.Controls
 {
@@ -62,6 +64,15 @@ namespace Avalonia.Controls
                 inherits: true,
                 defaultValue: FontWeight.Normal);
 
+        /// <summary>
+        /// Defines the <see cref="FontStretch"/> property.
+        /// </summary>
+        public static readonly AttachedProperty<FontStretch> FontStretchProperty =
+            AvaloniaProperty.RegisterAttached<TextBlock, Control, FontStretch>(
+                nameof(FontStretch),
+                inherits: true,
+                defaultValue: FontStretch.Normal);
+        
         /// <summary>
         /// Defines the <see cref="Foreground"/> property.
         /// </summary>
@@ -146,7 +157,7 @@ namespace Avalonia.Controls
         /// <summary>
         /// Gets the <see cref="TextLayout"/> used to render the text.
         /// </summary>
-        public TextLayout? TextLayout
+        public TextLayout TextLayout
         {
             get
             {
@@ -216,6 +227,15 @@ namespace Avalonia.Controls
         {
             get { return GetValue(FontWeightProperty); }
             set { SetValue(FontWeightProperty, value); }
+        }
+        
+        /// <summary>
+        /// Gets or sets the font stretch.
+        /// </summary>
+        public FontStretch FontStretch
+        {
+            get { return GetValue(FontStretchProperty); }
+            set { SetValue(FontStretchProperty, value); }
         }
 
         /// <summary>
@@ -295,7 +315,7 @@ namespace Avalonia.Controls
         /// Gets the value of the attached <see cref="FontSizeProperty"/> on a control.
         /// </summary>
         /// <param name="control">The control.</param>
-        /// <returns>The font family.</returns>
+        /// <returns>The font size.</returns>
         public static double GetFontSize(Control control)
         {
             return control.GetValue(FontSizeProperty);
@@ -305,7 +325,7 @@ namespace Avalonia.Controls
         /// Gets the value of the attached <see cref="FontStyleProperty"/> on a control.
         /// </summary>
         /// <param name="control">The control.</param>
-        /// <returns>The font family.</returns>
+        /// <returns>The font style.</returns>
         public static FontStyle GetFontStyle(Control control)
         {
             return control.GetValue(FontStyleProperty);
@@ -315,10 +335,20 @@ namespace Avalonia.Controls
         /// Gets the value of the attached <see cref="FontWeightProperty"/> on a control.
         /// </summary>
         /// <param name="control">The control.</param>
-        /// <returns>The font family.</returns>
+        /// <returns>The font weight.</returns>
         public static FontWeight GetFontWeight(Control control)
         {
             return control.GetValue(FontWeightProperty);
+        }
+        
+        /// <summary>
+        /// Gets the value of the attached <see cref="FontStretchProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The font stretch.</returns>
+        public static FontStretch GetFontStretch(Control control)
+        {
+            return control.GetValue(FontStretchProperty);
         }
 
         /// <summary>
@@ -336,7 +366,6 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="value">The property value to set.</param>
-        /// <returns>The font family.</returns>
         public static void SetFontFamily(Control control, FontFamily value)
         {
             control.SetValue(FontFamilyProperty, value);
@@ -347,7 +376,6 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="value">The property value to set.</param>
-        /// <returns>The font family.</returns>
         public static void SetFontSize(Control control, double value)
         {
             control.SetValue(FontSizeProperty, value);
@@ -358,7 +386,6 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="value">The property value to set.</param>
-        /// <returns>The font family.</returns>
         public static void SetFontStyle(Control control, FontStyle value)
         {
             control.SetValue(FontStyleProperty, value);
@@ -369,10 +396,19 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="value">The property value to set.</param>
-        /// <returns>The font family.</returns>
         public static void SetFontWeight(Control control, FontWeight value)
         {
             control.SetValue(FontWeightProperty, value);
+        }
+        
+        /// <summary>
+        /// Sets the value of the attached <see cref="FontStretchProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="value">The property value to set.</param>
+        public static void SetFontStretch(Control control, FontStretch value)
+        {
+            control.SetValue(FontStretchProperty, value);
         }
 
         /// <summary>
@@ -380,7 +416,6 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="value">The property value to set.</param>
-        /// <returns>The font family.</returns>
         public static void SetForeground(Control control, IBrush? value)
         {
             control.SetValue(ForegroundProperty, value);
@@ -399,25 +434,20 @@ namespace Avalonia.Controls
                 context.FillRectangle(background, new Rect(Bounds.Size));
             }
 
-            if (TextLayout is null)
-            {
-                return;
-            }
-            
             var padding = Padding;
             var top = padding.Top;
-            var textSize = TextLayout.Size;
+            var textHeight = TextLayout.Bounds.Height;
 
-            if (Bounds.Height < textSize.Height)
+            if (Bounds.Height < textHeight)
             {
                 switch (VerticalAlignment)
                 {
                     case VerticalAlignment.Center:
-                        top += (Bounds.Height - textSize.Height) / 2;
+                        top += (Bounds.Height - textHeight) / 2;
                         break;
 
                     case VerticalAlignment.Bottom:
-                        top += (Bounds.Height - textSize.Height);
+                        top += (Bounds.Height - textHeight);
                         break;
                 }
             }
@@ -431,16 +461,11 @@ namespace Avalonia.Controls
         /// <param name="constraint">The constraint of the text.</param>
         /// <param name="text">The text to format.</param>
         /// <returns>A <see cref="TextLayout"/> object.</returns>
-        protected virtual TextLayout? CreateTextLayout(Size constraint, string? text)
+        protected virtual TextLayout CreateTextLayout(Size constraint, string? text)
         {
-            if (constraint == Size.Empty)
-            {
-                return null;
-            }
-
             return new TextLayout(
                 text ?? string.Empty,
-                new Typeface(FontFamily, FontStyle, FontWeight),
+                new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
                 FontSize,
                 Foreground ?? Brushes.Transparent,
                 TextAlignment,
@@ -464,39 +489,35 @@ namespace Avalonia.Controls
             InvalidateMeasure();
         }
 
-        /// <summary>
-        /// Measures the control.
-        /// </summary>
-        /// <param name="availableSize">The available size for the control.</param>
-        /// <returns>The desired size.</returns>
         protected override Size MeasureOverride(Size availableSize)
         {
-            if (string.IsNullOrEmpty(Text))
-            {
-                return new Size();
-            }
-
             var padding = Padding;
+            
+            _constraint = availableSize.Deflate(padding);
+            
+            _textLayout = null;
 
-            availableSize = availableSize.Deflate(padding);
+            InvalidateArrange();
+            
+            var scale = LayoutHelper.GetLayoutScale(this);
 
-            if (_constraint != availableSize)
-            {
-                _constraint = availableSize;
+            var measuredSize = PixelSize.FromSize(TextLayout.Bounds.Size, scale);
 
-                InvalidateTextLayout();
-            }
-
-            var measuredSize = TextLayout?.Size ?? Size.Empty;
-
-            return measuredSize.Inflate(padding);
+            return new Size(measuredSize.Width, measuredSize.Height).Inflate(padding);
         }
 
-        protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
+        protected override Size ArrangeOverride(Size finalSize)
         {
-            base.OnAttachedToLogicalTree(e);
+            if (MathUtilities.AreClose(_constraint.Width, finalSize.Width))
+            {
+                return finalSize;
+            }
+            
+            _constraint = finalSize;
+            
+            _textLayout = null;
 
-            InvalidateTextLayout();
+            return finalSize;
         }
 
         private static bool IsValidMaxLines(int maxLines) => maxLines >= 0;

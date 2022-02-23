@@ -265,7 +265,7 @@ namespace Avalonia.Win32
             {
                 if (IsWindowVisible(_hwnd))
                 {
-                    ShowWindow(value, true);
+                    ShowWindow(value, value != WindowState.Minimized); // If the window is minimized, it shouldn't be activated
                 }
 
                 _showWindowState = value;                
@@ -527,6 +527,7 @@ namespace Avalonia.Win32
             if (_dropTarget != null)
             {
                 OleContext.Current?.UnregisterDragDrop(Handle);
+                _dropTarget.Dispose();
                 _dropTarget = null;
             }
 
@@ -971,7 +972,7 @@ namespace Avalonia.Win32
             {
                 case WindowState.Minimized:
                     newWindowProperties.IsFullScreen = false;
-                    command = activate ? ShowWindowCommand.Minimize : ShowWindowCommand.ShowMinNoActive;
+                    command = ShowWindowCommand.Minimize;
                     break;
                 case WindowState.Maximized:
                     newWindowProperties.IsFullScreen = false;
