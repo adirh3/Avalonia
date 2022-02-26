@@ -222,6 +222,8 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         public PixelSize Size => new PixelSize(_view.Holder.SurfaceFrame.Width(), _view.Holder.SurfaceFrame.Height());
 
         public double Scaling => RenderScaling;
+        public float CompositionPadding { get; }
+        public WindowState WindowState { get; }
 
         public ITextInputMethodImpl TextInputMethod => _textInputMethod;
 

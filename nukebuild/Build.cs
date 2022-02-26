@@ -42,7 +42,6 @@ partial class Build : NukeBuild
             return null;
 
         var msBuildDirectory = VSWhere("-latest -nologo -property installationPath -format value -prerelease").FirstOrDefault().Text;
-        return @"C:\Program Files\JetBrains\JetBrains Rider 2021.3.3\tools\MSBuild\Current\Bin\amd64\MSBuild.exe";
         if (!string.IsNullOrWhiteSpace(msBuildDirectory))
         {
             string msBuildExe = Path.Combine(msBuildDirectory, @"MSBuild\Current\Bin\MSBuild.exe");
