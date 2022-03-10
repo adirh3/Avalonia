@@ -516,9 +516,9 @@ namespace Avalonia.Controls.Presenters
             _textLayout = null;
             
             InvalidateArrange();
-            
-            var measuredSize = PixelSize.FromSize(TextLayout.Bounds.Size, 1);
 
+            var measuredSize = PixelSize.FromSize(TextLayout.Bounds.Size, 1);
+            
             return new Size(measuredSize.Width, measuredSize.Height);
         }
 
