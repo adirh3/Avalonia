@@ -38,6 +38,8 @@ namespace Avalonia.Media.TextFormatting
 
         public FontMetrics FontMetrics { get; }
 
+        public override double Baseline => -FontMetrics.Ascent;
+
         public override Size Size => GlyphRun.Size;
 
         public GlyphRun GlyphRun
@@ -127,6 +129,29 @@ namespace Avalonia.Media.TextFormatting
 
                 length += count;
                 currentWidth += advance;
+            }
+
+            return length > 0;
+        }
+
+        internal bool TryMeasureCharactersBackwards(double availableWidth, out int length, out double width)
+        {
+            length = 0;
+            width = 0;
+
+            for (var i = ShapedBuffer.Length - 1; i >= 0; i--)
+            {
+                var advance = ShapedBuffer.GlyphAdvances[i];
+
+                if (width + advance > availableWidth)
+                {
+                    break;
+                }
+
+                Codepoint.ReadAt(GlyphRun.Characters, length, out var count);
+
+                length += count;
+                width += advance;
             }
 
             return length > 0;

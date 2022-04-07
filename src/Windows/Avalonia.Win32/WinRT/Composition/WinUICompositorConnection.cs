@@ -18,6 +18,7 @@ namespace Avalonia.Win32.WinRT.Composition
 {
     class WinUICompositorConnection : IRenderTimer
     {
+        public static readonly Version MinHostBackdropVersion = new Version(10, 0, 22000);
         private readonly EglContext _syncContext;
         private ICompositor _compositor;
         private ICompositor2 _compositor2;
@@ -320,7 +321,7 @@ namespace Avalonia.Win32.WinRT.Composition
             var blurEffect = new WinUIGaussianBlurEffect(backDropParameterAsSource);
             using var blurEffectFactory = _compositor.CreateEffectFactory(blurEffect);
             using var compositionEffectBrush = blurEffectFactory.CreateBrush();
-            using var backdrop = _compositor2.CreateBackdropBrush();
+            using var backdrop = CreateBackdropBrush();
             using var backdropBrush = backdrop.QueryInterface<ICompositionBrush>();
 
             var saturateEffect = new SaturationEffect(blurEffect);
@@ -363,6 +364,30 @@ namespace Avalonia.Win32.WinRT.Composition
             visual2.SetRelativeSizeAdjustment(new Vector2(1.0f, 1.0f));
 
             return visual.CloneReference();
+        }
+        
+        private ICompositionBrush CreateBackdropBrush()
+        {
+            ICompositionBackdropBrush brush = null;
+            try
+            {
+                if (Win32Platform.WindowsVersion >= MinHostBackdropVersion)
+                {
+                    using var compositor3 = _compositor.QueryInterface<ICompositor3>();
+                    brush = compositor3.CreateHostBackdropBrush();
+                }
+                else
+                {
+                    using var compositor2 = _compositor.QueryInterface<ICompositor2>();
+                    brush = compositor2.CreateBackdropBrush();
+                }
+
+                return brush.QueryInterface<ICompositionBrush>();
+            }
+            finally
+            {
+                brush?.Dispose();
+            }
         }
 
 
