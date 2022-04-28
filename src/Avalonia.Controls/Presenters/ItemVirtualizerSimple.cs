@@ -391,7 +391,7 @@ namespace Avalonia.Controls.Presenters
             {
                 var item = Items!.ElementAt(itemIndex)!;
 
-                if (!object.Equals(container.Item, item))
+                if (!ReferenceEquals(container.Item, item))
                 {
                     if (!generator.TryRecycle(itemIndex, itemIndex, item))
                     {

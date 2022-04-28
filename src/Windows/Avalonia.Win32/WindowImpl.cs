@@ -397,7 +397,7 @@ namespace Avalonia.Win32
                     }
                 }
 
-                if (Win32Platform.WindowsVersion < WinUICompositorConnection.MinHostBackdropVersion && effect == BlurEffect.Mica)
+                if (Win32Platform.WindowsVersion < WinUICompositorConnection.MinHostBackdropVersion && effect is BlurEffect.MicaDark or BlurEffect.MicaLight)
                 {
                     effect = BlurEffect.Acrylic;
                 }
@@ -435,7 +435,8 @@ namespace Avalonia.Win32
 
                     case WindowTransparencyLevel.AcrylicBlur:
                     case WindowTransparencyLevel.ForceAcrylicBlur: // hack-force acrylic.
-                    case WindowTransparencyLevel.Mica:
+                    case WindowTransparencyLevel.MicaLight:
+                    case WindowTransparencyLevel.MicaDark:
                         accent.AccentState = AccentState.ACCENT_ENABLE_ACRYLIC;
                         transparencyLevel = WindowTransparencyLevel.AcrylicBlur;
                         break;

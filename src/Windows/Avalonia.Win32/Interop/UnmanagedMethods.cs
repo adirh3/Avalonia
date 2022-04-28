@@ -992,6 +992,9 @@ namespace Avalonia.Win32.Interop
 
         [DllImport("user32.dll")]
         public static extern int GetMessageTime();
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern uint GetLastError();
 
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
