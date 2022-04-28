@@ -282,6 +282,8 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
+        protected override bool BypassFlowDirectionPolicies => true;
+
         /// <summary>
         /// Creates the <see cref="TextLayout"/> used to render the text.
         /// </summary>
@@ -660,7 +662,7 @@ namespace Avalonia.Controls.Presenters
 
                     caretIndex = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
 
-                    if (textLine.NewLineLength > 0 && caretIndex == textLine.FirstTextSourceIndex + textLine.Length)
+                    if (textLine.TrailingWhitespaceLength > 0 && caretIndex == textLine.FirstTextSourceIndex + textLine.Length)
                     {
                         characterHit = new CharacterHit(caretIndex);
                     }
@@ -774,7 +776,7 @@ namespace Avalonia.Controls.Presenters
             _caretTimer.Tick -= CaretTimerTick;
         }
 
-        protected override void OnPropertyChanged<T>(AvaloniaPropertyChangedEventArgs<T> change)
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
             

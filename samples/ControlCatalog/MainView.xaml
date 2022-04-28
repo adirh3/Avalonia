@@ -43,6 +43,9 @@
       <TabItem Header="Clipboard">
         <pages:ClipboardPage />
       </TabItem>
+      <TabItem Header="ColorPicker">
+        <pages:ColorPickerPage />
+      </TabItem>
       <TabItem Header="ComboBox">
         <pages:ComboBoxPage />
       </TabItem>
@@ -189,6 +192,14 @@
                 <WindowTransparencyLevel>AcrylicBlur</WindowTransparencyLevel>
                 <WindowTransparencyLevel>MicaLight</WindowTransparencyLevel>
                 <WindowTransparencyLevel>MicaDark</WindowTransparencyLevel>
+              </ComboBox.Items>
+            </ComboBox>
+            <ComboBox x:Name="FlowDirection"
+                      HorizontalAlignment="Stretch"
+                      SelectedIndex="0">
+              <ComboBox.Items>
+                <FlowDirection>LeftToRight</FlowDirection>
+                <FlowDirection>RightToLeft</FlowDirection>
               </ComboBox.Items>
             </ComboBox>
             <ComboBox HorizontalAlignment="Stretch"

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.Remoting.Contexts;
-using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Controls.Templates;
@@ -28,12 +27,13 @@ namespace Avalonia.LeakTests
     {
         // Need to have the collection as field, so GC will not free it
         private readonly ObservableCollection<string> _observableCollection = new();
-
+        
         public ControlTests(ITestOutputHelper atr)
         {
             DotMemoryUnitTestOutput.SetOutputMethod(atr.WriteLine);
         }
-        
+
+ 
         [Fact]
         public void DataGrid_Is_Freed()
         {
