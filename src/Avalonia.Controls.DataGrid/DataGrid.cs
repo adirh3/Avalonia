@@ -2059,15 +2059,6 @@ namespace Avalonia.Controls
             }
         }
         
-        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-        {
-            base.OnAttachedToVisualTree(e);
-            if (DataConnection.DataSource != null && !DataConnection.EventsWired)
-            {
-                DataConnection.WireEvents(DataConnection.DataSource);
-            }
-        }
-
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
@@ -2083,13 +2074,6 @@ namespace Avalonia.Controls
             base.OnAttachedToVisualTree(e);
             if (DataConnection.DataSource != null && !DataConnection.EventsWired)
                 DataConnection.WireEvents(DataConnection.DataSource);
-        }
-
-        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-        {
-            base.OnDetachedFromVisualTree(e);
-            if (DataConnection.DataSource != null && DataConnection.EventsWired)
-                DataConnection.UnWireEvents(DataConnection.DataSource);
         }
 
         /// <summary>

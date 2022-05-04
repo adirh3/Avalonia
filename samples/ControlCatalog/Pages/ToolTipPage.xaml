@@ -14,8 +14,13 @@
                     Background="{DynamicResource SystemAccentColor}"
                     Margin="5"
                     Padding="50"
-                    ToolTip.Tip="This is a ToolTip">
-                <TextBlock>Hover Here</TextBlock>
+                    >
+              <ToolTip.Tip>
+                <TextBlock FontFamily="Segoe UI Variable Text Light"
+                           TextWrapping="Wrap"
+                           FontSize="15.120000000000001" Text="Introduction to Microsoft Edge WebView2 - Microsoft Edge Development | Microsoft Docs"/>
+              </ToolTip.Tip>
+              <TextBlock>Hover Here</TextBlock>
             </Border>
             <ToggleSwitch Grid.Column="1"
                       Margin="5"
