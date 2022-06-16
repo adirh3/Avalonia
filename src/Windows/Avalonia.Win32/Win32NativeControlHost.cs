@@ -81,7 +81,6 @@ namespace Avalonia.Win32
                 };
 
                 var atom = UnmanagedMethods.RegisterClassEx(ref wndClassEx);
-                
                 Handle = UnmanagedMethods.CreateWindowEx(
                     layered ? (int)UnmanagedMethods.WindowStyles.WS_EX_LAYERED : 0,
                     atom,
@@ -95,24 +94,10 @@ namespace Avalonia.Win32
                     IntPtr.Zero,
                     IntPtr.Zero,
                     IntPtr.Zero);
-                var lastError = UnmanagedMethods.GetLastError();
-                if (lastError != 0)
-                {
-                    layered = false;
-                    Handle = UnmanagedMethods.CreateWindowEx(
-                        0,
-                        atom,
-                        null,
-                        (int)UnmanagedMethods.WindowStyles.WS_CHILD,
-                        0,
-                        0,
-                        640,
-                        480,
-                        parent ?? OffscreenParentWindow.Handle,
-                        IntPtr.Zero,
-                        IntPtr.Zero,
-                        IntPtr.Zero);
-                }
+
+                if (Handle == IntPtr.Zero)
+                    throw new InvalidOperationException("Unable to create child window for native control host. Application manifest with supported OS list might be required.");
+
                 if (layered)
                     UnmanagedMethods.SetLayeredWindowAttributes(Handle, 0, 255,
                         UnmanagedMethods.LayeredWindowFlags.LWA_ALPHA);
