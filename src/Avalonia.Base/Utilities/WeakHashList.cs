@@ -209,7 +209,7 @@ internal class WeakHashList<T> where T : class
                 if (_arr[c]?.TryGetTarget(out var target) == true)
                     (pooled ??= factory?.Invoke()
                                 ?? (s_listPool.Count > 0
-                                    ? s_listPool.Pop()
+                                    ? s_listPool.Pop() ?? new PooledList<T>()
                                     : new PooledList<T>())).Add(target!);
                 else
                 {
@@ -228,7 +228,7 @@ internal class WeakHashList<T> where T : class
                 if (kvp.Key.Weak?.TryGetTarget(out var target) == true)
                     (pooled ??= factory?.Invoke()
                                 ?? (s_listPool.Count > 0
-                                    ? s_listPool.Pop()
+                                    ? s_listPool.Pop() ?? new PooledList<T>()
                                     : new PooledList<T>()))
                         .Add(target!);
                 else

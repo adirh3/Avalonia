@@ -160,7 +160,7 @@ public class WeakEvent<TSender, TEventArgs> : WeakEvent where TEventArgs : Event
             else
             {
                 foreach(var item in alive.Span)
-                    item.OnEvent(_target, _ev, eventArgs);
+                    item?.OnEvent(_target, _ev, eventArgs);
                 WeakHashList<IWeakEventSubscriber<TEventArgs>>.ReturnToSharedPool(alive);
                 if(_list.NeedCompact && !_compactScheduled)
                     ScheduleCompact();

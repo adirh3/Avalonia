@@ -134,15 +134,15 @@ namespace Avalonia.Data
             if (_target.TemplatedParent != null)
             {
                 var value = Property != null ?
-                    _target.TemplatedParent.GetValue(Property) :
+                    _target.TemplatedParent?.GetValue(Property) :
                     _target.TemplatedParent;
 
-                if (Converter is not null && _targetType is not null)
-                {
-                    value = Converter.Convert(value, _targetType, ConverterParameter, CultureInfo.CurrentCulture);
-                }
+                    if (Converter is not null && _targetType is not null)
+                    {
+                        value = Converter.Convert(value, _targetType, ConverterParameter, CultureInfo.CurrentCulture);
+                    }
 
-                PublishNext(value);
+                    PublishNext(value);
             }
             else
             {
