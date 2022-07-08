@@ -11,6 +11,7 @@ using Avalonia.Logging;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Rendering;
 using Avalonia.Styling;
 using Avalonia.Utilities;
@@ -100,6 +101,8 @@ namespace Avalonia.Controls
         private ILayoutManager? _layoutManager;
         private Border? _transparencyFallbackBorder;
         private TargetWeakEventSubscriber<TopLevel, ResourcesChangedEventArgs>? _resourcesChangesSubscriber;
+        private IStorageProvider? _storageProvider;
+        
         private float _compositionPadding;
 
         /// <summary>
@@ -336,6 +339,11 @@ namespace Avalonia.Controls
         double IRenderRoot.RenderScaling => PlatformImpl?.RenderScaling ?? 1;
 
         IStyleHost IStyleHost.StylingParent => _globalStyles!;
+        
+        public IStorageProvider StorageProvider => _storageProvider
+            ??= AvaloniaLocator.Current.GetService<IStorageProviderFactory>()?.CreateProvider(this)
+            ?? (PlatformImpl as ITopLevelImplWithStorageProvider)?.StorageProvider
+            ?? throw new InvalidOperationException("StorageProvider platform implementation is not available.");
 
         IRenderTarget IRenderRoot.CreateRenderTarget() => CreateRenderTarget();
 
@@ -501,7 +509,11 @@ namespace Avalonia.Controls
         /// Raises the <see cref="Opened"/> event.
         /// </summary>
         /// <param name="e">The event args.</param>
-        protected virtual void OnOpened(EventArgs e) => Opened?.Invoke(this, e);
+        protected virtual void OnOpened(EventArgs e)
+        {
+            FrameSize = PlatformImpl?.FrameSize;
+            Opened?.Invoke(this, e);  
+        } 
 
         /// <summary>
         /// Raises the <see cref="Closed"/> event.
