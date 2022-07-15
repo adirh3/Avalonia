@@ -13,6 +13,7 @@ using Avalonia.OpenGL;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Rendering;
+using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
 
 namespace Avalonia.Native
@@ -366,12 +367,19 @@ namespace Avalonia.Native
 
         public IRenderer CreateRenderer(IRenderRoot root)
         {
+            var customRendererFactory = AvaloniaLocator.Current.GetService<IRendererFactory>();
+            var loop = AvaloniaLocator.Current.GetService<IRenderLoop>();
+            if (customRendererFactory != null)
+                return customRendererFactory.Create(root, loop);
+            
             if (_deferredRendering)
             {
-                var loop = AvaloniaLocator.Current.GetService<IRenderLoop>();
-                var customRendererFactory = AvaloniaLocator.Current.GetService<IRendererFactory>();
-
-                return customRendererFactory?.Create(root, loop) ?? new DeferredRenderer(root, loop);
+                if (AvaloniaNativePlatform.Compositor != null)
+                    return new CompositingRenderer(root, AvaloniaNativePlatform.Compositor)
+                    {
+                        RenderOnlyOnRenderThread = false
+                    };
+                return new DeferredRenderer(root, loop);
             }
 
             return new ImmediateRenderer(root);

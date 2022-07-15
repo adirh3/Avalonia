@@ -15,6 +15,7 @@ using Avalonia.OpenGL.Egl;
 using Avalonia.OpenGL.Surfaces;
 using Avalonia.Platform;
 using Avalonia.Rendering;
+using Avalonia.Rendering.Composition;
 using Avalonia.Win32.Automation;
 using Avalonia.Win32.Input;
 using Avalonia.Win32.Interop;
@@ -546,10 +547,17 @@ namespace Avalonia.Win32
             if (renderer != null)
                 return renderer;
 
-            return Win32Platform.UseDeferredRendering ?
-                _isUsingComposition ? new DeferredRenderer(root, loop) { RenderOnlyOnRenderThread = true }
-                : (IRenderer)new DeferredRenderer(root, loop, rendererLock: _rendererLock) :
-                new ImmediateRenderer(root);
+            if (Win32Platform.Compositor != null)
+                return new CompositingRenderer(root, Win32Platform.Compositor);
+            
+            return Win32Platform.UseDeferredRendering
+                ? _isUsingComposition
+                    ? new DeferredRenderer(root, loop)
+                    {
+                        RenderOnlyOnRenderThread = true
+                    }
+                    : (IRenderer)new DeferredRenderer(root, loop, rendererLock: _rendererLock)
+                : new ImmediateRenderer(root);
         }
 
         public void Resize(Size value, PlatformResizeReason reason)
