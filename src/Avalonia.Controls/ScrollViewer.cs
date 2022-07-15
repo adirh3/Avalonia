@@ -45,7 +45,7 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly DirectProperty<ScrollViewer, Size> ExtentProperty =
             AvaloniaProperty.RegisterDirect<ScrollViewer, Size>(nameof(Extent),
-                o => o.Extent,
+                o => o?.Extent ?? Size.Empty,
                 (o, v) => o.Extent = v);
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Avalonia.Controls
         public static readonly DirectProperty<ScrollViewer, Vector> OffsetProperty =
             AvaloniaProperty.RegisterDirect<ScrollViewer, Vector>(
                 nameof(Offset),
-                o => o.Offset,
+                o => o?.Offset ?? Vector.Zero,
                 (o, v) => o.Offset = v);
 
         /// <summary>
