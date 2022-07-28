@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using Avalonia.Rendering.Composition.Animations;
 using Avalonia.Rendering.Composition.Server;
 
+// Special license applies <see href="https://raw.githubusercontent.com/AvaloniaUI/Avalonia/master/src/Avalonia.Base/Rendering/Composition/License.md">License.md</see>
+
 namespace Avalonia.Rendering.Composition.Transport;
 
 /// <summary>
@@ -72,7 +74,7 @@ internal class BatchStreamWriter : IDisposable
         var size = Unsafe.SizeOf<T>();
         if (_currentDataSegment.Data == IntPtr.Zero || _currentDataSegment.ElementCount + size > _memoryPool.BufferSize)
             NextDataSegment();
-        *(T*)((byte*)_currentDataSegment.Data + _currentDataSegment.ElementCount) = item;
+        Unsafe.WriteUnaligned<T>((byte*)_currentDataSegment.Data + _currentDataSegment.ElementCount, item);
         _currentDataSegment.ElementCount += size;
     }
 
@@ -123,7 +125,7 @@ internal class BatchStreamReader : IDisposable
         if (_memoryOffset + size > _currentDataSegment.ElementCount)
             throw new InvalidOperationException("Attempted to read more memory then left in the current segment");
 
-        var rv = *(T*)((byte*)_currentDataSegment.Data + _memoryOffset);
+        var rv = Unsafe.ReadUnaligned<T>((byte*)_currentDataSegment.Data + _memoryOffset);
         _memoryOffset += size;
         if (_memoryOffset == _currentDataSegment.ElementCount)
         {

@@ -303,6 +303,8 @@ namespace Avalonia.Controls
         /// </summary>
         public IRenderer Renderer { get; private set; }
 
+        internal PixelPoint? LastPointerPosition => _pointerOverPreProcessor?.LastPosition;
+        
         /// <summary>
         /// Gets the access key handler for the window.
         /// </summary>
@@ -319,9 +321,6 @@ namespace Avalonia.Controls
             get { return GetValue(PointerOverElementProperty); }
             set { SetValue(PointerOverElementProperty, value); }
         }
-
-        /// <inheritdoc/>
-        IMouseDevice? IInputRoot.MouseDevice => PlatformImpl?.MouseDevice;
 
         /// <summary>
         /// Gets or sets a value indicating whether access keys are shown in the window.
