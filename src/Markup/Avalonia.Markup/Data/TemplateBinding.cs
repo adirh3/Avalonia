@@ -19,6 +19,7 @@ namespace Avalonia.Data
         private bool _isSetterValue;
         private IStyledElement _target = default!;
         private Type? _targetType;
+        private bool _hasProducedValue;
 
         public TemplateBinding()
         {
@@ -134,19 +135,21 @@ namespace Avalonia.Data
             if (_target.TemplatedParent != null)
             {
                 var value = Property != null ?
-                    _target.TemplatedParent?.GetValue(Property) :
+                    _target.TemplatedParent.GetValue(Property) :
                     _target.TemplatedParent;
 
-                    if (Converter is not null && _targetType is not null)
-                    {
-                        value = Converter.Convert(value, _targetType, ConverterParameter, CultureInfo.CurrentCulture);
-                    }
+                if (Converter is not null && _targetType is not null)
+                {
+                    value = Converter.Convert(value, _targetType, ConverterParameter, CultureInfo.CurrentCulture);
+                }
 
-                    PublishNext(value);
+                PublishNext(value);
+                _hasProducedValue = true;
             }
-            else
+            else if (_hasProducedValue)
             {
                 PublishNext(AvaloniaProperty.UnsetValue);
+                _hasProducedValue = false;
             }
         }
 
