@@ -43,6 +43,11 @@ namespace Avalonia.Controls.Documents
             get => _parent;
             set
             {
+                if (_parent == value)
+                {
+                    return;
+                }
+
                 _parent = value;
 
                 OnParentChanged(value);
@@ -156,6 +161,8 @@ namespace Avalonia.Controls.Documents
         {
             foreach (var child in this)
             {
+                if (parent != null)
+                    ((ISetLogicalParent)child).SetParent(null);
                 ((ISetLogicalParent)child).SetParent(parent);
             }
         }
