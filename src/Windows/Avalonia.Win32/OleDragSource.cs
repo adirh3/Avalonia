@@ -35,7 +35,7 @@ namespace Avalonia.Win32
 
         public int GiveFeedback(DropEffect dwEffect)
         {
-            return DRAGDROP_S_USEDEFAULTCURSORS;
+            return (int) UnmanagedMethods.HRESULT.S_OK;
         }
     }
 }

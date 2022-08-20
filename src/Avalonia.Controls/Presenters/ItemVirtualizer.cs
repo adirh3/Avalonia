@@ -185,10 +185,9 @@ namespace Avalonia.Controls.Presenters
             }
 
             var virtualizingPanel = owner.Panel as IVirtualizingPanel;
-            var scrollContentPresenter = owner.Parent as IScrollable;
             ItemVirtualizer? result = null;
 
-            if (virtualizingPanel != null && scrollContentPresenter is object)
+            if (virtualizingPanel != null)
             {
                 switch (owner.VirtualizationMode)
                 {
