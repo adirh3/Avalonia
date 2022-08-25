@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using Avalonia.Controls;
 using Avalonia.OpenGL.Surfaces;
 
@@ -11,6 +12,11 @@ namespace Avalonia.OpenGL.Egl
             IntPtr Handle { get; }
             PixelSize Size { get; }
             double Scaling { get; }
+            
+            Vector3 ScaleTransform { get; }
+            Vector3 CenterPoint { get; }
+            Vector3 Offset { get; }
+            float Opacity { get; }
             
             float CompositionPadding { get; }
             WindowState WindowState { get; }

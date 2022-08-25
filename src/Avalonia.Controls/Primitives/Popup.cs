@@ -171,7 +171,7 @@ namespace Avalonia.Controls.Primitives
         /// </summary>
         public event EventHandler? Opened;
 
-        internal event EventHandler<CancelEventArgs>? Closing;
+        public event EventHandler<CancelEventArgs>? Closing;
 
         public IPopupHost? Host => _openState?.PopupHost;
 

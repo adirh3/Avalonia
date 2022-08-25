@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using Android.Content;
 using Android.Graphics;
 using Android.Views;
@@ -228,6 +229,10 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         public PixelSize Size => _view.Size;
 
         public double Scaling => RenderScaling;
+        public Vector3 ScaleTransform { get; }
+        public Vector3 CenterPoint { get; }
+        public Vector3 Offset { get; }
+        public float Opacity { get; }
         public float CompositionPadding { get; }
         public WindowState WindowState { get; }
 

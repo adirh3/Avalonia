@@ -53,7 +53,8 @@ namespace Avalonia.Win32.WinRT.Composition
                 _egl = egl;
                 _window = window.Clone();
                 _info = info;
-                _window.Item.ResizeIfNeeded(_info.Size, _info.Scaling, _info.WindowState, _info.CompositionPadding);
+                _window.Item.ResizeIfNeeded(_info.Size, _info.Scaling, _info.WindowState, _info.CompositionPadding,
+                    _info.ScaleTransform, _info.CenterPoint, _info.Opacity, _info.Offset);
             }
 
             public override IGlPlatformSurfaceRenderingSession BeginDraw()
@@ -70,7 +71,8 @@ namespace Avalonia.Win32.WinRT.Composition
 
                     var size = _info.Size;
                     transaction = _window.Item.BeginTransaction();
-                    _window.Item.ResizeIfNeeded(size, _info.Scaling, _info.WindowState, _info.CompositionPadding);
+                    _window.Item.ResizeIfNeeded(size, _info.Scaling, _info.WindowState, _info.CompositionPadding,
+                        _info.ScaleTransform, _info.CenterPoint, _info.Opacity, _info.Offset);
                     texture = _window.Item.BeginDrawToTexture(out var offset);
 
                     surface = ((AngleWin32EglDisplay)_egl.Display).WrapDirect3D11Texture(_egl,

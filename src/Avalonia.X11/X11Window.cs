@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
@@ -250,7 +251,11 @@ namespace Avalonia.X11
             }
 
             public double Scaling => _window.RenderScaling;
-            
+            public Vector3 ScaleTransform { get; }
+            public Vector3 CenterPoint { get; }
+            public Vector3 Offset { get; }
+            public float Opacity { get; }
+
             public float CompositionPadding => 0;
             public WindowState WindowState => _window.WindowState;
         }

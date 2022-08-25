@@ -26,6 +26,10 @@ namespace Avalonia.Win32.WinRT.Composition
 
         private static Guid IID_ID3D11Texture2D = Guid.Parse("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
         private ICompositor _compositor;
+        private Vector3 _scale = Vector3.One;
+        private Vector3 _centerPoint = Vector3.Zero;
+        private float _opacity = 1f;
+        private Vector3 _offset;
 
 
         internal WinUICompositedWindow(EglContext syncContext,
@@ -51,14 +55,18 @@ namespace Avalonia.Win32.WinRT.Composition
 
 
         public void ResizeIfNeeded(PixelSize size, double infoScaling, WindowState infoWindowState,
-            float infoCompositionPadding)
+            float infoCompositionPadding, Vector3 scaleTransform, Vector3 centerPoint, float opacity,
+            Vector3 infoOffset)
         {
             using (_syncContext.EnsureLocked())
             {
-                if (_size != size)
+                centerPoint *= new Vector3((float)infoScaling);
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
+                if (_size != size || _scale != scaleTransform || _centerPoint != centerPoint || _opacity != opacity || infoOffset != _offset)
                 {
                     _surfaceInterop.Resize(new UnmanagedMethods.POINT { X = size.Width, Y = size.Height });
                     _contentVisual.SetSize(new Vector2(size.Width, size.Height));
+
                     float backdropPadding = infoWindowState == WindowState.Maximized ? 0 : infoCompositionPadding;
                     var offset = (float)Math.Ceiling(backdropPadding * infoScaling);
                     var sizeReduction = 2 * offset;
@@ -75,11 +83,31 @@ namespace Avalonia.Win32.WinRT.Composition
                         _roundedRectangleGeometry?.SetSize(new Vector2(size.Width, size.Height));
                         _roundedRectangleGeometry?.SetOffset(new Vector2(0, 0));
                     }
+                    
+                    _blurVisual.SetOffset(infoOffset);
+                    _micaDarkVisual.SetOffset(infoOffset);
+                    _micaLightVisual.SetOffset(infoOffset);
+
+                    _blurVisual.SetScale(scaleTransform);
+                    _micaDarkVisual.SetScale(scaleTransform);
+                    _micaLightVisual.SetScale(scaleTransform);
+
+                    _blurVisual.SetCenterPoint(centerPoint);
+                    _micaDarkVisual.SetCenterPoint(centerPoint);
+                    _micaLightVisual.SetCenterPoint(centerPoint);  
+                    
+                    _blurVisual.SetOpacity(opacity);
+                    _micaDarkVisual.SetOpacity(opacity);
+                    _micaLightVisual.SetOpacity(opacity);
 
                     _roundedRectangleGeometry?.SetCornerRadius(infoWindowState == WindowState.Maximized ?
                         Vector2.Zero :
                         new Vector2((float)Math.Ceiling(_backdropCornerRadius * infoScaling)));
                     _size = size;
+                    _scale = scaleTransform;
+                    _centerPoint = centerPoint;
+                    _opacity = opacity;
+                    _offset = infoOffset;
                 }
             }
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Automation.Peers;
@@ -24,6 +25,7 @@ using Avalonia.Win32.WinRT;
 using Avalonia.Win32.WinRT.Composition;
 using static Avalonia.Win32.Interop.UnmanagedMethods;
 using Avalonia.Collections.Pooled;
+using Avalonia.Media;
 using Avalonia.Metadata;
 using Avalonia.Platform.Storage;
 
@@ -1353,6 +1355,67 @@ namespace Avalonia.Win32
                 return new PixelSize(
                     Math.Max(1, rect.right - rect.left),
                     Math.Max(1, rect.bottom - rect.top));
+            }
+        }
+        
+        Vector3 EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.ScaleTransform
+        {
+            get
+            {
+                if (_owner is Visual visual)
+                {
+                    return visual.CurrentCompositionScale;
+                }
+
+                // if (_owner.RenderTransform is ScaleTransform scaleTransform)
+                // {
+                //     scaleX *= (float)scaleTransform.ScaleX;
+                //     scaleY *= (float) scaleTransform.ScaleY;
+                // }
+
+                return Vector3.One;
+            }
+        }     
+        
+        Vector3 EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.CenterPoint
+        {
+            get
+            {
+                if (_owner is Visual visual)
+                {
+                    
+                    return visual.CurrentCompositionCenterPoint;
+                }
+
+                return Vector3.Zero;
+            }
+        }     
+        
+        Vector3 EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Offset
+        {
+            get
+            {
+                if (_owner is Visual visual)
+                {
+                    
+                    return visual.CurrentOffset;
+                }
+
+                return Vector3.Zero;
+            }
+        }   
+        
+        float EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Opacity
+        {
+            get
+            {
+                if (_owner is Visual visual)
+                {
+                    
+                    return visual.CurrentCompositionOpacity;
+                }
+
+                return 1f;
             }
         }
 
