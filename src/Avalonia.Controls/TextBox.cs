@@ -840,6 +840,11 @@ namespace Avalonia.Controls
                 return;
             }
 
+            if (!string.IsNullOrEmpty(_presenter.PreeditText))
+            {
+                return;
+            }
+
             var text = Text ?? string.Empty;
             var caretIndex = CaretIndex;
             var movement = false;
@@ -1152,7 +1157,7 @@ namespace Avalonia.Controls
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            if (_presenter == null)
+            if (_presenter == null || !string.IsNullOrEmpty(_presenter.PreeditText))
             {
                 return;
             }
@@ -1492,7 +1497,7 @@ namespace Avalonia.Controls
             SelectionEnd = Text?.Length ?? 0;
         }
 
-        private bool DeleteSelection(bool raiseTextChanged = true)
+        internal bool DeleteSelection(bool raiseTextChanged = true)
         {
             if (IsReadOnly)
                 return true;
