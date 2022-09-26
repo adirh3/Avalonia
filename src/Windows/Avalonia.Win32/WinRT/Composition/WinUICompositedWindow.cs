@@ -64,8 +64,8 @@ namespace Avalonia.Win32.WinRT.Composition
                 // ReSharper disable once CompareOfFloatsByEqualityOperator
                 if (_size != size || _scale != scaleTransform || _centerPoint != centerPoint || _opacity != opacity || infoOffset != _offset)
                 {
-                    _surfaceInterop.Resize(new UnmanagedMethods.POINT { X = size.Width, Y = size.Height });
-                    _contentVisual.SetSize(new Vector2(size.Width, size.Height));
+                    _surfaceInterop?.Resize(new UnmanagedMethods.POINT { X = size.Width, Y = size.Height });
+                    _contentVisual?.SetSize(new Vector2(size.Width, size.Height));
 
                     float backdropPadding = infoWindowState == WindowState.Maximized ? 0 : infoCompositionPadding;
                     var offset = (float)Math.Ceiling(backdropPadding * infoScaling);
@@ -84,21 +84,21 @@ namespace Avalonia.Win32.WinRT.Composition
                         _roundedRectangleGeometry?.SetOffset(new Vector2(0, 0));
                     }
                     
-                    _blurVisual.SetOffset(infoOffset);
-                    _micaDarkVisual.SetOffset(infoOffset);
-                    _micaLightVisual.SetOffset(infoOffset);
+                    _blurVisual?.SetOffset(infoOffset);
+                    _micaDarkVisual?.SetOffset(infoOffset);
+                    _micaLightVisual?.SetOffset(infoOffset);
 
-                    _blurVisual.SetScale(scaleTransform);
-                    _micaDarkVisual.SetScale(scaleTransform);
-                    _micaLightVisual.SetScale(scaleTransform);
+                    _blurVisual?.SetScale(scaleTransform);
+                    _micaDarkVisual?.SetScale(scaleTransform);
+                    _micaLightVisual?.SetScale(scaleTransform);
 
-                    _blurVisual.SetCenterPoint(centerPoint);
-                    _micaDarkVisual.SetCenterPoint(centerPoint);
-                    _micaLightVisual.SetCenterPoint(centerPoint);  
+                    _blurVisual?.SetCenterPoint(centerPoint);
+                    _micaDarkVisual?.SetCenterPoint(centerPoint);
+                    _micaLightVisual?.SetCenterPoint(centerPoint);  
                     
-                    _blurVisual.SetOpacity(opacity);
-                    _micaDarkVisual.SetOpacity(opacity);
-                    _micaLightVisual.SetOpacity(opacity);
+                    _blurVisual?.SetOpacity(opacity);
+                    _micaDarkVisual?.SetOpacity(opacity);
+                    _micaLightVisual?.SetOpacity(opacity);
 
                     _roundedRectangleGeometry?.SetCornerRadius(infoWindowState == WindowState.Maximized ?
                         Vector2.Zero :
@@ -135,7 +135,7 @@ namespace Avalonia.Win32.WinRT.Composition
         {
             using (_syncContext.EnsureLocked())
             {
-                _blurVisual.SetIsVisible(blurEffect == BlurEffect.Acrylic ? 1 : 0);
+                _blurVisual?.SetIsVisible(blurEffect == BlurEffect.Acrylic ? 1 : 0);
                 _micaDarkVisual?.SetIsVisible(blurEffect == BlurEffect.MicaDark ? 1 : 0);
                 _micaLightVisual?.SetIsVisible(blurEffect == BlurEffect.MicaLight ? 1 : 0);
             }
