@@ -43,11 +43,6 @@ namespace Avalonia.Controls.Documents
             get => _parent;
             set
             {
-                if (_parent == value)
-                {
-                    return;
-                }
-
                 _parent = value;
 
                 OnParentChanged(value);
@@ -116,7 +111,7 @@ namespace Avalonia.Controls.Documents
 
         private void AddText(string text)
         {
-            if(Parent is RichTextBlock textBlock && !textBlock.HasComplexContent)
+            if (Parent is RichTextBlock textBlock && !textBlock.HasComplexContent)
             {
                 textBlock._text += text;
             }
@@ -161,9 +156,17 @@ namespace Avalonia.Controls.Documents
         {
             foreach (var child in this)
             {
-                if (parent != null)
-                    ((ISetLogicalParent)child).SetParent(null);
-                ((ISetLogicalParent)child).SetParent(parent);
+                var oldParent = child.Parent;
+
+                if (oldParent != parent)
+                {
+                    if (oldParent != null)
+                    {
+                        ((ISetLogicalParent)child).SetParent(null);
+                    }
+
+                    ((ISetLogicalParent)child).SetParent(parent);
+                }
             }
         }
 
