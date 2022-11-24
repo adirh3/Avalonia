@@ -13,7 +13,7 @@ namespace Avalonia.Input
         private readonly PointerPointProperties _properties;
         private readonly Lazy<IReadOnlyList<RawPointerPoint>?>? _previousPoints;
 
-        internal PointerEventArgs(RoutedEvent routedEvent,
+        public PointerEventArgs(RoutedEvent routedEvent,
             IInteractive? source,
             IPointer pointer,
             IVisual? rootVisual, Point rootVisualPosition,
@@ -31,7 +31,7 @@ namespace Avalonia.Input
             KeyModifiers = modifiers;
         }
 
-        internal PointerEventArgs(RoutedEvent routedEvent,
+        public PointerEventArgs(RoutedEvent routedEvent,
             IInteractive? source,
             IPointer pointer,
             IVisual? rootVisual, Point rootVisualPosition,
