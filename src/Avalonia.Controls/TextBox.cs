@@ -84,7 +84,13 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
             AvaloniaProperty.Register<TextBox, IBrush?>(nameof(SelectionBrush));
-
+        
+        /// <summary>
+        /// Defines the <see cref="MatchHotkeys"/> property 
+        /// </summary>
+        public static readonly StyledProperty<bool> MatchHotKeysProperty =
+            AvaloniaProperty.Register<TextBox, bool>(nameof(MatchHotKeys), true);
+        
         /// <summary>
         /// Defines the <see cref="SelectionForegroundBrush"/> property
         /// </summary>
@@ -430,6 +436,15 @@ namespace Avalonia.Controls
             get => GetValue(PasswordCharProperty);
             set => SetValue(PasswordCharProperty, value);
         }
+        
+        /// <summary>
+        /// Gets or sets that the keyboard shortcuts will invoke (e.g. Ctrl+C, Ctrl+Z)
+        /// </summary>
+        public bool MatchHotKeys
+        {
+            get { return GetValue(MatchHotKeysProperty); }
+            set { SetValue(MatchHotKeysProperty, value); }
+        }    
 
         /// <summary>
         /// Gets or sets a brush that is used to highlight selected text
@@ -1121,8 +1136,9 @@ namespace Avalonia.Controls
 
             var keymap = AvaloniaLocator.Current.GetRequiredService<PlatformHotkeyConfiguration>();
 
-            bool Match(List<KeyGesture> gestures) => gestures.Any(g => g.Matches(e));
-            bool DetectSelection() => e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
+            bool Match(List<KeyGesture> gestures) => MatchHotKeys && gestures.Any(g => g.Matches(e));
+            bool DetectSelection() => MatchHotKeys && e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
+
 
             if (Match(keymap.SelectAll))
             {
@@ -1233,7 +1249,7 @@ namespace Avalonia.Controls
                 selection = true;
                 handled = true;
             }
-            else
+            else if (MatchHotKeys)
             {
                 bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers);
                 switch (e.Key)
