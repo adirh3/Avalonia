@@ -59,8 +59,8 @@ namespace Avalonia
         /// <summary>
         /// Defines the <see cref="TemplatedParent"/> property.
         /// </summary>
-        public static readonly DirectProperty<StyledElement, AvaloniaObject?> TemplatedParentProperty =
-            AvaloniaProperty.RegisterDirect<StyledElement, AvaloniaObject?>(
+        public static readonly DirectProperty<StyledElement, ITemplatedControl?> TemplatedParentProperty =
+            AvaloniaProperty.RegisterDirect<StyledElement, ITemplatedControl?>(
                 nameof(TemplatedParent),
                 o => o.TemplatedParent,
                 (o ,v) => o.TemplatedParent = v);
@@ -81,7 +81,7 @@ namespace Avalonia
         private Styles? _styles;
         private bool _stylesApplied;
         private bool _themeApplied;
-        private AvaloniaObject? _templatedParent;
+        private ITemplatedControl? _templatedParent;
         private bool _dataContextUpdating;
         private ControlTheme? _implicitTheme;
 
@@ -241,7 +241,7 @@ namespace Avalonia
         /// <summary>
         /// Gets the styled element whose lookless template this styled element is part of.
         /// </summary>
-        public AvaloniaObject? TemplatedParent
+        public ITemplatedControl? TemplatedParent
         {
             get => _templatedParent;
             internal set => SetAndRaise(TemplatedParentProperty, ref _templatedParent, value);

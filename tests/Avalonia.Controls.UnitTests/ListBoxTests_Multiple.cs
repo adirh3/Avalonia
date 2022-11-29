@@ -1,6 +1,5 @@
 using System.Linq;
 using Avalonia.Controls.Presenters;
-using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Styling;
@@ -85,7 +84,7 @@ namespace Avalonia.Controls.UnitTests
             Assert.Equal(new[] { "Foo", "Bar" }, target.SelectedItems);
         }
 
-        private Control CreateListBoxTemplate(TemplatedControl parent, INameScope scope)
+        private Control CreateListBoxTemplate(ITemplatedControl parent, INameScope scope)
         {
             return new ScrollViewer
             {
@@ -98,7 +97,7 @@ namespace Avalonia.Controls.UnitTests
             };
         }
 
-        private Control CreateScrollViewerTemplate(TemplatedControl parent, INameScope scope)
+        private Control CreateScrollViewerTemplate(ITemplatedControl parent, INameScope scope)
         {
             return new ScrollContentPresenter
             {

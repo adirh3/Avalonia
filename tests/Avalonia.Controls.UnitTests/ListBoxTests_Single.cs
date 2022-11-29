@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls.Presenters;
-using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
@@ -316,7 +315,7 @@ namespace Avalonia.Controls.UnitTests
             }
         }
 
-        private Control CreateListBoxTemplate(TemplatedControl parent, INameScope scope)
+        private Control CreateListBoxTemplate(ITemplatedControl parent, INameScope scope)
         {
             return new ScrollViewer
             {
@@ -329,7 +328,7 @@ namespace Avalonia.Controls.UnitTests
             };
         }
 
-        private Control CreateScrollViewerTemplate(TemplatedControl parent, INameScope scope)
+        private Control CreateScrollViewerTemplate(ITemplatedControl parent, INameScope scope)
         {
             return new ScrollContentPresenter
             {

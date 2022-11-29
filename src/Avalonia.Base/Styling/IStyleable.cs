@@ -23,6 +23,6 @@ namespace Avalonia.Styling
         /// <summary>
         /// Gets the template parent of this element if the control comes from a template.
         /// </summary>
-        AvaloniaObject? TemplatedParent { get; }
+        ITemplatedControl? TemplatedParent { get; }
     }
 }

@@ -17,7 +17,7 @@ namespace Avalonia.Controls.Presenters
     /// interface.
     /// </remarks>
     [NotClientImplementable]
-    public interface IContentPresenterHost
+    public interface IContentPresenterHost : ITemplatedControl
     {
         /// <summary>
         /// Gets a collection describing the logical children of the host control.

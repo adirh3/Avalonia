@@ -16,14 +16,12 @@ namespace Avalonia.Controls.UnitTests.Presenters
         [Fact]
         public void Should_Register_With_Host_When_TemplatedParent_Set()
         {
-            var host = new ItemsControl();
+            var host = new Mock<IItemsPresenterHost>();
             var target = new ItemsPresenter();
 
-            Assert.Null(host.Presenter);
+            target.SetValue(Control.TemplatedParentProperty, host.Object);
 
-            target.SetValue(Control.TemplatedParentProperty, host);
-
-            Assert.Same(target, host.Presenter);
+            host.Verify(x => x.RegisterItemsPresenter(target));
         }
 
         [Fact]

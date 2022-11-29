@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls.Primitives;
+using Avalonia.Styling;
 
 namespace Avalonia.Controls.Templates
 {
@@ -7,7 +8,7 @@ namespace Avalonia.Controls.Templates
     /// A template for a <see cref="TemplatedControl"/>.
     /// </summary>
     /// <typeparam name="T">The type of the lookless control.</typeparam>
-    public class FuncControlTemplate<T> : FuncControlTemplate where T : TemplatedControl
+    public class FuncControlTemplate<T> : FuncControlTemplate where T : ITemplatedControl
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="FuncControlTemplate{T}"/> class.

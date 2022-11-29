@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Reactive.Linq;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
@@ -9,6 +10,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Styling;
 using Avalonia.UnitTests;
 using Avalonia.VisualTree;
+using Moq;
 using Xunit;
 
 namespace Avalonia.Controls.UnitTests.Presenters
@@ -21,14 +23,12 @@ namespace Avalonia.Controls.UnitTests.Presenters
         [Fact]
         public void Should_Register_With_Host_When_TemplatedParent_Set()
         {
-            var host = new ContentControl();
-            var target = new ContentPresenter { Name = "PART_ContentPresenter" };
+            var host = new Mock<IContentPresenterHost>();
+            var target = new ContentPresenter();
 
-            Assert.Null(host.Presenter);
+            target.SetValue(Control.TemplatedParentProperty, host.Object);
 
-            target.SetValue(Control.TemplatedParentProperty, host);
-
-            Assert.Same(target, host.Presenter);
+            host.Verify(x => x.RegisterContentPresenter(target));
         }
 
         [Fact]
@@ -394,7 +394,7 @@ namespace Avalonia.Controls.UnitTests.Presenters
             return ((ContentPresenter)templatedParent.Presenter, templatedParent);
         }
 
-        private class TestContentControl : ContentControl, IContentPresenterHost
+        private class TestContentControl : ContentControl
         {
             public Control Child { get; set; }
         }

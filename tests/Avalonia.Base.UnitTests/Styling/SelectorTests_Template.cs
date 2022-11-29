@@ -118,7 +118,7 @@ namespace Avalonia.Base.UnitTests.Styling
             Assert.Equal(0, target.Classes.ListenerCount);
         }
 
-        private class TestTemplatedControl : Controls.Primitives.TemplatedControl
+        private class TestTemplatedControl : TemplatedControl
         {
             public TestTemplatedControl()
             {
