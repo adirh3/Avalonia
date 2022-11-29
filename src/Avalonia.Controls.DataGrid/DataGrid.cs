@@ -311,6 +311,23 @@ namespace Avalonia.Controls
             AvaloniaProperty.Register<DataGrid, int>(
                 nameof(FrozenColumnCount),
                 validate: ValidateFrozenColumnCount);
+        
+        public static readonly StyledProperty<IBrush> AlternatingRowBackgroundProperty =
+            AvaloniaProperty.Register<DataGrid, IBrush>(nameof(AlternatingRowBackground));
+
+        /// <summary>
+        /// Gets or sets the <see cref="T:System.Windows.Media.Brush" /> that is used to paint the background of odd-numbered rows.
+        /// </summary>
+        /// <returns>
+        /// The brush that is used to paint the background of odd-numbered rows. The default is a
+        /// <see cref="T:System.Windows.Media.SolidColorBrush" /> with a
+        /// <see cref="P:System.Windows.Media.SolidColorBrush.Color" /> value of white (ARGB value #00FFFFFF).
+        /// </returns>
+        public IBrush AlternatingRowBackground
+        {
+            get { return GetValue(AlternatingRowBackgroundProperty); }
+            set { SetValue(AlternatingRowBackgroundProperty, value); }
+        }
 
         /// <summary>
         /// Gets or sets the number of columns that the user cannot scroll horizontally.
