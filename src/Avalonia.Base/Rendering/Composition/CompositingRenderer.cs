@@ -45,7 +45,7 @@ public class CompositingRenderer : IRendererWithCompositor
         _compositor = compositor;
         _recordingContext = new DrawingContext(_recorder);
         CompositionTarget = compositor.CreateCompositionTarget(root.CreateRenderTarget);
-        CompositionTarget.Root = ((Visual)root).AttachToCompositor(compositor);
+        CompositionTarget.Root = ((Visual)root!.VisualRoot!).AttachToCompositor(compositor);
         _update = Update;
     }
 
@@ -75,7 +75,7 @@ public class CompositingRenderer : IRendererWithCompositor
     }
     
     /// <inheritdoc/>
-    public void AddDirty(Visual visual)
+    public void AddDirty(IVisual visual)
     {
         if (_updating)
             throw new InvalidOperationException("Visual was invalidated during the render pass");
@@ -84,7 +84,7 @@ public class CompositingRenderer : IRendererWithCompositor
     }
 
     /// <inheritdoc/>
-    public IEnumerable<Visual> HitTest(Point p, Visual root, Func<Visual, bool>? filter)
+    public IEnumerable<IVisual> HitTest(Point p, IVisual root, Func<IVisual, bool>? filter)
     {
         Func<CompositionVisual, bool>? f = null;
         if (filter != null)
@@ -109,14 +109,14 @@ public class CompositingRenderer : IRendererWithCompositor
     }
 
     /// <inheritdoc/>
-    public Visual? HitTestFirst(Point p, Visual root, Func<Visual, bool>? filter)
+    public IVisual? HitTestFirst(Point p, IVisual root, Func<IVisual, bool>? filter)
     {
         // TODO: Optimize
         return HitTest(p, root, filter).FirstOrDefault();
     }
 
     /// <inheritdoc/>
-    public void RecalculateChildren(Visual visual)
+    public void RecalculateChildren(IVisual visual)
     {
         if (_updating)
             throw new InvalidOperationException("Visual was invalidated during the render pass");
@@ -130,9 +130,9 @@ public class CompositingRenderer : IRendererWithCompositor
         if(v.CompositionVisual == null)
             return;
         var compositionChildren = v.CompositionVisual.Children;
-        var visualChildren = (AvaloniaList<Visual>)v.GetVisualChildren();
+        var visualChildren = (AvaloniaList<IVisual>)v.GetVisualChildren();
         
-        PooledList<(Visual visual, int index)>? sortedChildren = null;
+        PooledList<(IVisual visual, int index)>? sortedChildren = null;
         if (v.HasNonUniformZIndexChildren && visualChildren.Count > 1)
         {
             sortedChildren = new (visualChildren.Count);

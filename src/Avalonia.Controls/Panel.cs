@@ -16,7 +16,7 @@ namespace Avalonia.Controls
     /// Controls can be added to a <see cref="Panel"/> by adding them to its <see cref="Children"/>
     /// collection. All children are layed out to fill the panel.
     /// </remarks>
-    public class Panel : Control, IChildIndexProvider
+    public class Panel : Control, IPanel, IChildIndexProvider
     {
         /// <summary>
         /// Defines the <see cref="Background"/> property.
@@ -84,7 +84,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="properties">The properties.</param>
         protected static void AffectsParentArrange<TPanel>(params AvaloniaProperty[] properties)
-            where TPanel : Panel
+            where TPanel : class, IPanel
         {
             foreach (var property in properties)
             {
@@ -97,7 +97,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="properties">The properties.</param>
         protected static void AffectsParentMeasure<TPanel>(params AvaloniaProperty[] properties)
-            where TPanel : Panel
+            where TPanel : class, IPanel
         {
             foreach (var property in properties)
             {
@@ -137,7 +137,7 @@ namespace Avalonia.Controls
                     for (var i = 0; i < e.OldItems!.Count; ++i)
                     {
                         var index = i + e.OldStartingIndex;
-                        var child = (Control)e.NewItems![i]!;
+                        var child = (IControl)e.NewItems![i]!;
                         LogicalChildren[index] = child;
                         VisualChildren[index] = child;
                     }
@@ -157,24 +157,24 @@ namespace Avalonia.Controls
         }
 
         private static void AffectsParentArrangeInvalidate<TPanel>(AvaloniaPropertyChangedEventArgs e)
-            where TPanel : Panel
+            where TPanel : class, IPanel
         {
-            var control = e.Sender as Control;
+            var control = e.Sender as IControl;
             var panel = control?.VisualParent as TPanel;
             panel?.InvalidateArrange();
         }
 
         private static void AffectsParentMeasureInvalidate<TPanel>(AvaloniaPropertyChangedEventArgs e)
-            where TPanel : Panel
+            where TPanel : class, IPanel
         {
-            var control = e.Sender as Control;
+            var control = e.Sender as IControl;
             var panel = control?.VisualParent as TPanel;
             panel?.InvalidateMeasure();
         }
 
         int IChildIndexProvider.GetChildIndex(ILogical child)
         {
-            return child is Control control ? Children.IndexOf(control) : -1;
+            return child is IControl control ? Children.IndexOf(control) : -1;
         }
 
         public bool TryGetTotalCount(out int count)

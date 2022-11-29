@@ -1,5 +1,6 @@
 ﻿using Avalonia.Media;
 using Avalonia.Platform;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Rendering.SceneGraph
 {
@@ -13,7 +14,7 @@ namespace Avalonia.Rendering.SceneGraph
         /// </summary>
         /// <param name="layerRoot">The visual at the root of the layer.</param>
         /// <param name="distanceFromRoot">The distance from the scene root.</param>
-        public SceneLayer(Visual layerRoot, int distanceFromRoot)
+        public SceneLayer(IVisual layerRoot, int distanceFromRoot)
         {
             LayerRoot = layerRoot;
             Dirty = new DirtyRects();
@@ -38,7 +39,7 @@ namespace Avalonia.Rendering.SceneGraph
         /// <summary>
         /// Gets the visual at the root of the layer.
         /// </summary>
-        public Visual LayerRoot { get; }
+        public IVisual LayerRoot { get; }
 
         /// <summary>
         /// Gets the distance of the layer root from the root of the scene.

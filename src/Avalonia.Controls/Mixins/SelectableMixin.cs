@@ -38,7 +38,7 @@ namespace Avalonia.Controls.Mixins
         /// <typeparam name="TControl">The control type.</typeparam>
         /// <param name="isSelected">The IsSelected property.</param>
         public static void Attach<TControl>(AvaloniaProperty<bool> isSelected)
-            where TControl : Control
+            where TControl : class, IControl
         {
             _ = isSelected ?? throw new ArgumentNullException(nameof(isSelected));
 

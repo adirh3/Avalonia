@@ -545,7 +545,7 @@ namespace Avalonia.Controls.Primitives
 
         private void OnItemTapped(object? sender, TappedEventArgs e)
         {
-            if (e.Source is Visual source && 
+            if (e.Source is IVisual source && 
                 GetItemFromSource(source) is ListBoxItem listBoxItem &&
                 listBoxItem.Tag is int tag)
             {
@@ -555,7 +555,7 @@ namespace Avalonia.Controls.Primitives
         }
 
         //Helper to get ListBoxItem from pointerevent source
-        private ListBoxItem? GetItemFromSource(Visual src)
+        private ListBoxItem? GetItemFromSource(IVisual src)
         {
             var item = src;
             while (item != null && !(item is ListBoxItem))
@@ -565,9 +565,9 @@ namespace Avalonia.Controls.Primitives
             return (ListBoxItem?)item;
         }
 
-        public bool BringIntoView(Control target, Rect targetRect) { return false; }
+        public bool BringIntoView(IControl target, Rect targetRect) { return false; }
 
-        public Control? GetControlInDirection(NavigationDirection direction, Control? from) { return null; }
+        public IControl? GetControlInDirection(NavigationDirection direction, IControl? from) { return null; }
 
         public void RaiseScrollInvalidated(EventArgs e)
         {

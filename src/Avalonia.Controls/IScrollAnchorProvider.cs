@@ -8,7 +8,7 @@
         /// <summary>
         /// The currently chosen anchor element to use for scroll anchoring.
         /// </summary>
-        Control? CurrentAnchor { get; }
+        IControl? CurrentAnchor { get; }
 
         /// <summary>
         /// Registers a control as a potential scroll anchor candidate.
@@ -16,7 +16,7 @@
         /// <param name="element">
         /// A control within the subtree of the <see cref="IScrollAnchorProvider"/>.
         /// </param>
-        void RegisterAnchorCandidate(Control element);
+        void RegisterAnchorCandidate(IControl element);
 
         /// <summary>
         /// Unregisters a control as a potential scroll anchor candidate.
@@ -24,6 +24,6 @@
         /// <param name="element">
         /// A control within the subtree of the <see cref="IScrollAnchorProvider"/>.
         /// </param>
-        void UnregisterAnchorCandidate(Control element);
+        void UnregisterAnchorCandidate(IControl element);
     }
 }

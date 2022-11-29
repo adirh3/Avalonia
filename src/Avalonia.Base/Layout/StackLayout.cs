@@ -78,10 +78,10 @@ namespace Avalonia.Layout
         internal Rect GetExtent(
             Size availableSize,
             VirtualizingLayoutContext context,
-            Layoutable? firstRealized,
+            ILayoutable? firstRealized,
             int firstRealizedItemIndex,
             Rect firstRealizedLayoutBounds,
-            Layoutable? lastRealized,
+            ILayoutable? lastRealized,
             int lastRealizedItemIndex,
             Rect lastRealizedLayoutBounds)
         {
@@ -121,7 +121,7 @@ namespace Avalonia.Layout
         }
 
         internal void OnElementMeasured(
-            Layoutable element,
+            ILayoutable element,
             int index,
             Size availableSize,
             Size measureSize,
@@ -188,10 +188,10 @@ namespace Avalonia.Layout
         Rect IFlowLayoutAlgorithmDelegates.Algorithm_GetExtent(
             Size availableSize,
             VirtualizingLayoutContext context,
-            Layoutable? firstRealized,
+            ILayoutable? firstRealized,
             int firstRealizedItemIndex,
             Rect firstRealizedLayoutBounds,
-            Layoutable? lastRealized,
+            ILayoutable? lastRealized,
             int lastRealizedItemIndex,
             Rect lastRealizedLayoutBounds)
         {
@@ -206,7 +206,7 @@ namespace Avalonia.Layout
                 lastRealizedLayoutBounds);
         }
 
-        void IFlowLayoutAlgorithmDelegates.Algorithm_OnElementMeasured(Layoutable element, int index, Size availableSize, Size measureSize, Size desiredSize, Size provisionalArrangeSize, VirtualizingLayoutContext context)
+        void IFlowLayoutAlgorithmDelegates.Algorithm_OnElementMeasured(ILayoutable element, int index, Size availableSize, Size measureSize, Size desiredSize, Size provisionalArrangeSize, VirtualizingLayoutContext context)
         {
             OnElementMeasured(
                 element,

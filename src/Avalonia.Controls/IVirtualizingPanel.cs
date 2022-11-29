@@ -5,13 +5,8 @@ namespace Avalonia.Controls
     /// <summary>
     /// A panel that can be used to virtualize items.
     /// </summary>
-    public interface IVirtualizingPanel
+    public interface IVirtualizingPanel : IPanel
     {
-        /// <summary>
-        /// Gets the children of the panel.
-        /// </summary>
-        Controls Children { get; }
-
         /// <summary>
         /// Gets or sets the controller for the virtualizing panel.
         /// </summary>
@@ -79,8 +74,8 @@ namespace Avalonia.Controls
         /// </summary>
         /// <remarks>
         /// The implementation for this method should call
-        /// <see cref="Layoutable.InvalidateMeasure"/> and also ensure that the next call to
-        /// <see cref="Layoutable.Measure(Size)"/> calls
+        /// <see cref="ILayoutable.InvalidateMeasure"/> and also ensure that the next call to
+        /// <see cref="ILayoutable.Measure(Size)"/> calls
         /// <see cref="IVirtualizingController.UpdateControls"/> on the next measure even if
         /// the available size hasn't changed.
         /// </remarks>

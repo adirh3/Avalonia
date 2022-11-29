@@ -16,15 +16,15 @@ namespace Avalonia.Layout
         public static double LayoutEpsilon { get; } = 0.00000153;
 
         /// <summary>
-        /// Calculates a control's size based on its <see cref="Layoutable.Width"/>,
-        /// <see cref="Layoutable.Height"/>, <see cref="Layoutable.MinWidth"/>,
-        /// <see cref="Layoutable.MaxWidth"/>, <see cref="Layoutable.MinHeight"/> and
-        /// <see cref="Layoutable.MaxHeight"/>.
+        /// Calculates a control's size based on its <see cref="ILayoutable.Width"/>,
+        /// <see cref="ILayoutable.Height"/>, <see cref="ILayoutable.MinWidth"/>,
+        /// <see cref="ILayoutable.MaxWidth"/>, <see cref="ILayoutable.MinHeight"/> and
+        /// <see cref="ILayoutable.MaxHeight"/>.
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="constraints">The space available for the control.</param>
         /// <returns>The control's size.</returns>
-        public static Size ApplyLayoutConstraints(Layoutable control, Size constraints)
+        public static Size ApplyLayoutConstraints(ILayoutable control, Size constraints)
         {
             var minmax = new MinMax(control);
 
@@ -33,7 +33,7 @@ namespace Avalonia.Layout
                 MathUtilities.Clamp(constraints.Height, minmax.MinHeight, minmax.MaxHeight));
         }
 
-        public static Size MeasureChild(Layoutable? control, Size availableSize, Thickness padding,
+        public static Size MeasureChild(ILayoutable? control, Size availableSize, Thickness padding,
             Thickness borderThickness)
         {
             if (IsParentLayoutRounded(control, out double scale))
@@ -51,7 +51,7 @@ namespace Avalonia.Layout
             return new Size().Inflate(padding + borderThickness);
         }
 
-        public static Size MeasureChild(Layoutable? control, Size availableSize, Thickness padding)
+        public static Size MeasureChild(ILayoutable? control, Size availableSize, Thickness padding)
         {
             if (IsParentLayoutRounded(control, out double scale))
             {
@@ -67,7 +67,7 @@ namespace Avalonia.Layout
             return new Size(padding.Left + padding.Right, padding.Bottom + padding.Top);
         }
 
-        public static Size ArrangeChild(Layoutable? child, Size availableSize, Thickness padding, Thickness borderThickness)
+        public static Size ArrangeChild(ILayoutable? child, Size availableSize, Thickness padding, Thickness borderThickness)
         {
             if (IsParentLayoutRounded(child, out double scale))
             {
@@ -78,7 +78,7 @@ namespace Avalonia.Layout
             return ArrangeChildInternal(child, availableSize, padding + borderThickness);
         }
 
-        public static Size ArrangeChild(Layoutable? child, Size availableSize, Thickness padding)
+        public static Size ArrangeChild(ILayoutable? child, Size availableSize, Thickness padding)
         {
             if(IsParentLayoutRounded(child, out double scale))
                 padding = RoundLayoutThickness(padding, scale, scale);
@@ -86,18 +86,18 @@ namespace Avalonia.Layout
             return ArrangeChildInternal(child, availableSize, padding);
         }
 
-        private static Size ArrangeChildInternal(Layoutable? child, Size availableSize, Thickness padding)
+        private static Size ArrangeChildInternal(ILayoutable? child, Size availableSize, Thickness padding)
         {
             child?.Arrange(new Rect(availableSize).Deflate(padding));
 
             return availableSize;
         }
 
-        private static bool IsParentLayoutRounded(Layoutable? child, out double scale)
+        private static bool IsParentLayoutRounded(ILayoutable? child, out double scale)
         {
-            var layoutableParent = (child as Visual)?.GetVisualParent() as Layoutable;
+            var layoutableParent = (ILayoutable?)child?.GetVisualParent();
 
-            if (layoutableParent == null || !layoutableParent.UseLayoutRounding)
+            if (layoutableParent == null || !((Layoutable)layoutableParent).UseLayoutRounding)
             {
                 scale = 1.0;
                 return false;
@@ -110,11 +110,11 @@ namespace Avalonia.Layout
         /// <summary>
         /// Invalidates measure for given control and all visual children recursively.
         /// </summary>
-        public static void InvalidateSelfAndChildrenMeasure(Layoutable control)
+        public static void InvalidateSelfAndChildrenMeasure(ILayoutable control)
         {
-            void InnerInvalidateMeasure(Visual target)
+            void InnerInvalidateMeasure(IVisual target)
             {
-                if (target is Layoutable targetLayoutable)
+                if (target is ILayoutable targetLayoutable)
                 {
                     targetLayoutable.InvalidateMeasure();
                 }
@@ -124,14 +124,13 @@ namespace Avalonia.Layout
 
                 for (int i = 0; i < visualChildrenCount; i++)
                 {
-                    Visual child = visualChildren[i];
+                    IVisual child = visualChildren[i];
 
                     InnerInvalidateMeasure(child);
                 }
             }
 
-            if (control is Visual v)
-                InnerInvalidateMeasure(v);
+            InnerInvalidateMeasure(control);
         }
 
         /// <summary>
@@ -139,9 +138,9 @@ namespace Avalonia.Layout
         /// </summary>
         /// <param name="control">The control.</param>
         /// <exception cref="Exception">Thrown when control has no root or returned layout scaling is invalid.</exception>
-        public static double GetLayoutScale(Layoutable control)
+        public static double GetLayoutScale(ILayoutable control)
         {
-            var visualRoot = (control as Visual)?.VisualRoot;
+            var visualRoot = control.VisualRoot;
             
             var result = (visualRoot as ILayoutRoot)?.LayoutScaling ?? 1.0;
 
@@ -290,7 +289,7 @@ namespace Avalonia.Layout
         /// </summary>
         private readonly struct MinMax
         {
-            public MinMax(Layoutable e)
+            public MinMax(ILayoutable e)
             {
                 MaxHeight = e.MaxHeight;
                 MinHeight = e.MinHeight;

@@ -2,11 +2,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Subjects;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.LogicalTree;
-using Avalonia.UnitTests;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia.UnitTests;
 using Xunit;
 
 namespace Avalonia.Controls.UnitTests
@@ -46,7 +48,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Single(target.GetLogicalChildren());
 
@@ -67,7 +69,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Single(target.ItemContainerGenerator.Containers);
             target.SelectedIndex = 1;
@@ -92,7 +94,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Equal(3, target.GetLogicalChildren().Count());
 
@@ -128,7 +130,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Single(target.GetLogicalChildren());
 
@@ -158,7 +160,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Equal(-1, target.SelectedIndex);
             Assert.Empty(target.GetLogicalChildren());
@@ -187,7 +189,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Equal(3, target.GetLogicalChildren().Count());
 
@@ -222,7 +224,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Equal("FooBar", target.SelectedItem);
 
@@ -250,7 +252,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             Assert.Equal(3, target.GetLogicalChildren().Count());
 
@@ -284,7 +286,7 @@ namespace Avalonia.Controls.UnitTests
             };
 
             target.ApplyTemplate();
-            ((Control)target.Presenter).ApplyTemplate();
+            target.Presenter.ApplyTemplate();
 
             target.SelectedIndex = 1;
 
@@ -321,12 +323,11 @@ namespace Avalonia.Controls.UnitTests
             {
                 var target = new Carousel
                 {
-                    Template = new FuncControlTemplate<Carousel>(CreateTemplate),
-                    IsVirtualized = false
+                    Template = new FuncControlTemplate<Carousel>(CreateTemplate), IsVirtualized = false
                 };
 
                 target.ApplyTemplate();
-                ((Control)target.Presenter).ApplyTemplate();
+                target.Presenter.ApplyTemplate();
 
                 var exception = new System.InvalidCastException("failed validation");
                 var textObservable =

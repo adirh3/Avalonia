@@ -13,7 +13,7 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets the control displayed by the presenter.
         /// </summary>
-        Control? Child { get; }
+        IControl? Child { get; }
 
         /// <summary>
         /// Gets or sets the content to be displayed by the presenter.

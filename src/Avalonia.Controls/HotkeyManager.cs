@@ -14,7 +14,7 @@ namespace Avalonia.Controls
         {
             readonly WeakReference reference;
 
-            public HotkeyCommandWrapper(Control control)
+            public HotkeyCommandWrapper(IControl control)
             {
                 reference = new WeakReference(control);
             }
@@ -76,7 +76,7 @@ namespace Avalonia.Controls
 
         class Manager
         {
-            private readonly Control _control;
+            private readonly IControl _control;
             private TopLevel? _root;
             private IDisposable? _parentSub;
             private IDisposable? _hotkeySub;
@@ -84,7 +84,7 @@ namespace Avalonia.Controls
             private readonly HotkeyCommandWrapper _wrapper;
             private KeyBinding? _binding;
 
-            public Manager(Control control)
+            public Manager(IControl control)
             {
                 _control = control;
                 _wrapper = new HotkeyCommandWrapper(_control);
@@ -147,7 +147,7 @@ namespace Avalonia.Controls
                 if (args.NewValue.Value is null)
                     return;
 
-                var control = args.Sender as Control;
+                var control = args.Sender as IControl;
                 if (control is not IClickableControl)
                 {
                     Logging.Logger.TryGet(Logging.LogEventLevel.Warning, Logging.LogArea.Control)?.Log(control,

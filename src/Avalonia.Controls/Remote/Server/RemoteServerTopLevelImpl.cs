@@ -258,7 +258,7 @@ namespace Avalonia.Controls.Remote.Server
 
         protected virtual Size Measure(Size constraint)
         {
-            var l = (Layoutable) InputRoot!;
+            var l = (ILayoutable) InputRoot!;
             l.Measure(constraint);
             return l.DesiredSize;
         }

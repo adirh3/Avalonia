@@ -67,7 +67,7 @@ namespace Avalonia.Data
 
         /// <inheritdoc/>
         public InstancedBinding? Initiate(
-            AvaloniaObject target,
+            IAvaloniaObject target,
             AvaloniaProperty? targetProperty,
             object? anchor = null,
             bool enableDataValidation = false)

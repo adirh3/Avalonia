@@ -107,7 +107,7 @@ namespace Avalonia.Base.UnitTests.Layout
             }
         }
 
-        private static Point Position(Visual v)
+        private static Point Position(IVisual v)
         {
             return v.Bounds.Position;
         }

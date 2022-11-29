@@ -7,7 +7,6 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.LogicalTree;
-using Avalonia.Styling;
 using Avalonia.UnitTests;
 using Avalonia.VisualTree;
 using Moq;
@@ -323,7 +322,7 @@ namespace Avalonia.Controls.UnitTests.Presenters
             Assert.Same(logicalParent, child.Parent);
 
             // InheritanceParent is exposed via StylingParent.
-            Assert.Same(target, ((IStyleHost)child).StylingParent);
+            Assert.Same(target, ((IStyledElement)child).StylingParent);
         }
 
         [Fact]
@@ -338,7 +337,7 @@ namespace Avalonia.Controls.UnitTests.Presenters
             target.Content = null;
 
             // InheritanceParent is exposed via StylingParent.
-            Assert.Same(logicalParent, ((IStyleHost)child).StylingParent);
+            Assert.Same(logicalParent, ((IStyledElement)child).StylingParent);
         }
 
         [Fact]
@@ -396,7 +395,7 @@ namespace Avalonia.Controls.UnitTests.Presenters
 
         private class TestContentControl : ContentControl
         {
-            public Control Child { get; set; }
+            public IControl Child { get; set; }
         }
 
         private class TestViewModel : INotifyPropertyChanged

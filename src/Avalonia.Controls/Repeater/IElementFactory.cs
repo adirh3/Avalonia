@@ -15,10 +15,10 @@ namespace Avalonia.Controls
         public object? Data { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="Control"/> that is expected to be the parent of the
+        /// Gets or sets the <see cref="IControl"/> that is expected to be the parent of the
         /// realized element from <see cref="IElementFactory.GetElement"/>.
         /// </summary>
-        public Control? Parent { get; set; }
+        public IControl? Parent { get; set; }
 
         /// <summary>
         /// Gets or sets the index of the item that should be realized.
@@ -33,16 +33,16 @@ namespace Avalonia.Controls
     public class ElementFactoryRecycleArgs
     {
         /// <summary>
-        /// Gets or sets the <see cref="Control"/> to recycle when calling 
+        /// Gets or sets the <see cref="IControl"/> to recycle when calling 
         /// <see cref="IElementFactory.RecycleElement"/>.
         /// </summary>
-        public Control? Element { get; set; }
+        public IControl? Element { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="Control"/> that is expected to be the parent of the
+        /// Gets or sets the <see cref="IControl"/> that is expected to be the parent of the
         /// realized element from <see cref="IElementFactory.GetElement"/>.
         /// </summary>
-        public Control? Parent { get; set; }
+        public IControl? Parent { get; set; }
     }
 
     /// <summary>
@@ -51,13 +51,13 @@ namespace Avalonia.Controls
     public interface IElementFactory : IDataTemplate
     {
         /// <summary>
-        /// Gets an <see cref="Control"/>.
+        /// Gets an <see cref="IControl"/>.
         /// </summary>
         /// <param name="args">The element args.</param>
-        public Control GetElement(ElementFactoryGetArgs args);
+        public IControl GetElement(ElementFactoryGetArgs args);
 
         /// <summary>
-        /// Recycles an <see cref="Control"/> that was previously retrieved using
+        /// Recycles an <see cref="IControl"/> that was previously retrieved using
         /// <see cref="GetElement"/>.
         /// </summary>
         /// <param name="args">The recycle args.</param>

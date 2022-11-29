@@ -26,7 +26,7 @@ namespace Avalonia.Controls
         /// <summary>
         /// Defines the <see cref="Child"/> property
         /// </summary>
-        public static readonly StyledProperty<Control?> ChildProperty =
+        public static readonly StyledProperty<IControl?> ChildProperty =
             Decorator.ChildProperty.AddOwner<Viewbox>();
 
         static Viewbox()
@@ -69,7 +69,7 @@ namespace Avalonia.Controls
         /// Gets or sets the child of the Viewbox
         /// </summary>
         [Content]
-        public Control? Child
+        public IControl? Child
         {
             get => GetValue(ChildProperty);
             set => SetValue(ChildProperty, value);
@@ -91,7 +91,7 @@ namespace Avalonia.Controls
 
             if (change.Property == ChildProperty)
             {
-                var (oldChild, newChild) = change.GetOldAndNewValue<Control>();
+                var (oldChild, newChild) = change.GetOldAndNewValue<IControl>();
 
                 if (oldChild is not null)
                 {
@@ -153,9 +153,9 @@ namespace Avalonia.Controls
         /// </summary>
         private class ViewboxContainer : Control
         {
-            private Control? _child;
+            private IControl? _child;
 
-            public Control? Child
+            public IControl? Child
             {
                 get => _child;
                 set

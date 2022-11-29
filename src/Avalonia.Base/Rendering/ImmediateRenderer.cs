@@ -18,7 +18,7 @@ namespace Avalonia.Rendering
     /// </remarks>
     public class ImmediateRenderer : RendererBase, IRenderer, IVisualBrushRenderer
     {
-        private readonly Visual _root;
+        private readonly IVisual _root;
         private readonly IRenderRoot? _renderRoot;
         private bool _updateTransformedBounds = true;
         private IRenderTarget? _renderTarget;
@@ -27,13 +27,13 @@ namespace Avalonia.Rendering
         /// Initializes a new instance of the <see cref="ImmediateRenderer"/> class.
         /// </summary>
         /// <param name="root">The control to render.</param>
-        public ImmediateRenderer(Visual root)
+        public ImmediateRenderer(IVisual root)
         {
             _root = root ?? throw new ArgumentNullException(nameof(root));
             _renderRoot = root as IRenderRoot;
         }
 
-        private ImmediateRenderer(Visual root, bool updateTransformedBounds)
+        private ImmediateRenderer(IVisual root, bool updateTransformedBounds)
         {
             _root = root ?? throw new ArgumentNullException(nameof(root));
             _renderRoot = root as IRenderRoot;
@@ -102,7 +102,7 @@ namespace Avalonia.Rendering
         /// </summary>
         /// <param name="visual">The visual.</param>
         /// <param name="target">The render target.</param>
-        public static void Render(Visual visual, IRenderTarget target)
+        public static void Render(IVisual visual, IRenderTarget target)
         {
             using (var renderer = new ImmediateRenderer(visual, updateTransformedBounds: false))
             using (var context = new DrawingContext(target.CreateDrawingContext(renderer)))
@@ -116,7 +116,7 @@ namespace Avalonia.Rendering
         /// </summary>
         /// <param name="visual">The visual.</param>
         /// <param name="context">The drawing context.</param>
-        public static void Render(Visual visual, DrawingContext context)
+        public static void Render(IVisual visual, DrawingContext context)
         {
             using (var renderer = new ImmediateRenderer(visual, updateTransformedBounds: false))
             {
@@ -125,7 +125,7 @@ namespace Avalonia.Rendering
         }
 
         /// <inheritdoc/>
-        public void AddDirty(Visual visual)
+        public void AddDirty(IVisual visual)
         {
             if (visual.Bounds != Rect.Empty)
             {
@@ -162,18 +162,18 @@ namespace Avalonia.Rendering
         }
 
         /// <inheritdoc/>
-        public IEnumerable<Visual> HitTest(Point p, Visual root, Func<Visual, bool> filter)
+        public IEnumerable<IVisual> HitTest(Point p, IVisual root, Func<IVisual, bool> filter)
         {
             return HitTest(root, p, filter);
         }
 
-        public Visual? HitTestFirst(Point p, Visual root, Func<Visual, bool> filter)
+        public IVisual? HitTestFirst(Point p, IVisual root, Func<IVisual, bool> filter)
         {
             return HitTest(root, p, filter).FirstOrDefault();
         }
 
         /// <inheritdoc/>
-        public void RecalculateChildren(Visual visual) => AddDirty(visual);
+        public void RecalculateChildren(IVisual visual) => AddDirty(visual);
 
         /// <inheritdoc/>
         public void Start()
@@ -199,21 +199,21 @@ namespace Avalonia.Rendering
             Render(new DrawingContext(context), visual, visual.Bounds);
         }
 
-        internal static void Render(Visual visual, DrawingContext context, bool updateTransformedBounds)
+        internal static void Render(IVisual visual, DrawingContext context, bool updateTransformedBounds)
         {
             using var renderer = new ImmediateRenderer(visual, updateTransformedBounds);
             renderer.Render(context, visual, visual.Bounds);
         }
 
-        private static void ClearTransformedBounds(Visual visual)
+        private static void ClearTransformedBounds(IVisual visual)
         {
             foreach (var e in visual.GetSelfAndVisualDescendants())
             {
-                visual.SetTransformedBounds(null);
+                visual.TransformedBounds = null;
             }
         }
 
-        private static Rect GetTransformedBounds(Visual visual)
+        private static Rect GetTransformedBounds(IVisual visual)
         {
             if (visual.RenderTransform == null)
             {
@@ -228,10 +228,10 @@ namespace Avalonia.Rendering
             }
         }
 
-        private static IEnumerable<Visual> HitTest(
-           Visual visual,
+        private static IEnumerable<IVisual> HitTest(
+           IVisual visual,
            Point p,
-           Func<Visual, bool>? filter)
+           Func<IVisual, bool>? filter)
         {
             _ = visual ?? throw new ArgumentNullException(nameof(visual));
 
@@ -266,7 +266,7 @@ namespace Avalonia.Rendering
             }
         }
 
-        private void Render(DrawingContext context, Visual visual, Rect clipRect)
+        private void Render(DrawingContext context, IVisual visual, Rect clipRect)
         {
             var opacity = visual.Opacity;
             var clipToBounds = visual.ClipToBounds;
@@ -329,11 +329,11 @@ namespace Avalonia.Rendering
 #pragma warning restore 0618
 
                     if (_updateTransformedBounds)
-                        visual.SetTransformedBounds(transformed);
+                        visual.TransformedBounds = transformed;
 
                     var childrenEnumerable = visual.HasNonUniformZIndexChildren
                         ? visual.VisualChildren.OrderBy(x => x, ZIndexComparer.Instance)
-                        : (IEnumerable<Visual>)visual.VisualChildren;
+                        : (IEnumerable<IVisual>)visual.VisualChildren;
                     
                     foreach (var child in childrenEnumerable)
                     {

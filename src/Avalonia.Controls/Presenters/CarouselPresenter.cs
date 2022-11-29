@@ -155,7 +155,7 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-        protected override void PanelCreated(Panel panel)
+        protected override void PanelCreated(IPanel panel)
         {
             ItemsChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
@@ -171,8 +171,8 @@ namespace Avalonia.Controls.Presenters
             if (fromIndex != toIndex)
             {
                 var generator = ItemContainerGenerator;
-                Control? from = null;
-                Control? to = null;
+                IControl? from = null;
+                IControl? to = null;
 
                 if (fromIndex != -1)
                 {
@@ -208,7 +208,7 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-        private Control? GetOrCreateContainer(int index)
+        private IControl? GetOrCreateContainer(int index)
         {
             var container = ItemContainerGenerator.ContainerFromIndex(index);
 

@@ -382,7 +382,7 @@ namespace Avalonia.Native
                 return new DeferredRenderer(root, loop);
             }
 
-            return new ImmediateRenderer((Visual)root);
+            return new ImmediateRenderer(root);
         }
 
         public virtual void Dispose()

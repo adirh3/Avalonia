@@ -121,7 +121,7 @@ namespace Avalonia.ReactiveUI
             }
 
             viewInstance.ViewModel = viewModel;
-            if (viewInstance is StyledElement styled)
+            if (viewInstance is IStyledElement styled)
                 styled.DataContext = viewModel;
             Content = viewInstance;
         }

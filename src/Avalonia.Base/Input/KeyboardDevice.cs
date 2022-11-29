@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Avalonia.Input.Raw;
 using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Input
 {
@@ -36,21 +37,18 @@ namespace Avalonia.Input
                     ie.IsKeyboardFocusWithin = false;
                 }
 
-                el = (IInputElement?)(el as Visual)?.VisualParent;
+                el = (IInputElement?)el.VisualParent;
             }
         }
         
         private void ClearFocusWithin(IInputElement element, bool clearRoot)
         {
-            if (element is Visual v)
+            foreach (var visual in element.VisualChildren)
             {
-                foreach (var visual in v.VisualChildren)
+                if (visual is IInputElement el && el.IsKeyboardFocusWithin)
                 {
-                    if (visual is IInputElement el && el.IsKeyboardFocusWithin)
-                    {
-                        ClearFocusWithin(el, true);
-                        break;
-                    }
+                    ClearFocusWithin(el, true);
+                    break;
                 }
             }
             
@@ -83,7 +81,7 @@ namespace Avalonia.Input
                     break;
                 }
 
-                el = (el as Visual)?.VisualParent as IInputElement;
+                el = el.VisualParent as IInputElement;
             }
 
             el = oldElement;
@@ -102,21 +100,18 @@ namespace Avalonia.Input
                     ie.IsKeyboardFocusWithin = true;
                 }
 
-                el = (el as Visual)?.VisualParent as IInputElement;
+                el = el.VisualParent as IInputElement;
             }
         }
         
         private void ClearChildrenFocusWithin(IInputElement element, bool clearRoot)
         {
-            if (element is Visual v)
+            foreach (var visual in element.VisualChildren)
             {
-                foreach (var visual in v.VisualChildren)
+                if (visual is IInputElement el && el.IsKeyboardFocusWithin)
                 {
-                    if (visual is IInputElement el && el.IsKeyboardFocusWithin)
-                    {
-                        ClearChildrenFocusWithin(el, true);
-                        break;
-                    }
+                    ClearChildrenFocusWithin(el, true);
+                    break;
                 }
             }
             
@@ -136,8 +131,8 @@ namespace Avalonia.Input
                 var interactive = FocusedElement as IInteractive;
 
                 if (FocusedElement != null && 
-                    (!((Visual)FocusedElement).IsAttachedToVisualTree ||
-                     _focusedRoot != ((Visual?)element)?.VisualRoot as IInputRoot) &&
+                    (!FocusedElement.IsAttachedToVisualTree ||
+                     _focusedRoot != element?.VisualRoot as IInputRoot) &&
                     _focusedRoot != null)
                 {
                     ClearChildrenFocusWithin(_focusedRoot, true);
@@ -145,7 +140,7 @@ namespace Avalonia.Input
                 
                 SetIsFocusWithin(FocusedElement, element);
                 _focusedElement = element;
-                _focusedRoot = ((Visual?)_focusedElement)?.VisualRoot as IInputRoot;
+                _focusedRoot = _focusedElement?.VisualRoot as IInputRoot;
 
                 interactive?.RaiseEvent(new RoutedEventArgs
                 {
@@ -196,8 +191,8 @@ namespace Avalonia.Input
                             KeyModifiers = keyInput.Modifiers.ToKeyModifiers(),
                             Source = element,
                         };
-                        
-                        var currentHandler = element as Visual;
+
+                        IVisual? currentHandler = element;
                         while (currentHandler != null && !ev.Handled && keyInput.Type == RawKeyEventType.KeyDown)
                         {
                             var bindings = (currentHandler as IInputElement)?.KeyBindings;

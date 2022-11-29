@@ -6,7 +6,7 @@ namespace Avalonia
     /// Defines an element with a data context that can be used for binding.
     /// </summary>
     [NotClientImplementable]
-    public interface IDataContextProvider
+    public interface IDataContextProvider : IAvaloniaObject
     {
         /// <summary>
         /// Gets or sets the element's data context.

@@ -7,7 +7,7 @@ namespace Avalonia.Diagnostics
 {
     internal class ViewLocator : IDataTemplate
     {
-        public Control? Build(object? data)
+        public IControl? Build(object? data)
         {
             if (data is null)
                 return null;

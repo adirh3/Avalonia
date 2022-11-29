@@ -9,7 +9,7 @@ namespace Avalonia.Diagnostics.ViewModels
 {
     internal class ControlLayoutViewModel : ViewModelBase
     {
-        private readonly Visual _control;
+        private readonly IVisual _control;
         private Thickness _borderThickness;
         private double _height;
         private string? _heightConstraint;
@@ -21,7 +21,7 @@ namespace Avalonia.Diagnostics.ViewModels
         private double _width;
         private string? _widthConstraint;
 
-        public ControlLayoutViewModel(Visual control)
+        public ControlLayoutViewModel(IVisual control)
         {
             _control = control;
 

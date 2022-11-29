@@ -13,7 +13,7 @@ namespace Avalonia.Styling
     internal class PropertySetterInstance<T> : SingleSubscriberObservableBase<BindingValue<T>>,
         ISetterInstance
     {
-        private readonly StyledElement _target;
+        private readonly IStyleable _target;
         private readonly StyledPropertyBase<T>? _styledProperty;
         private readonly DirectPropertyBase<T>? _directProperty;
         private readonly T _value;
@@ -21,7 +21,7 @@ namespace Avalonia.Styling
         private State _state;
 
         public PropertySetterInstance(
-            StyledElement target,
+            IStyleable target,
             StyledPropertyBase<T> property,
             T value)
         {
@@ -31,7 +31,7 @@ namespace Avalonia.Styling
         }
 
         public PropertySetterInstance(
-            StyledElement target,
+            IStyleable target,
             DirectPropertyBase<T> property,
             T value)
         {

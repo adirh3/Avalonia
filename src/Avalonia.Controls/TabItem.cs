@@ -71,7 +71,7 @@ namespace Avalonia.Controls
                 }
                 else
                 {
-                    if (!(obj.NewValue is Control))
+                    if (!(obj.NewValue is IControl))
                     {
                         Header = obj.NewValue;
                     }

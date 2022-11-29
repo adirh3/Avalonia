@@ -21,7 +21,7 @@ namespace Avalonia.Controls
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             _currentRoot = e.Root as TopLevel;
-            var visual = (Visual)this;
+            var visual = (IVisual)this;
             while (visual != null)
             {
                 if (visual is Visual v)

@@ -383,7 +383,7 @@ namespace Avalonia.Controls.UnitTests
                 }
             }
 
-            public bool BringIntoView(Control target, Rect targetRect)
+            public bool BringIntoView(IControl target, Rect targetRect)
             {
                 throw new NotImplementedException();
             }
@@ -399,7 +399,7 @@ namespace Avalonia.Controls.UnitTests
                 return new Size(150, 150);
             }
 
-            public Control GetControlInDirection(NavigationDirection direction, Control from)
+            public IControl GetControlInDirection(NavigationDirection direction, IControl from)
             {
                 throw new NotImplementedException();
             }

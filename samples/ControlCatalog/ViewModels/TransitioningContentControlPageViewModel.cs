@@ -293,10 +293,10 @@ namespace ControlCatalog.ViewModels
         /// <remarks>
         /// Any one of the parameters may be null, but not both.
         /// </remarks>
-        private static Visual GetVisualParent(Visual? from, Visual? to)
+        private static IVisual GetVisualParent(IVisual? from, IVisual? to)
         {
-            var p1 = (from ?? to)!.GetVisualParent();
-            var p2 = (to ?? from)!.GetVisualParent();
+            var p1 = (from ?? to)!.VisualParent;
+            var p2 = (to ?? from)!.VisualParent;
 
             if (p1 != null && p2 != null && p1 != p2)
             {

@@ -18,7 +18,7 @@ namespace Avalonia.Controls.Primitives
     public sealed class DataGridColumnHeadersPresenter : Panel, IChildIndexProvider
     {
         private Control _dragIndicator;
-        private Control _dropLocationIndicator;
+        private IControl _dropLocationIndicator;
         private EventHandler<ChildIndexChangedEventArgs> _childIndexChanged;
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Avalonia.Controls.Primitives
         /// <summary>
         /// The drop location indicator control.  This value is null if no column is being dragged.
         /// </summary>
-        internal Control DropLocationIndicator
+        internal IControl DropLocationIndicator
         {
             get
             {

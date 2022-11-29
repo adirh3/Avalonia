@@ -118,8 +118,8 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Defines the <see cref="Child"/> property.
         /// </summary>
-        public static readonly DirectProperty<ContentPresenter, Control?> ChildProperty =
-            AvaloniaProperty.RegisterDirect<ContentPresenter, Control?>(
+        public static readonly DirectProperty<ContentPresenter, IControl?> ChildProperty =
+            AvaloniaProperty.RegisterDirect<ContentPresenter, IControl?>(
                 nameof(Child),
                 o => o.Child);
 
@@ -161,7 +161,7 @@ namespace Avalonia.Controls.Presenters
                 nameof(RecognizesAccessKey),
                 cp => cp.RecognizesAccessKey, (cp, value) => cp.RecognizesAccessKey = value);
 
-        private Control? _child;
+        private IControl? _child;
         private bool _createdChild;
         private IRecyclingDataTemplate? _recyclingDataTemplate;
         private readonly BorderRenderHelper _borderRenderer = new BorderRenderHelper();
@@ -329,7 +329,7 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets the control displayed by the presenter.
         /// </summary>
-        public Control? Child
+        public IControl? Child
         {
             get { return _child; }
             private set { SetAndRaise(ChildProperty, ref _child, value); }
@@ -460,7 +460,7 @@ namespace Avalonia.Controls.Presenters
             }
 
             // Set the DataContext if the data isn't a control.
-            if (contentTemplate is { } || !(content is Control))
+            if (contentTemplate is { } || !(content is IControl))
             {
                 DataContext = content;
             }
@@ -544,16 +544,16 @@ namespace Avalonia.Controls.Presenters
         /// Creates the child control.
         /// </summary>
         /// <returns>The child control or null.</returns>
-        protected virtual Control? CreateChild()
+        protected virtual IControl? CreateChild()
         {
             var content = Content;
             var oldChild = Child;
             return CreateChild(content, oldChild, ContentTemplate);
         }
 
-        private Control? CreateChild(object? content, Control? oldChild, IDataTemplate? template)
+        private IControl? CreateChild(object? content, IControl? oldChild, IDataTemplate? template)
         {            
-            var newChild = content as Control;
+            var newChild = content as IControl;
 
             // We want to allow creating Child from the Template, if Content is null.
             // But it's important to not use DataTemplates, otherwise we will break content presenters in many places,

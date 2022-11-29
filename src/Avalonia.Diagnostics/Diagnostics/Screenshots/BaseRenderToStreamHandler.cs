@@ -13,9 +13,9 @@ namespace Avalonia.Diagnostics.Screenshots
         /// </summary>
         /// <param name="control"></param>
         /// <returns>stream to render the control</returns>
-        protected abstract Task<System.IO.Stream?> GetStream(Control control);
+        protected abstract Task<System.IO.Stream?> GetStream(IControl control);
 
-        public async Task Take(Control control)
+        public async Task Take(IControl control)
         {
             using var output = await GetStream(control);
             if (output is { })

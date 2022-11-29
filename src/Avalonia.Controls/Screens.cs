@@ -53,7 +53,7 @@ namespace Avalonia.Controls
             return _iScreenImpl.ScreenFromPoint(point);
         }
 
-        public Screen? ScreenFromVisual(Visual visual)
+        public Screen? ScreenFromVisual(IVisual visual)
         {
             var tl = visual.PointToScreen(visual.Bounds.TopLeft);
             var br = visual.PointToScreen(visual.Bounds.BottomRight);

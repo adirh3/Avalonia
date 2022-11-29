@@ -29,7 +29,7 @@ namespace Avalonia
     /// extension methods defined in <see cref="VisualExtensions"/>.
     /// </remarks>
     [UsableDuringInitialization]
-    public class Visual : StyledElement
+    public class Visual : StyledElement, IVisual
     {
         /// <summary>
         /// Defines the <see cref="Bounds"/> property.
@@ -91,10 +91,10 @@ namespace Avalonia
             AvaloniaProperty.Register<Visual, RelativePoint>(nameof(RenderTransformOrigin), defaultValue: RelativePoint.Center);
 
         /// <summary>
-        /// Defines the <see cref="VisualParent"/> property.
+        /// Defines the <see cref="IVisual.VisualParent"/> property.
         /// </summary>
-        public static readonly DirectProperty<Visual, Visual?> VisualParentProperty =
-            AvaloniaProperty.RegisterDirect<Visual, Visual?>(nameof(VisualParent), o => o._visualParent);
+        public static readonly DirectProperty<Visual, IVisual?> VisualParentProperty =
+            AvaloniaProperty.RegisterDirect<Visual, IVisual?>(nameof(IVisual.VisualParent), o => o._visualParent);
 
         /// <summary>
         /// Defines the <see cref="ZIndex"/> property.
@@ -110,7 +110,7 @@ namespace Avalonia
         private Rect _bounds;
         private TransformedBounds? _transformedBounds;
         private IRenderRoot? _visualRoot;
-        private Visual? _visualParent;
+        private IVisual? _visualParent;
         private bool _hasMirrorTransform;
         private TargetWeakEventSubscriber<Visual, EventArgs>? _affectsRenderWeakSubscriber;
 
@@ -138,7 +138,7 @@ namespace Avalonia
             // Disable transitions until we're added to the visual tree.
             DisableTransitions();
 
-            var visualChildren = new AvaloniaList<Visual>();
+            var visualChildren = new AvaloniaList<IVisual>();
             visualChildren.ResetBehavior = ResetBehavior.Remove;
             visualChildren.Validate = visual => ValidateVisualChild(visual);
             visualChildren.CollectionChanged += VisualChildrenChanged;
@@ -194,7 +194,7 @@ namespace Avalonia
         {
             get
             {
-                Visual? node = this;
+                IVisual? node = this;
 
                 while (node != null)
                 {
@@ -281,7 +281,7 @@ namespace Avalonia
         /// <summary>
         /// Gets the control's child visuals.
         /// </summary>
-        protected internal IAvaloniaList<Visual> VisualChildren
+        protected IAvaloniaList<IVisual> VisualChildren
         {
             get;
             private set;
@@ -290,7 +290,7 @@ namespace Avalonia
         /// <summary>
         /// Gets the root of the visual tree, if the control is attached to a visual tree.
         /// </summary>
-        protected internal IRenderRoot? VisualRoot => _visualRoot ?? (this as IRenderRoot);
+        protected IRenderRoot? VisualRoot => _visualRoot ?? (this as IRenderRoot);
 
         internal CompositionDrawListVisual? CompositionVisual { get; private set; }
         internal CompositionVisual? ChildCompositionVisual { get; set; }
@@ -300,12 +300,28 @@ namespace Avalonia
         /// <summary>
         /// Gets a value indicating whether this control is attached to a visual root.
         /// </summary>
-        internal bool IsAttachedToVisualTree => VisualRoot != null;
+        bool IVisual.IsAttachedToVisualTree => VisualRoot != null;
+
+        /// <summary>
+        /// Gets the control's child controls.
+        /// </summary>
+        IAvaloniaReadOnlyList<IVisual> IVisual.VisualChildren => VisualChildren;
 
         /// <summary>
         /// Gets the control's parent visual.
         /// </summary>
-        internal Visual? VisualParent => _visualParent;
+        IVisual? IVisual.VisualParent => _visualParent;
+
+        /// <summary>
+        /// Gets the root of the visual tree, if the control is attached to a visual tree.
+        /// </summary>
+        IRenderRoot? IVisual.VisualRoot => VisualRoot;
+        
+        TransformedBounds? IVisual.TransformedBounds
+        {
+            get { return _transformedBounds; }
+            set { SetAndRaise(TransformedBoundsProperty, ref _transformedBounds, value); }
+        }
 
         /// <summary>
         /// Invalidates the visual and queues a repaint.
@@ -419,7 +435,7 @@ namespace Avalonia
             AttachedToVisualTree?.Invoke(this, e);
             InvalidateVisual();
 
-            if (ZIndex != 0 && VisualParent is Visual parent)
+            if (ZIndex != 0 && this.GetVisualParent() is Visual parent)
                 parent.HasNonUniformZIndexChildren = true;
 
             var visualChildren = VisualChildren;
@@ -466,11 +482,6 @@ namespace Avalonia
             }
 
             return CompositionVisual;
-        }
-
-        internal void SetTransformedBounds(TransformedBounds? value)
-        {
-            SetAndRaise(TransformedBoundsProperty, ref _transformedBounds, value);
         }
 
         /// <summary>
@@ -537,9 +548,13 @@ namespace Avalonia
         /// </summary>
         /// <param name="oldParent">The old visual parent.</param>
         /// <param name="newParent">The new visual parent.</param>
-        protected virtual void OnVisualParentChanged(Visual? oldParent, Visual? newParent)
+        protected virtual void OnVisualParentChanged(IVisual? oldParent, IVisual? newParent)
         {
-            RaisePropertyChanged(VisualParentProperty, oldParent, newParent, BindingPriority.LocalValue);
+            RaisePropertyChanged(
+                VisualParentProperty,
+                new Optional<IVisual?>(oldParent),
+                new BindingValue<IVisual?>(newParent),
+                BindingPriority.LocalValue);
         }
 
         internal override ParametrizedLogger? GetBindingWarningLogger(
@@ -593,7 +608,7 @@ namespace Avalonia
         /// Ensures a visual child is not null and not already parented.
         /// </summary>
         /// <param name="c">The visual child.</param>
-        private static void ValidateVisualChild(Visual c)
+        private static void ValidateVisualChild(IVisual c)
         {
             if (c == null)
             {
@@ -612,7 +627,7 @@ namespace Avalonia
         /// <param name="e">The event args.</param>
         private static void ZIndexChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var sender = e.Sender as Visual;
+            var sender = e.Sender as IVisual;
             var parent = sender?.VisualParent;
             if (sender?.ZIndex != 0 && parent is Visual parentVisual)
                 parentVisual.HasNonUniformZIndexChildren = true;

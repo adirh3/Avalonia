@@ -10,15 +10,15 @@ namespace Avalonia.Controls.Utils
     {
         class FinderNode : IDisposable
         {
-            private readonly StyledElement _control;
+            private readonly IStyledElement _control;
             private readonly Type _ancestorType;
-            public IObservable<StyledElement?> Observable => _subject;
-            private readonly Subject<StyledElement?> _subject = new Subject<StyledElement?>();
+            public IObservable<IStyledElement?> Observable => _subject;
+            private readonly Subject<IStyledElement?> _subject = new Subject<IStyledElement?>();
 
             private FinderNode? _child;
             private IDisposable? _disposable;
 
-            public FinderNode(StyledElement control, Type ancestorType)
+            public FinderNode(IStyledElement control, Type ancestorType)
             {
                 _control = control;
                 _ancestorType = ancestorType;
@@ -29,7 +29,7 @@ namespace Avalonia.Controls.Utils
                 _disposable = _control.GetObservable(Control.ParentProperty).Subscribe(OnValueChanged);
             }
 
-            private void OnValueChanged(StyledElement? next)
+            private void OnValueChanged(IStyledElement? next)
             {
                 if (next == null || _ancestorType.IsAssignableFrom(next.GetType()))
                     _subject.OnNext(next);
@@ -42,7 +42,7 @@ namespace Avalonia.Controls.Utils
                 }
             }
 
-            private void OnChildValueChanged(StyledElement? control) => _subject.OnNext(control);
+            private void OnChildValueChanged(IStyledElement? control) => _subject.OnNext(control);
 
 
             public void Dispose()
@@ -53,15 +53,15 @@ namespace Avalonia.Controls.Utils
             }
         }
 
-        public static IObservable<T?> Create<T>(StyledElement control)
-            where T : StyledElement
+        public static IObservable<T?> Create<T>(IStyledElement control)
+            where T : IStyledElement
         {
             return Create(control, typeof(T)).Select(x => (T?)x);
         }
 
-        public static IObservable<StyledElement?> Create(StyledElement control, Type ancestorType)
+        public static IObservable<IStyledElement?> Create(IStyledElement control, Type ancestorType)
         {
-            return new AnonymousObservable<StyledElement?>(observer =>
+            return new AnonymousObservable<IStyledElement?>(observer =>
             {
                 var finder = new FinderNode(control, ancestorType);
                 var subscription = finder.Observable.Subscribe(observer);

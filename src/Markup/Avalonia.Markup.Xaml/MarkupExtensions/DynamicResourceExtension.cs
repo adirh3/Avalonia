@@ -31,9 +31,9 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions
 
             var provideTarget = serviceProvider.GetService<IProvideValueTarget>();
 
-            if (!(provideTarget.TargetObject is StyledElement))
+            if (!(provideTarget.TargetObject is IStyledElement))
             {
-                _anchor = serviceProvider.GetFirstParent<StyledElement>() ??
+                _anchor = serviceProvider.GetFirstParent<IStyledElement>() ??
                     serviceProvider.GetFirstParent<IResourceProvider>() ??
                     (object?)serviceProvider.GetFirstParent<IResourceHost>();
             }
@@ -42,7 +42,7 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions
         }
 
         InstancedBinding? IBinding.Initiate(
-            AvaloniaObject target,
+            IAvaloniaObject target,
             AvaloniaProperty? targetProperty,
             object? anchor,
             bool enableDataValidation)

@@ -18,13 +18,13 @@ namespace Avalonia.Layout
         /// Notifies the layout manager that a control requires a measure.
         /// </summary>
         /// <param name="control">The control.</param>
-        void InvalidateMeasure(Layoutable control);
+        void InvalidateMeasure(ILayoutable control);
 
         /// <summary>
         /// Notifies the layout manager that a control requires an arrange.
         /// </summary>
         /// <param name="control">The control.</param>
-        void InvalidateArrange(Layoutable control);
+        void InvalidateArrange(ILayoutable control);
 
         /// <summary>
         /// Executes a layout pass.
@@ -48,12 +48,12 @@ namespace Avalonia.Layout
         /// Registers a control as wanting to receive effective viewport notifications.
         /// </summary>
         /// <param name="control">The control.</param>
-        void RegisterEffectiveViewportListener(Layoutable control);
+        void RegisterEffectiveViewportListener(ILayoutable control);
 
         /// <summary>
         /// Registers a control as no longer wanting to receive effective viewport notifications.
         /// </summary>
         /// <param name="control">The control.</param>
-        void UnregisterEffectiveViewportListener(Layoutable control);
+        void UnregisterEffectiveViewportListener(ILayoutable control);
     }
 }

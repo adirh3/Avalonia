@@ -68,7 +68,7 @@ namespace Avalonia.Input
         /// <param name="value">The tab index.</param>
         public static void SetTabIndex(IInputElement element, int value)
         {
-            ((AvaloniaObject)element).SetValue(TabIndexProperty, value);
+            ((IAvaloniaObject)element).SetValue(TabIndexProperty, value);
         }
 
         /// <summary>

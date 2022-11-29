@@ -6,15 +6,15 @@ namespace Avalonia.Reactive
 {
     internal class AvaloniaPropertyObservable<T> : LightweightObservableBase<T>, IDescription
     {
-        private readonly WeakReference<AvaloniaObject> _target;
+        private readonly WeakReference<IAvaloniaObject> _target;
         private readonly AvaloniaProperty _property;
         private Optional<T> _value;
 
         public AvaloniaPropertyObservable(
-            AvaloniaObject target,
+            IAvaloniaObject target,
             AvaloniaProperty property)
         {
-            _target = new WeakReference<AvaloniaObject>(target);
+            _target = new WeakReference<IAvaloniaObject>(target);
             _property = property;
         }
 
@@ -49,23 +49,31 @@ namespace Avalonia.Reactive
         {
             if (e.Property == _property)
             {
-                T newValue;
-
-                if (e is AvaloniaPropertyChangedEventArgs<T> typed)
+                if (e.Sender is AvaloniaObject ao)
                 {
-                    newValue = AvaloniaObjectExtensions.GetValue(e.Sender, typed.Property);
+                    T newValue;
+
+                    if (e is AvaloniaPropertyChangedEventArgs<T> typed)
+                    {
+                        newValue = AvaloniaObjectExtensions.GetValue(ao, typed.Property);
+                    }
+                    else
+                    {
+                        newValue = (T)e.Sender.GetValue(e.Property)!;
+                    }
+
+                    if (!_value.HasValue ||
+                        !EqualityComparer<T>.Default.Equals(newValue, _value.Value))
+                    {
+                        _value = newValue;
+                        PublishNext(_value.Value!);
+                    }
                 }
                 else
                 {
-                    newValue = (T)e.Sender.GetValue(e.Property)!;
+                    throw new NotSupportedException("Custom implementations of IAvaloniaObject not supported.");
                 }
 
-                if (!_value.HasValue ||
-                    !EqualityComparer<T>.Default.Equals(newValue, _value.Value))
-                {
-                    _value = newValue;
-                    PublishNext(_value.Value!);
-                }
             }
         }
     }

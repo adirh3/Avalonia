@@ -89,7 +89,7 @@ namespace Avalonia.Win32.Interop.Wpf
 
         public IRenderer CreateRenderer(IRenderRoot root)
         {
-            return new ImmediateRenderer((Visual)root);
+            return new ImmediateRenderer(root);
         }
 
         public void Dispose()

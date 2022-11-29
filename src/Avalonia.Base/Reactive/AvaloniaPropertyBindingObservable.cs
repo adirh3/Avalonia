@@ -6,15 +6,15 @@ namespace Avalonia.Reactive
 {
     internal class AvaloniaPropertyBindingObservable<T> : LightweightObservableBase<BindingValue<T>>, IDescription
     {
-        private readonly WeakReference<AvaloniaObject> _target;
+        private readonly WeakReference<IAvaloniaObject> _target;
         private readonly AvaloniaProperty _property;
         private BindingValue<T> _value = BindingValue<T>.Unset;
 
         public AvaloniaPropertyBindingObservable(
-            AvaloniaObject target,
+            IAvaloniaObject target,
             AvaloniaProperty property)
         {
-            _target = new WeakReference<AvaloniaObject>(target);
+            _target = new WeakReference<IAvaloniaObject>(target);
             _property = property;
         }
 

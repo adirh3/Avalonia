@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using Avalonia.Platform;
 using Avalonia.Utilities;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Rendering.SceneGraph
 {
     /// <summary>
-    /// Represents a node in the low-level scene graph representing a <see cref="Visual"/>.
+    /// Represents a node in the low-level scene graph representing an <see cref="IVisual"/>.
     /// </summary>
     public interface IVisualNode : IDisposable
     {
         /// <summary>
         /// Gets the visual to which the node relates.
         /// </summary>
-        Visual Visual { get; }
+        IVisual Visual { get; }
 
         /// <summary>
         /// Gets the parent scene graph node.

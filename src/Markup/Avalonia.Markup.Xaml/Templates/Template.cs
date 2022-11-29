@@ -4,13 +4,13 @@ using Avalonia.Styling;
 
 namespace Avalonia.Markup.Xaml.Templates
 {
-    public class Template : ITemplate<Control>
+    public class Template : ITemplate<IControl>
     {
         [Content]
         [TemplateContent]
         public object Content { get; set; }
 
-        public Control Build() => TemplateContent.Load(Content)?.Control;
+        public IControl Build() => TemplateContent.Load(Content)?.Control;
 
         object ITemplate.Build() => Build();
     }

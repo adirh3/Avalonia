@@ -109,9 +109,9 @@ namespace Avalonia.Win32
 
                             if (_owner is Window window)
                             {
-                                var visual = window.Renderer.HitTestFirst(position, (Visual)_owner, x =>
+                                var visual = window.Renderer.HitTestFirst(position, _owner, x =>
                                 {
-                                    if (x is IInputElement ie && (!ie.IsHitTestVisible || !ie.IsEffectivelyVisible))
+                                    if (x is IInputElement ie && (!ie.IsHitTestVisible || !ie.IsVisible))
                                     {
                                         return false;
                                     }

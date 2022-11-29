@@ -2,7 +2,6 @@
 using Avalonia.Data.Converters;
 using Avalonia.LogicalTree;
 using Avalonia.Reactive;
-using Avalonia.Styling;
 
 #nullable enable
 
@@ -50,7 +49,7 @@ namespace Avalonia.Controls
                     return true;
                 }
 
-                current = (current as IStyleHost)?.StylingParent as IResourceNode;
+                current = (current as IStyledElement)?.StylingParent as IResourceNode;
             }
 
             value = null;

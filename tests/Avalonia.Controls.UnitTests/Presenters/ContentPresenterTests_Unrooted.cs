@@ -1,6 +1,5 @@
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
-using Avalonia.Styling;
 using Avalonia.UnitTests;
 using Xunit;
 
@@ -111,7 +110,7 @@ namespace Avalonia.Controls.UnitTests.Presenters
             target.UpdateChild();
 
             // InheritanceParent is exposed via StylingParent.
-            Assert.Same(logicalParent, ((IStyleHost)child).StylingParent);
+            Assert.Same(logicalParent, ((IStyledElement)child).StylingParent);
         }
     }
 }

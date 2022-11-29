@@ -368,7 +368,7 @@ namespace Avalonia.Controls
                 return;
             }
 
-            var src = e.Source as Visual;
+            var src = e.Source as IVisual;
             while (src != null)
             {
                 // Make assumption that if Popup is in visual tree,

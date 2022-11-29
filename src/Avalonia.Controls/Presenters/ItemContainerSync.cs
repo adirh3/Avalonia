@@ -110,7 +110,7 @@ namespace Avalonia.Controls.Presenters
         }
 
         private static void RemoveContainers(
-            Panel panel,
+            IPanel panel,
             IEnumerable<ItemContainerInfo> items)
         {
             foreach (var i in items)

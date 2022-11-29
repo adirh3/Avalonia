@@ -6,13 +6,13 @@ namespace Avalonia.Controls.Documents
 {
     internal class EmbeddedControlRun : DrawableTextRun
     {
-        public EmbeddedControlRun(Control control, TextRunProperties properties)
+        public EmbeddedControlRun(IControl control, TextRunProperties properties)
         {
             Control = control;
             Properties = properties;
         }
 
-        public Control Control { get; }
+        public IControl Control { get; }
 
         public override TextRunProperties? Properties { get; }
 

@@ -12,6 +12,6 @@ namespace Avalonia.Diagnostics
         /// Handle the Screenshot
         /// </summary>
         /// <returns></returns>
-        Task Take(Control control);
+        Task Take(IControl control);
     }
 }

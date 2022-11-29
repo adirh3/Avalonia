@@ -19,7 +19,7 @@ namespace Avalonia.Controls.Generators
 
         public new TabControl Owner { get; }
 
-        protected override Control CreateContainer(object item)
+        protected override IControl CreateContainer(object item)
         {
             var tabItem = (TabItem)base.CreateContainer(item)!;
 
@@ -48,14 +48,14 @@ namespace Avalonia.Controls.Generators
                 }
                 else
                 {
-                    if (!(tabItem.DataContext is Control))
+                    if (!(tabItem.DataContext is IControl))
                     {
                         tabItem.Header = tabItem.DataContext;
                     }
                 }
             }
 
-            if (!(tabItem.Content is Control))
+            if (!(tabItem.Content is IControl))
             {
                 tabItem.Bind(TabItem.ContentTemplateProperty, new OwnerBinding<IDataTemplate?>(
                     tabItem,

@@ -226,7 +226,7 @@ namespace Avalonia.Controls.Presenters
             InvalidateScroll();
         }
 
-        public override Control? GetControlInDirection(NavigationDirection direction, Control? from)
+        public override IControl? GetControlInDirection(NavigationDirection direction, IControl? from)
         {
             var generator = Owner.ItemContainerGenerator;
             var panel = VirtualizingPanel;
@@ -313,9 +313,8 @@ namespace Avalonia.Controls.Presenters
         {
             var generator = Owner.ItemContainerGenerator;
             var panel = VirtualizingPanel;
-            var panelControl = (Control)panel;
 
-            if (!panel.IsFull && Items != null && panelControl.IsAttachedToVisualTree)
+            if (!panel.IsFull && Items != null && panel.IsAttachedToVisualTree)
             {
                 var index = NextIndex;
                 var step = 1;
@@ -514,26 +513,25 @@ namespace Avalonia.Controls.Presenters
         /// </summary>
         /// <param name="index">The item index.</param>
         /// <returns>The container that was brought into view.</returns>
-        private Control? ScrollIntoViewCore(int index)
+        private IControl? ScrollIntoViewCore(int index)
         {
             var panel = VirtualizingPanel;
-            var panelControl = (Control)panel;
             var generator = Owner.ItemContainerGenerator;
             var newOffset = -1.0;
 
             //better not trigger any container generation/recycle while  or layout stuff
             //before panel is attached/visible
-            if (!panelControl.IsAttachedToVisualTree)
+            if (!panel.IsAttachedToVisualTree)
             {
                 return null;
             }
 
-            if (!panelControl.IsMeasureValid && panelControl.PreviousMeasure.HasValue)
+            if (!panel.IsMeasureValid && panel.PreviousMeasure.HasValue)
             {
                 //before any kind of scrolling we need to make sure panel measure is valid
                 //or we risk get panel into not valid state
                 //we make a preemptive quick measure so scrolling is valid
-                panelControl.Measure(panelControl.PreviousMeasure.Value);
+                panel.Measure(panel.PreviousMeasure.Value);
             }
 
             if (index >= 0 && index < ItemCount)
@@ -569,17 +567,17 @@ namespace Avalonia.Controls.Presenters
                     {
                         OffsetValue = newOffset;
                     }
-                    
+
                     if (panel.ScrollDirection == Orientation.Vertical)
                     {
-                        if (container.Bounds.Y < panelControl.Bounds.Y || container.Bounds.Bottom > panelControl.Bounds.Bottom)
+                        if (container.Bounds.Y < panel.Bounds.Y || container.Bounds.Bottom > panel.Bounds.Bottom)
                         {
                             OffsetValue += 1;
                         }
                     }
                     else
                     {
-                        if (container.Bounds.X < panelControl.Bounds.X || container.Bounds.Right > panelControl.Bounds.Right)
+                        if (container.Bounds.X < panel.Bounds.X || container.Bounds.Right > panel.Bounds.Right)
                         {
                             OffsetValue += 1;
                         }

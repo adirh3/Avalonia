@@ -1029,7 +1029,7 @@ namespace Avalonia.LeakTests
 #pragma warning disable CS0067
             public event EventHandler<SceneInvalidatedEventArgs> SceneInvalidated;
 #pragma warning restore CS0067
-            public void AddDirty(Visual visual)
+            public void AddDirty(IVisual visual)
             {
             }
 
@@ -1037,15 +1037,15 @@ namespace Avalonia.LeakTests
             {
             }
 
-            public IEnumerable<Visual> HitTest(Point p, Visual root, Func<Visual, bool> filter) => null;
+            public IEnumerable<IVisual> HitTest(Point p, IVisual root, Func<IVisual, bool> filter) => null;
 
-            public Visual HitTestFirst(Point p, Visual root, Func<Visual, bool> filter) => null;
+            public IVisual HitTestFirst(Point p, IVisual root, Func<IVisual, bool> filter) => null;
 
             public void Paint(Rect rect)
             {
             }
 
-            public void RecalculateChildren(Visual visual)
+            public void RecalculateChildren(IVisual visual)
             {
             }
 

@@ -19,18 +19,18 @@ namespace Avalonia.Layout
             set => _virtualizingContext.LayoutState = value;
         }
 
-        protected override IReadOnlyList<Layoutable> ChildrenCore =>
+        protected override IReadOnlyList<ILayoutable> ChildrenCore =>
             _children ?? (_children = new ChildrenCollection(_virtualizingContext));
 
-        private class ChildrenCollection : IReadOnlyList<Layoutable>
+        private class ChildrenCollection : IReadOnlyList<ILayoutable>
         {
             private readonly VirtualizingLayoutContext _context;
             public ChildrenCollection(VirtualizingLayoutContext context) => _context = context;
-            public Layoutable this[int index] => _context.GetOrCreateElementAt(index);
+            public ILayoutable this[int index] => _context.GetOrCreateElementAt(index);
             public int Count => _context.ItemCount;
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-            public IEnumerator<Layoutable> GetEnumerator()
+            public IEnumerator<ILayoutable> GetEnumerator()
             {
                 for (var i = 0; i < Count; ++i)
                 {

@@ -185,7 +185,7 @@ namespace Avalonia.Input
         /// </summary>
         /// <param name="e">The element.</param>
         /// <returns>True if the element can be focused.</returns>
-        private static bool CanFocus(IInputElement e) => e.Focusable && e.IsEffectivelyEnabled && IsVisible(e);
+        private static bool CanFocus(IInputElement e) => e.Focusable && e.IsEffectivelyEnabled && e.IsVisible;
 
         /// <summary>
         /// Gets the focus scope ancestors of the specified control, traversing popups.
@@ -198,15 +198,14 @@ namespace Avalonia.Input
 
             while (c != null)
             {
-                if (c is IFocusScope scope &&
-                    c is Visual v &&
-                    v.VisualRoot is Visual root &&
-                    root.IsVisible)
+                var scope = c as IFocusScope;
+
+                if (scope != null && c.VisualRoot?.IsVisible == true)
                 {
                     yield return scope;
                 }
 
-                c = (c as Visual)?.GetVisualParent<IInputElement>() ??
+                c = c.GetVisualParent<IInputElement>() ??
                     ((c as IHostedVisualTreeRoot)?.Host as IInputElement);
             }
         }
@@ -222,11 +221,11 @@ namespace Avalonia.Input
                 return;
 
             var ev = (PointerPressedEventArgs)e;
-            var visual = (Visual)sender;
+            var visual = (IVisual)sender;
 
             if (sender == e.Source && ev.GetCurrentPoint(visual).Properties.IsLeftButtonPressed)
             {
-                Visual? element = ev.Pointer?.Captured as Visual ?? e.Source as Visual;
+                IVisual? element = ev.Pointer?.Captured ?? e.Source as IInputElement;
 
                 while (element != null)
                 {
@@ -241,7 +240,5 @@ namespace Avalonia.Input
                 }
             }
         }
-
-        private static bool IsVisible(IInputElement e) => (e as Visual)?.IsVisible ?? true;
     }
 }

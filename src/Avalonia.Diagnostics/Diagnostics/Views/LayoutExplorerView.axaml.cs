@@ -100,7 +100,7 @@ namespace Avalonia.Diagnostics.Views
                 }
             }
 
-            Point TranslateToRoot(Point point, Visual from)
+            Point TranslateToRoot(Point point, IVisual from)
             {
                 return from.TranslatePoint(point, _layoutRoot) ?? default;
             }

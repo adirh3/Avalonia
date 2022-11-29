@@ -15,8 +15,8 @@ namespace Avalonia.Controls.Documents
         /// <summary>
         /// Defines the <see cref="Child"/> property.
         /// </summary>
-        public static readonly StyledProperty<Control> ChildProperty =
-            AvaloniaProperty.Register<InlineUIContainer, Control>(nameof(Child));
+        public static readonly StyledProperty<IControl> ChildProperty =
+            AvaloniaProperty.Register<InlineUIContainer, IControl>(nameof(Child));
 
         static InlineUIContainer()
         {
@@ -41,7 +41,7 @@ namespace Avalonia.Controls.Documents
         /// <param name="child">
         /// UIElement set as a child of this inline item
         /// </param>
-        public InlineUIContainer(Control child)
+        public InlineUIContainer(IControl child)
         {
             Child = child;
         }
@@ -50,7 +50,7 @@ namespace Avalonia.Controls.Documents
         /// The content spanned by this TextElement.
         /// </summary>
         [Content]
-        public Control Child
+        public IControl Child
         {
             get => GetValue(ChildProperty);
             set => SetValue(ChildProperty, value);

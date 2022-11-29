@@ -386,11 +386,11 @@ namespace Avalonia.Controls.Primitives
         /// </summary>
         /// <param name="eventSource">The control that raised the event.</param>
         /// <returns>The container or null if the event did not originate in a container.</returns>
-        protected Control? GetContainerFromEventSource(IInteractive? eventSource)
+        protected IControl? GetContainerFromEventSource(IInteractive? eventSource)
         {
-            for (var current = eventSource as Visual; current != null; current = current.VisualParent)
+            for (var current = eventSource as IVisual; current != null; current = current.VisualParent)
             {
-                if (current is Control control && control.Parent == this &&
+                if (current is IControl control && control.LogicalParent == this &&
                     ItemContainerGenerator?.IndexFromContainer(control) != -1)
                 {
                     return control;
@@ -645,10 +645,10 @@ namespace Avalonia.Controls.Primitives
         /// <param name="direction">The direction to move.</param>
         /// <param name="wrap">Whether to wrap when the selection reaches the first or last item.</param>
         /// <returns>True if the selection was moved; otherwise false.</returns>
-        protected bool MoveSelection(Control? from, NavigationDirection direction, bool wrap)
+        protected bool MoveSelection(IControl? from, NavigationDirection direction, bool wrap)
         {
             if (Presenter?.Panel is INavigableContainer container &&
-                GetNextControl(container, direction, from, wrap) is Control next)
+                GetNextControl(container, direction, from, wrap) is IControl next)
             {
                 var index = ItemContainerGenerator?.IndexFromContainer(next) ?? -1;
 
@@ -750,7 +750,7 @@ namespace Avalonia.Controls.Primitives
         /// <param name="rightButton">Whether the event is a right-click.</param>
         /// <param name="fromFocus">Wheter the event is a focus event</param>
         protected void UpdateSelection(
-            Control container,
+            IControl container,
             bool select = true,
             bool rangeModifier = false,
             bool toggleModifier = false,
@@ -892,7 +892,7 @@ namespace Avalonia.Controls.Primitives
                 !_hasScrolledToSelectedItem &&
                 Presenter is object &&
                 Selection.AnchorIndex >= 0 &&
-                IsAttachedToVisualTree)
+                ((IVisual)this).IsAttachedToVisualTree)
             {
                 ScrollIntoView(Selection.AnchorIndex);
                 _hasScrolledToSelectedItem = true;
@@ -906,9 +906,9 @@ namespace Avalonia.Controls.Primitives
         private void ContainerSelectionChanged(RoutedEventArgs e)
         {
             if (!_ignoreContainerSelectionChanged &&
-                e.Source is Control control &&
+                e.Source is IControl control &&
                 e.Source is ISelectable selectable &&
-                control.Parent == this &&
+                control.LogicalParent == this &&
                 ItemContainerGenerator?.IndexFromContainer(control) != -1)
             {
                 UpdateSelection(control, selectable.IsSelected);
@@ -926,7 +926,7 @@ namespace Avalonia.Controls.Primitives
         /// <param name="container">The container.</param>
         /// <param name="selected">Whether the control is selected</param>
         /// <returns>The previous selection state.</returns>
-        private bool MarkContainerSelected(Control container, bool selected)
+        private bool MarkContainerSelected(IControl container, bool selected)
         {
             try
             {
@@ -955,7 +955,7 @@ namespace Avalonia.Controls.Primitives
 
         private void UpdateContainerSelection()
         {
-            if (Presenter?.Panel is Panel panel)
+            if (Presenter?.Panel is IPanel panel)
             {
                 foreach (var container in panel.Children)
                 {

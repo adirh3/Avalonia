@@ -5,7 +5,7 @@ namespace Avalonia.Controls.Templates
     /// <summary>
     /// Interface representing a template used to build a control for a piece of data.
     /// </summary>
-    public interface IDataTemplate : ITemplate<object?, Control?>
+    public interface IDataTemplate : ITemplate<object?, IControl?>
     {
         /// <summary>
         /// Checks to see if this data template matches the specified data.

@@ -15,7 +15,7 @@ namespace Avalonia
     /// allows the avalonia property system to read and write the current value.
     /// </remarks>
     public class DirectProperty<TOwner, TValue> : DirectPropertyBase<TValue>, IDirectPropertyAccessor
-        where TOwner : AvaloniaObject
+        where TOwner : IAvaloniaObject
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectProperty{TOwner, TValue}"/> class.
@@ -151,13 +151,13 @@ namespace Avalonia
         }
 
         /// <inheritdoc/>
-        internal override TValue InvokeGetter(AvaloniaObject instance)
+        internal override TValue InvokeGetter(IAvaloniaObject instance)
         {
             return Getter((TOwner)instance);
         }
 
         /// <inheritdoc/>
-        internal override void InvokeSetter(AvaloniaObject instance, BindingValue<TValue> value)
+        internal override void InvokeSetter(IAvaloniaObject instance, BindingValue<TValue> value)
         {
             if (Setter == null)
             {
@@ -171,13 +171,13 @@ namespace Avalonia
         }
 
         /// <inheritdoc/>
-        object? IDirectPropertyAccessor.GetValue(AvaloniaObject instance)
+        object? IDirectPropertyAccessor.GetValue(IAvaloniaObject instance)
         {
             return Getter((TOwner)instance);
         }
 
         /// <inheritdoc/>
-        void IDirectPropertyAccessor.SetValue(AvaloniaObject instance, object? value)
+        void IDirectPropertyAccessor.SetValue(IAvaloniaObject instance, object? value)
         {
             if (Setter == null)
             {

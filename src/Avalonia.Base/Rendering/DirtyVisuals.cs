@@ -13,10 +13,10 @@ namespace Avalonia.Rendering
     /// visual. TODO: We probably want to put an upper limit on the number of visuals that can be
     /// stored and if we reach that limit, assume all visuals are dirty.
     /// </remarks>
-    internal class DirtyVisuals : IEnumerable<Visual>
+    internal class DirtyVisuals : IEnumerable<IVisual>
     {
-        private SortedDictionary<int, List<Visual>> _inner = new SortedDictionary<int, List<Visual>>();
-        private Dictionary<Visual, int> _index = new Dictionary<Visual, int>();
+        private SortedDictionary<int, List<IVisual>> _inner = new SortedDictionary<int, List<IVisual>>();
+        private Dictionary<IVisual, int> _index = new Dictionary<IVisual, int>();
         private int _enumerating;
 
         /// <summary>
@@ -28,14 +28,14 @@ namespace Avalonia.Rendering
         /// Adds a visual to the dirty list.
         /// </summary>
         /// <param name="visual">The dirty visual.</param>
-        public void Add(Visual visual)
+        public void Add(IVisual visual)
         {
             if (_enumerating > 0)
             {
                 throw new InvalidOperationException("Visual was invalidated during a render pass");
             }
 
-            var distance = visual.CalculateDistanceFromAncestor((Visual?)visual.GetVisualRoot());
+            var distance = visual.CalculateDistanceFromAncestor(visual.VisualRoot);
 
             if (_index.TryGetValue(visual, out var existingDistance))
             {
@@ -50,7 +50,7 @@ namespace Avalonia.Rendering
 
             if (!_inner.TryGetValue(distance, out var list))
             {
-                list = new List<Visual>();
+                list = new List<IVisual>();
                 _inner.Add(distance, list);
             }
 
@@ -76,7 +76,7 @@ namespace Avalonia.Rendering
         /// Gets the dirty visuals, in ascending order of distance to their root.
         /// </summary>
         /// <returns>A collection of visuals.</returns>
-        public IEnumerator<Visual> GetEnumerator()
+        public IEnumerator<IVisual> GetEnumerator()
         {
             _enumerating++;
             try

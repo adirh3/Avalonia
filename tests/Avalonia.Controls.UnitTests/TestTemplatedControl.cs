@@ -7,7 +7,7 @@ namespace Avalonia.Controls.UnitTests
     {
         public bool OnTemplateAppliedCalled { get; private set; }
 
-        public void AddVisualChild(Visual visual)
+        public void AddVisualChild(IVisual visual)
         {
             VisualChildren.Add(visual);
         }

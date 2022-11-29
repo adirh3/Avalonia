@@ -9,17 +9,17 @@ namespace Avalonia.Controls.Templates
 {
     public static class TemplateExtensions
     {
-        public static IEnumerable<Control> GetTemplateChildren(this ITemplatedControl control)
+        public static IEnumerable<IControl> GetTemplateChildren(this ITemplatedControl control)
         {
-            foreach (Control child in GetTemplateChildren((Control)control, control))
+            foreach (IControl child in GetTemplateChildren((IControl)control, control))
             {
                 yield return child;
             }
         }
 
-        private static IEnumerable<Control> GetTemplateChildren(Control control, ITemplatedControl templatedParent)
+        private static IEnumerable<IControl> GetTemplateChildren(IControl control, ITemplatedControl templatedParent)
         {
-            foreach (Control child in control.GetVisualChildren())
+            foreach (IControl child in control.GetVisualChildren())
             {
                 var childTemplatedParent = child.TemplatedParent;
 

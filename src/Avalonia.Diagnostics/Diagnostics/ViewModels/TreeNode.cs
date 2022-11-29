@@ -15,7 +15,7 @@ namespace Avalonia.Diagnostics.ViewModels
         private string _classes;
         private bool _isExpanded;
 
-        protected TreeNode(AvaloniaObject avaloniaObject, TreeNode? parent, string? customName = null)
+        protected TreeNode(IAvaloniaObject avaloniaObject, TreeNode? parent, string? customName = null)
         {
             _classes = string.Empty;
             Parent = parent;
@@ -24,7 +24,7 @@ namespace Avalonia.Diagnostics.ViewModels
             Visual = visual!;
             FontWeight = IsRoot ? FontWeight.Bold : FontWeight.Normal;
 
-            if (visual is Control control)
+            if (visual is IControl control)
             {
                 ElementName = control.Name;
 
@@ -76,7 +76,7 @@ namespace Avalonia.Diagnostics.ViewModels
             get;
         }
 
-        public AvaloniaObject Visual
+        public IAvaloniaObject Visual
         {
             get;
         }

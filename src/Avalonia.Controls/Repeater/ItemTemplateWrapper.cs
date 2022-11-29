@@ -13,10 +13,10 @@ namespace Avalonia.Controls
 
         public ItemTemplateWrapper(IDataTemplate dataTemplate) => _dataTemplate = dataTemplate;
 
-        public Control Build(object? param) => GetElement(null, param);
+        public IControl Build(object? param) => GetElement(null, param);
         public bool Match(object? data) => _dataTemplate.Match(data);
 
-        public Control GetElement(ElementFactoryGetArgs args)
+        public IControl GetElement(ElementFactoryGetArgs args)
         {
             return GetElement(args.Parent, args.Data);
         }
@@ -26,11 +26,11 @@ namespace Avalonia.Controls
             RecycleElement(args.Parent, args.Element!);
         }
 
-        private Control GetElement(Control? parent, object? data)
+        private IControl GetElement(IControl? parent, object? data)
         {
             var selectedTemplate = _dataTemplate;
             var recyclePool = RecyclePool.GetPoolInstance(selectedTemplate);
-            Control? element = null;
+            IControl? element = null;
 
             if (recyclePool != null)
             {
@@ -50,7 +50,7 @@ namespace Avalonia.Controls
             return element;
         }
 
-        private void RecycleElement(Control? parent, Control element)
+        private void RecycleElement(IControl? parent, IControl element)
         {
             var selectedTemplate = _dataTemplate;
             var recyclePool = RecyclePool.GetPoolInstance(selectedTemplate);

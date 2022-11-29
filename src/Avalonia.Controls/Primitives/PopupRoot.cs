@@ -77,7 +77,7 @@ namespace Avalonia.Controls.Primitives
         /// <summary>
         /// Gets the control that is hosting the popup root.
         /// </summary>
-        Visual? IHostedVisualTreeRoot.Host => Parent;
+        IVisual? IHostedVisualTreeRoot.Host => Parent;
 
         /// <summary>
         /// Gets the styling parent of the popup root.
@@ -98,7 +98,7 @@ namespace Avalonia.Controls.Primitives
             PlatformImpl?.PopupPositioner.Update(_positionerParameters);
         }
 
-        public void ConfigurePosition(Visual target, PlacementMode placement, Point offset,
+        public void ConfigurePosition(IVisual target, PlacementMode placement, Point offset,
             PopupAnchor anchor = PopupAnchor.None,
             PopupGravity gravity = PopupGravity.None,
             PopupPositionerConstraintAdjustment constraintAdjustment = PopupPositionerConstraintAdjustment.All,
@@ -111,9 +111,9 @@ namespace Avalonia.Controls.Primitives
                 UpdatePosition();
         }
 
-        public void SetChild(Control? control) => Content = control;
+        public void SetChild(IControl? control) => Content = control;
 
-        Visual IPopupHost.HostedVisualTreeRoot => this;
+        IVisual IPopupHost.HostedVisualTreeRoot => this;
         
         protected override Size MeasureOverride(Size availableSize)
         {

@@ -19,7 +19,7 @@ namespace Avalonia.Controls.Generators
         /// Initializes a new instance of the <see cref="ItemContainerGenerator"/> class.
         /// </summary>
         /// <param name="owner">The owner control.</param>
-        public ItemContainerGenerator(Control owner)
+        public ItemContainerGenerator(IControl owner)
         {
             Owner = owner ?? throw new ArgumentNullException(nameof(owner));
         }
@@ -52,7 +52,7 @@ namespace Avalonia.Controls.Generators
         /// <summary>
         /// Gets the owner control.
         /// </summary>
-        public Control Owner { get; }
+        public IControl Owner { get; }
 
         /// <inheritdoc/>
         public virtual Type? ContainerType => null;
@@ -159,7 +159,7 @@ namespace Avalonia.Controls.Generators
         }
 
         /// <inheritdoc/>
-        public Control? ContainerFromIndex(int index)
+        public IControl? ContainerFromIndex(int index)
         {
             ItemContainerInfo? result;
             _containers.TryGetValue(index, out result);
@@ -167,7 +167,7 @@ namespace Avalonia.Controls.Generators
         }
 
         /// <inheritdoc/>
-        public int IndexFromContainer(Control? container)
+        public int IndexFromContainer(IControl? container)
         {
             foreach (var i in _containers)
             {
@@ -185,9 +185,9 @@ namespace Avalonia.Controls.Generators
         /// </summary>
         /// <param name="item">The item.</param>
         /// <returns>The created container control.</returns>
-        protected virtual Control? CreateContainer(object item)
+        protected virtual IControl? CreateContainer(object item)
         {
-            var result = item as Control;
+            var result = item as IControl;
 
             if (result == null)
             {
