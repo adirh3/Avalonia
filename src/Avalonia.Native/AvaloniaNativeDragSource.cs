@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Native.Interop;
+using Avalonia.Platform;
 using Avalonia.VisualTree;
 
 namespace Avalonia.Native
@@ -18,14 +19,14 @@ namespace Avalonia.Native
         {
             _factory = factory;
         }
-
-        private static TopLevel FindRoot(object? element)
+        
+        TopLevel FindRoot(IInteractive interactive)
         {
-            while (element is Interactive interactive && element is not Visual)
-                element = interactive.GetInteractiveParent();
-            if (element == null)
+            while (interactive != null && !(interactive is Visual))
+                interactive = interactive.InteractiveParent;
+            if (interactive == null)
                 return null;
-            var visual = (Visual)element;
+            var visual = (Visual)interactive;
             return visual.GetVisualRoot() as TopLevel;
         }
 

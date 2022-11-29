@@ -43,7 +43,7 @@ namespace Avalonia.Interactivity
         /// `DynamicInvoke` on the handler.
         /// </param>
         public void Add(
-            Interactive target,
+            IInteractive target,
             Delegate handler,
             RoutingStrategies routes,
             bool handledEventsToo = false,
@@ -60,7 +60,7 @@ namespace Avalonia.Interactivity
         /// Adds a class handler to the route.
         /// </summary>
         /// <param name="target">The target on which the event should be raised.</param>
-        public void AddClassHandler(Interactive target)
+        public void AddClassHandler(IInteractive target)
         {
             target = target ?? throw new ArgumentNullException(nameof(target));
 
@@ -73,7 +73,7 @@ namespace Avalonia.Interactivity
         /// </summary>
         /// <param name="source">The event source.</param>
         /// <param name="e">The event args.</param>
-        public void RaiseEvent(Interactive source, RoutedEventArgs e)
+        public void RaiseEvent(IInteractive source, RoutedEventArgs e)
         {
             source = source ?? throw new ArgumentNullException(nameof(source));
             e = e ?? throw new ArgumentNullException(nameof(e));
@@ -125,7 +125,7 @@ namespace Avalonia.Interactivity
                 throw new ArgumentException("Event source may not be null", nameof(e));
             }
 
-            Interactive? lastTarget = null;
+            IInteractive? lastTarget = null;
             var start = 0;
             var end = _route.Count;
             var step = 1;
@@ -177,7 +177,7 @@ namespace Avalonia.Interactivity
         private readonly struct RouteItem
         {
             public RouteItem(
-                Interactive target,
+                IInteractive target,
                 Delegate? handler,
                 Action<Delegate, object, RoutedEventArgs>? adapter,
                 RoutingStrategies routes,
@@ -190,7 +190,7 @@ namespace Avalonia.Interactivity
                 HandledEventsToo = handledEventsToo;
             }
 
-            public Interactive Target { get; }
+            public IInteractive Target { get; }
             public Delegate? Handler { get; }
             public Action<Delegate, object, RoutedEventArgs>? Adapter { get; }
             public RoutingStrategies Routes { get; }

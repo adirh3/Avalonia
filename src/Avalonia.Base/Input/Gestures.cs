@@ -43,7 +43,7 @@ namespace Avalonia.Input
             RoutedEvent.Register<PointerDeltaEventArgs>(
                 "PointerSwipeGesture", RoutingStrategies.Bubble, typeof(Gestures));
 
-        private static readonly WeakReference<object?> s_lastPress = new WeakReference<object?>(null);
+        private static readonly WeakReference<IInteractive?> s_lastPress = new WeakReference<IInteractive?>(null);
         private static Point s_lastPressPoint;
 
         static Gestures()
@@ -52,32 +52,32 @@ namespace Avalonia.Input
             InputElement.PointerReleasedEvent.RouteFinished.Subscribe(PointerReleased);
         }
 
-        public static void AddTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void AddTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.AddHandler(TappedEvent, handler);
         }
 
-        public static void AddDoubleTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void AddDoubleTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.AddHandler(DoubleTappedEvent, handler);
         }
 
-        public static void AddRightTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void AddRightTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.AddHandler(RightTappedEvent, handler);
         }
 
-        public static void RemoveTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void RemoveTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.RemoveHandler(TappedEvent, handler);
         }
 
-        public static void RemoveDoubleTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void RemoveDoubleTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.RemoveHandler(DoubleTappedEvent, handler);
         }
 
-        public static void RemoveRightTappedHandler(Interactive element, EventHandler<RoutedEventArgs> handler)
+        public static void RemoveRightTappedHandler(IInteractive element, EventHandler<RoutedEventArgs> handler)
         {
             element.RemoveHandler(RightTappedEvent, handler);
         }
@@ -102,12 +102,10 @@ namespace Avalonia.Input
                 }
                 else if (e.ClickCount % 2 == 0 && e.GetCurrentPoint(visual).Properties.IsLeftButtonPressed)
                 {
-                    if (s_lastPress.TryGetTarget(out var target) && 
-                        target == e.Source && 
-                        e.Source is Interactive i)
+                    if (s_lastPress.TryGetTarget(out var target) && target == e.Source)
                     {
                         s_isDoubleTapped = true;
-                        i.RaiseEvent(new TappedEventArgs(DoubleTappedEvent, e));
+                        e.Source.RaiseEvent(new TappedEventArgs(DoubleTappedEvent, e));
                     }
                 }
             }
@@ -121,8 +119,7 @@ namespace Avalonia.Input
 
                 if (s_lastPress.TryGetTarget(out var target) && 
                     target == e.Source &&
-                    e.InitialPressMouseButton is MouseButton.Left or MouseButton.Right &&
-                    e.Source is Interactive i)
+                    e.InitialPressMouseButton is MouseButton.Left or MouseButton.Right)
                 {
                     var point = e.GetCurrentPoint((Visual)target);
                     var settings = AvaloniaLocator.Current.GetService<IPlatformSettings>();
@@ -134,13 +131,13 @@ namespace Avalonia.Input
                     {
                         if (e.InitialPressMouseButton == MouseButton.Right)
                         {
-                            i.RaiseEvent(new TappedEventArgs(RightTappedEvent, e));
+                            e.Source.RaiseEvent(new TappedEventArgs(RightTappedEvent, e));
                         }
                         //s_isDoubleTapped needed here to prevent invoking Tapped event when DoubleTapped is called.
                         //This behaviour matches UWP behaviour.
                         else if (s_isDoubleTapped == false)
                         {
-                            i.RaiseEvent(new TappedEventArgs(TappedEvent, e));
+                            e.Source.RaiseEvent(new TappedEventArgs(TappedEvent, e));
                         }
                     }
                 }
