@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
-using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -251,13 +248,6 @@ namespace Avalonia.X11
             }
 
             public double Scaling => _window.RenderScaling;
-            public Vector3 ScaleTransform { get; }
-            public Vector3 CenterPoint { get; }
-            public Vector3 Offset { get; }
-            public float Opacity { get; }
-
-            public float CompositionPadding => 0;
-            public WindowState WindowState => _window.WindowState;
         }
 
         void UpdateMotifHints()
@@ -406,7 +396,7 @@ namespace Avalonia.X11
                     {
                         RenderOnlyOnRenderThread = true
                     }
-                : (IRenderer)new X11ImmediateRendererProxy(root, loop);
+                : (IRenderer)new X11ImmediateRendererProxy((Visual)root, loop);
         }
 
         void OnEvent(ref XEvent ev)
@@ -691,7 +681,7 @@ namespace Avalonia.X11
 
         }
 
-        RawInputModifiers TranslateModifiers(XModifierMask state)
+        static RawInputModifiers TranslateModifiers(XModifierMask state)
         {
             var rv = default(RawInputModifiers);
             if (state.HasAllFlags(XModifierMask.Button1Mask))
