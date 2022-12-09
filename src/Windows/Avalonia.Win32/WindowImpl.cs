@@ -1393,13 +1393,7 @@ namespace Avalonia.Win32
                 {
                     return visual.CurrentCompositionScale;
                 }
-
-                // if (_owner.RenderTransform is ScaleTransform scaleTransform)
-                // {
-                //     scaleX *= (float)scaleTransform.ScaleX;
-                //     scaleY *= (float) scaleTransform.ScaleY;
-                // }
-
+                
                 return Vector3.One;
             }
         }     

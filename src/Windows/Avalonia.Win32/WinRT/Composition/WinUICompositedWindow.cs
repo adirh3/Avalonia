@@ -103,7 +103,7 @@ namespace Avalonia.Win32.WinRT.Composition
         {
             if (!_syncContext.IsCurrent)
                 throw new InvalidOperationException();
-
+            
             var iid = IID_ID3D11Texture2D;
             void* pTexture;
             var off = _surfaceInterop.BeginDraw(null, &iid, &pTexture);
