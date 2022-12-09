@@ -54,7 +54,7 @@ namespace Avalonia.Input
                 v3.DetachedFromVisualTree += OnCaptureDetached;
         }
 
-        static IInputElement? GetNextCapture(Visual parent)
+        static IInputElement? GetNextCapture(IVisual parent)
         {
             return parent as IInputElement ?? parent.FindAncestorOfType<IInputElement>();
         }

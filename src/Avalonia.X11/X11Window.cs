@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -248,6 +249,12 @@ namespace Avalonia.X11
             }
 
             public double Scaling => _window.RenderScaling;
+            public Vector3 ScaleTransform { get; }
+            public Vector3 CenterPoint { get; }
+            public Vector3 Offset { get; }
+            public float Opacity { get; }
+            public float CompositionPadding { get; }
+            public WindowState WindowState { get; }
         }
 
         void UpdateMotifHints()
