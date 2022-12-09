@@ -772,7 +772,7 @@ namespace Avalonia.Controls
         /// false.
         /// </returns>
         protected bool UpdateSelectionFromEventSource(
-            IInteractive eventSource,
+            object eventSource,
             bool select = true,
             bool rangeModifier = false,
             bool toggleModifier = false,
@@ -794,7 +794,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="eventSource">The control that raised the event.</param>
         /// <returns>The container or null if the event did not originate in a container.</returns>
-        protected TreeViewItem? GetContainerFromEventSource(IInteractive eventSource)
+        protected TreeViewItem? GetContainerFromEventSource(object eventSource)
         {
             var item = ((IVisual)eventSource).GetSelfAndVisualAncestors()
                 .OfType<TreeViewItem>()

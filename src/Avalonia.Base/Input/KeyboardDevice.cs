@@ -128,7 +128,7 @@ namespace Avalonia.Input
         {
             if (element != FocusedElement)
             {
-                var interactive = FocusedElement as IInteractive;
+                var interactive = FocusedElement as Interactive;
 
                 if (FocusedElement != null && 
                     (!FocusedElement.IsAttachedToVisualTree ||
@@ -147,7 +147,7 @@ namespace Avalonia.Input
                     RoutedEvent = InputElement.LostFocusEvent,
                 });
 
-                interactive = element as IInteractive;
+                interactive = element as Interactive;
 
                 interactive?.RaiseEvent(new GotFocusEventArgs
                 {
