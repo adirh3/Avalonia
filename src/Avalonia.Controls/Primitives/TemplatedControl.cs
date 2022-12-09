@@ -14,7 +14,7 @@ namespace Avalonia.Controls.Primitives
     /// <summary>
     /// A lookless control whose visual appearance is defined by its <see cref="Template"/>.
     /// </summary>
-    public class TemplatedControl : Control
+    public class TemplatedControl : Control, ITemplatedControl
     {
         /// <summary>
         /// Defines the <see cref="Background"/> property.
@@ -380,7 +380,7 @@ namespace Avalonia.Controls.Primitives
         /// </summary>
         /// <param name="control">The control.</param>
         /// <param name="templatedParent">The templated parent to apply.</param>
-        internal static void ApplyTemplatedParent(StyledElement control, AvaloniaObject? templatedParent)
+        internal static void ApplyTemplatedParent(StyledElement control, ITemplatedControl? templatedParent)
         {
             control.SetValue(TemplatedParentProperty, templatedParent);
 

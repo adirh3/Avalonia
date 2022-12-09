@@ -552,7 +552,7 @@ namespace Avalonia.Controls
 
         void PlatformImpl_LostFocus()
         {
-            var focused = (IVisual?)FocusManager.Instance?.Current;
+            var focused = (Visual?)FocusManager.Instance?.Current;
             if (focused == null)
                 return;
             while (focused.VisualParent != null)

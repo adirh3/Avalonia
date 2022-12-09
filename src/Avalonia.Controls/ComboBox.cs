@@ -454,9 +454,10 @@ namespace Avalonia.Controls
         {
             if (SelectionBoxItem is Rectangle rectangle)
             {
-                if ((rectangle.Fill as VisualBrush)?.Visual is Visual content)
+                if ((rectangle.Fill as VisualBrush)?.Visual is Control content)
                 {
-                    var flowDirection = content.VisualParent?.FlowDirection ?? FlowDirection.LeftToRight;
+                    var flowDirection = (((Visual)content!).VisualParent as Control)?.FlowDirection ?? 
+                        FlowDirection.LeftToRight;
                     rectangle.FlowDirection = flowDirection;
                 }
             }

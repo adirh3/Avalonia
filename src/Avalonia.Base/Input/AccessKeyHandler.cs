@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
@@ -24,7 +23,7 @@ namespace Avalonia.Input
         /// <summary>
         /// The registered access keys.
         /// </summary>
-        private readonly List<(string AccessKey, IInputElement Element)> _registered = new();
+        private readonly List<Tuple<string, IInputElement>> _registered = new List<Tuple<string, IInputElement>>();
 
         /// <summary>
         /// The window to which the handler belongs.
@@ -109,12 +108,12 @@ namespace Avalonia.Input
         {
             var existing = _registered.FirstOrDefault(x => x.Item2 == element);
 
-            if (existing != default)
+            if (existing != null)
             {
                 _registered.Remove(existing);
             }
 
-            _registered.Add((accessKey.ToString().ToUpperInvariant(), element));
+            _registered.Add(Tuple.Create(accessKey.ToString().ToUpper(), element));
         }
 
         /// <summary>
@@ -144,7 +143,7 @@ namespace Avalonia.Input
                 {
                     // TODO: Use FocusScopes to store the current element and restore it when context menu is closed.
                     // Save currently focused input element.
-                    _restoreFocusElement = FocusManager.Instance?.Current;
+                    _restoreFocusElement = FocusManager.Instance?.Current;                    
 
                     // When Alt is pressed without a main menu, or with a closed main menu, show
                     // access key markers in the window (i.e. "_File").
@@ -181,11 +180,10 @@ namespace Avalonia.Input
             {
                 // If any other key is pressed with the Alt key held down, or the main menu is open,
                 // find all controls who have registered that access key.
-                var text = e.Key.ToString();
+                var text = e.Key.ToString().ToUpper();
                 var matches = _registered
-                    .Where(x => string.Equals(x.AccessKey, text, StringComparison.OrdinalIgnoreCase)
-                        && x.Element.IsEffectivelyVisible)
-                    .Select(x => x.Element);
+                    .Where(x => x.Item1 == text && ((Visual)x.Item2).IsEffectivelyVisible)
+                    .Select(x => x.Item2);
 
                 // If the menu is open, only match controls in the menu's visual tree.
                 if (menuIsOpen)
@@ -196,7 +194,7 @@ namespace Avalonia.Input
                 var match = matches.FirstOrDefault();
 
                 // If there was a match, raise the AccessKeyPressed event on it.
-                if (match is not null)
+                if (match != null)
                 {
                     match.RaiseEvent(new RoutedEventArgs(AccessKeyPressedEvent));
                     e.Handled = true;

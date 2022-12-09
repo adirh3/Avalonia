@@ -14,7 +14,7 @@ namespace Avalonia.Input
         private readonly Lazy<IReadOnlyList<RawPointerPoint>?>? _previousPoints;
 
         public PointerEventArgs(RoutedEvent routedEvent,
-            object? source,
+            IInteractive? source,
             IPointer pointer,
             Visual? rootVisual, Point rootVisualPosition,
             ulong timestamp,
@@ -32,7 +32,7 @@ namespace Avalonia.Input
         }
 
         public PointerEventArgs(RoutedEvent routedEvent,
-            object? source,
+            IInteractive? source,
             IPointer pointer,
             Visual? rootVisual, Point rootVisualPosition,
             ulong timestamp,
@@ -125,7 +125,7 @@ namespace Avalonia.Input
     public class PointerPressedEventArgs : PointerEventArgs
     {
         internal PointerPressedEventArgs(
-            object source,
+            IInteractive source,
             IPointer pointer,
             Visual rootVisual, Point rootVisualPosition,
             ulong timestamp,
@@ -144,7 +144,7 @@ namespace Avalonia.Input
     public class PointerReleasedEventArgs : PointerEventArgs
     {
         internal PointerReleasedEventArgs(
-            object source, IPointer pointer,
+            IInteractive source, IPointer pointer,
             Visual rootVisual, Point rootVisualPosition, ulong timestamp,
             PointerPointProperties properties, KeyModifiers modifiers,
             MouseButton initialPressMouseButton)
@@ -164,7 +164,7 @@ namespace Avalonia.Input
     {
         public IPointer Pointer { get; }
 
-        internal PointerCaptureLostEventArgs(object source, IPointer pointer) : base(InputElement.PointerCaptureLostEvent)
+        internal PointerCaptureLostEventArgs(IInteractive source, IPointer pointer) : base(InputElement.PointerCaptureLostEvent)
         {
             Pointer = pointer;
             Source = source;

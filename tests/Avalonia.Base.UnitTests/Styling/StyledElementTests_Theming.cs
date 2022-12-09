@@ -359,49 +359,16 @@ public class StyledElementTests_Theming
         }
 
         [Fact]
-        public void Implicit_Theme_Is_Not_Detached_When_Removed_From_Logical_Tree()
+        public void Implicit_Theme_Is_Cleared_When_Removed_From_Logical_Tree()
         {
             var target = CreateTarget();
             var root = CreateRoot(target);
-
-            Assert.Equal("theme", target.Tag);
-
-            root.Child = null;
-
-            var border = Assert.IsType<Border>(target.VisualChild);
-            Assert.Equal("theme", target.Tag);
-            Assert.Equal("theme", border.Tag);
-        }
-
-        [Fact]
-        public void Can_Attach_Then_Reattach_To_Same_Logical_Tree()
-        {
-            var target = CreateTarget();
-            var root = CreateRoot(target);
-
-            Assert.Equal("theme", target.Tag);
+            
+            Assert.NotNull(target.GetEffectiveTheme());
 
             root.Child = null;
-            root.Child = target;
 
-            Assert.Equal("theme", target.Tag);
-        }
-
-        [Fact]
-        public void Implicit_Theme_Is_Reevaluated_When_Removed_And_Added_To_Different_Logical_Tree()
-        {
-            var target = CreateTarget();
-            var root1 = CreateRoot(target, "theme1");
-            var root2 = CreateRoot(null, "theme2");
-
-            Assert.Equal("theme1", target.Tag);
-
-            root1.Child = null;
-            root2.Child = target;
-
-            var border = Assert.IsType<Border>(target.VisualChild);
-            Assert.Equal("theme2", target.Tag);
-            Assert.Equal("theme2", border.Tag);
+            Assert.Null(target.GetEffectiveTheme());
         }
 
         [Fact]
@@ -414,14 +381,14 @@ public class StyledElementTests_Theming
                     Setters =
                     {
                         new Setter(
-                            Controls.Primitives.TemplatedControl.TemplateProperty,
+                            TemplatedControl.TemplateProperty,
                             new FuncControlTemplate<ThemedControl2>((o, n) => new ThemedControl())),
                     },
                     Children =
                     {
                         new Style(x => x.Nesting().Template().OfType<ThemedControl>())
                         {
-                            Setters = { new Setter(Controls.Primitives.TemplatedControl.CornerRadiusProperty, new CornerRadius(7)), }
+                            Setters = { new Setter(TemplatedControl.CornerRadiusProperty, new CornerRadius(7)), }
                         },
                     }
                 },
@@ -435,10 +402,10 @@ public class StyledElementTests_Theming
 
         private static ThemedControl CreateTarget() => new ThemedControl();
 
-        private static TestRoot CreateRoot(Control? child, string themeTag = "theme")
+        private static TestRoot CreateRoot(Control child)
         {
             var result = new TestRoot();
-            result.Resources.Add(typeof(ThemedControl), CreateTheme(themeTag));
+            result.Resources.Add(typeof(ThemedControl), CreateTheme());
             result.Child = child;
             result.LayoutManager.ExecuteInitialLayoutPass();
             return result;
@@ -563,7 +530,7 @@ public class StyledElementTests_Theming
         }
     }
 
-    private static ControlTheme CreateTheme(string tag = "theme")
+    private static ControlTheme CreateTheme()
     {
         var template = new FuncControlTemplate<ThemedControl>((o, n) => new Border());
 
@@ -572,7 +539,7 @@ public class StyledElementTests_Theming
             TargetType = typeof(ThemedControl),
             Setters =
             {
-                new Setter(Control.TagProperty, tag),
+                new Setter(Control.TagProperty, "theme"),
                 new Setter(TemplatedControl.TemplateProperty, template),
                 new Setter(TemplatedControl.CornerRadiusProperty, new CornerRadius(5)),
             },
@@ -583,7 +550,7 @@ public class StyledElementTests_Theming
                     Setters = 
                     { 
                         new Setter(Border.BackgroundProperty, Brushes.Red),
-                        new Setter(Control.TagProperty, tag),
+                        new Setter(Control.TagProperty, "theme"),
                     }
                 },
                 new Style(x => x.Nesting().Class("foo").Template().OfType<Border>())
@@ -618,12 +585,12 @@ public class StyledElementTests_Theming
         };
     }
 
-    private class ThemedControl : Controls.Primitives.TemplatedControl
+    private class ThemedControl : TemplatedControl
     {
         public Visual? VisualChild => VisualChildren?.SingleOrDefault();
     }
 
-    private class ThemedControl2 : Controls.Primitives.TemplatedControl
+    private class ThemedControl2 : TemplatedControl
     {
         public Visual? VisualChild => VisualChildren?.SingleOrDefault();
     }

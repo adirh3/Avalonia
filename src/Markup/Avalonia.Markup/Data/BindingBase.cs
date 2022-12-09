@@ -75,7 +75,7 @@ namespace Avalonia.Data
         public WeakReference<INameScope>? NameScope { get; set; }
 
         protected abstract ExpressionObserver CreateExpressionObserver(
-            IAvaloniaObject target,
+            AvaloniaObject target,
             AvaloniaProperty? targetProperty,
             object? anchor,
             bool enableDataValidation);
@@ -83,7 +83,7 @@ namespace Avalonia.Data
         /// <inheritdoc/>
         [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = TrimmingMessages.TypeConvertionSupressWarningMessage)]
         public InstancedBinding? Initiate(
-            IAvaloniaObject target,
+            AvaloniaObject target,
             AvaloniaProperty? targetProperty,
             object? anchor = null,
             bool enableDataValidation = false)
@@ -132,16 +132,19 @@ namespace Avalonia.Data
         }
 
         protected ExpressionObserver CreateDataContextObserver(
-            IAvaloniaObject target,
+            AvaloniaObject target,
             ExpressionNode node,
             bool targetIsDataContext,
             object? anchor)
         {
             _ = target ?? throw new ArgumentNullException(nameof(target));
 
-            if (!(target is IDataContextProvider))
+            if (target is not IDataContextProvider)
             {
-                target = anchor as IDataContextProvider ?? throw new InvalidOperationException("Cannot find a DataContext to bind to.");
+                if (anchor is IDataContextProvider && anchor is AvaloniaObject ao)
+                    target = ao;
+                else
+                    throw new InvalidOperationException("Cannot find a DataContext to bind to.");
             }
 
             if (!targetIsDataContext)
@@ -164,7 +167,7 @@ namespace Avalonia.Data
         }
 
         protected ExpressionObserver CreateElementObserver(
-            IStyledElement target,
+            StyledElement target,
             string elementName,
             ExpressionNode node)
         {
@@ -180,7 +183,7 @@ namespace Avalonia.Data
         }
 
         protected ExpressionObserver CreateFindAncestorObserver(
-            IStyledElement target,
+            StyledElement target,
             RelativeSource relativeSource,
             ExpressionNode node)
         {
@@ -198,7 +201,7 @@ namespace Avalonia.Data
                     break;
                 case TreeType.Visual:
                     controlLocator = VisualLocator.Track(
-                        (IVisual)target,
+                        (Visual)target,
                         relativeSource.AncestorLevel - 1,
                         relativeSource.AncestorType);
                     break;
@@ -222,7 +225,7 @@ namespace Avalonia.Data
         }
 
         protected ExpressionObserver CreateTemplatedParentObserver(
-            IAvaloniaObject target,
+            AvaloniaObject target,
             ExpressionNode node)
         {
             _ = target ?? throw new ArgumentNullException(nameof(target));
@@ -236,7 +239,7 @@ namespace Avalonia.Data
             return result;
         }
 
-        protected IObservable<object?> GetParentDataContext(IAvaloniaObject target)
+        protected IObservable<object?> GetParentDataContext(AvaloniaObject target)
         {
             // The DataContext is based on the visual parent and not the logical parent: this may
             // seem counter intuitive considering the fact that property inheritance works on the logical
@@ -247,17 +250,17 @@ namespace Avalonia.Data
             return target.GetObservable(Visual.VisualParentProperty)
                 .Select(x =>
                 {
-                    return (x as IAvaloniaObject)?.GetObservable(StyledElement.DataContextProperty) ??
+                    return (x as AvaloniaObject)?.GetObservable(StyledElement.DataContextProperty) ??
                            Observable.Return((object?)null);
                 }).Switch();
         }
 
         private class UpdateSignal : SingleSubscriberObservableBase<Unit>
         {
-            private readonly IAvaloniaObject _target;
+            private readonly AvaloniaObject _target;
             private readonly AvaloniaProperty _property;
 
-            public UpdateSignal(IAvaloniaObject target, AvaloniaProperty property)
+            public UpdateSignal(AvaloniaObject target, AvaloniaProperty property)
             {
                 _target = target;
                 _property = property;

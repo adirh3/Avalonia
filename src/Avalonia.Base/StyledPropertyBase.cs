@@ -31,7 +31,7 @@ namespace Avalonia
             StyledPropertyMetadata<TValue> metadata,
             bool inherits = false,
             Func<TValue, bool>? validate = null,
-            Action<IAvaloniaObject, bool>? notifying = null)
+            Action<AvaloniaObject, bool>? notifying = null)
                 : base(name, ownerType, metadata, notifying)
         {
             _inherits = inherits;
@@ -75,7 +75,7 @@ namespace Avalonia
         /// </summary>
         internal bool HasCoercion { get; private set; }
 
-        public TValue CoerceValue(IAvaloniaObject instance, TValue baseValue)
+        public TValue CoerceValue(AvaloniaObject instance, TValue baseValue)
         {
             var metadata = GetMetadata(instance.GetType());
 
@@ -115,7 +115,7 @@ namespace Avalonia
         /// </summary>
         /// <typeparam name="T">The type.</typeparam>
         /// <param name="defaultValue">The default value.</param>
-        public void OverrideDefaultValue<T>(TValue defaultValue) where T : IAvaloniaObject
+        public void OverrideDefaultValue<T>(TValue defaultValue) where T : AvaloniaObject
         {
             OverrideDefaultValue(typeof(T), defaultValue);
         }
@@ -135,7 +135,7 @@ namespace Avalonia
         /// </summary>
         /// <typeparam name="T">The type.</typeparam>
         /// <param name="metadata">The metadata.</param>
-        public void OverrideMetadata<T>(StyledPropertyMetadata<TValue> metadata) where T : IAvaloniaObject
+        public void OverrideMetadata<T>(StyledPropertyMetadata<TValue> metadata) where T : AvaloniaObject
         {
             base.OverrideMetadata(typeof(T), metadata);
         }

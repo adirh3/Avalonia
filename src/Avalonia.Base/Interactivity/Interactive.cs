@@ -10,14 +10,14 @@ namespace Avalonia.Interactivity
     /// <summary>
     /// Base class for objects that raise routed events.
     /// </summary>
-    public class Interactive : Layoutable
+    public class Interactive : Layoutable, IInteractive
     {
         private Dictionary<RoutedEvent, List<EventSubscription>>? _eventHandlers;
 
         /// <summary>
         /// Gets the interactive parent of the object for bubbling and tunneling events.
         /// </summary>
-        protected internal virtual Interactive? InteractiveParent => VisualParent as Interactive;
+        IInteractive? IInteractive.InteractiveParent => this.VisualParent as IInteractive;
 
         /// <summary>
         /// Adds a handler for the specified routed event.
@@ -125,6 +125,21 @@ namespace Avalonia.Interactivity
             route.RaiseEvent(this, e);
         }
 
+        void IInteractive.AddToEventRoute(RoutedEvent routedEvent, EventRoute route)
+        {
+            routedEvent = routedEvent ?? throw new ArgumentNullException(nameof(routedEvent));
+            route = route ?? throw new ArgumentNullException(nameof(route));
+
+            if (_eventHandlers != null &&
+                _eventHandlers.TryGetValue(routedEvent, out var subscriptions))
+            {
+                foreach (var sub in subscriptions)
+                {
+                    route.Add(this, sub.Handler, sub.Routes, sub.HandledEventsToo, sub.InvokeAdapter);
+                }
+            }
+        }
+
         /// <summary>
         /// Builds an event route for a routed event.
         /// </summary>
@@ -136,7 +151,7 @@ namespace Avalonia.Interactivity
         /// and should be avoided if there are no handlers for an event. In these cases you can call
         /// this method to build the event route and check the <see cref="EventRoute.HasHandlers"/>
         /// property to see if there are any handlers registered on the route. If there are, call
-        /// <see cref="EventRoute.RaiseEvent(Interactive, RoutedEventArgs)"/> to raise the event.
+        /// <see cref="EventRoute.RaiseEvent(IInteractive, RoutedEventArgs)"/> to raise the event.
         /// </remarks>
         protected EventRoute BuildEventRoute(RoutedEvent e)
         {
@@ -148,7 +163,7 @@ namespace Avalonia.Interactivity
             if (e.RoutingStrategies.HasAllFlags(RoutingStrategies.Bubble) ||
                 e.RoutingStrategies.HasAllFlags(RoutingStrategies.Tunnel))
             {
-                Interactive? element = this;
+                IInteractive? element = this;
 
                 while (element != null)
                 {
@@ -168,7 +183,7 @@ namespace Avalonia.Interactivity
                     result.AddClassHandler(this);
                 }
 
-                AddToEventRoute(e, result);
+                ((IInteractive)this).AddToEventRoute(e, result);
             }
 
             return result;
@@ -185,21 +200,6 @@ namespace Avalonia.Interactivity
             }
 
             subscriptions.Add(subscription);
-        }
-
-        private void AddToEventRoute(RoutedEvent routedEvent, EventRoute route)
-        {
-            routedEvent = routedEvent ?? throw new ArgumentNullException(nameof(routedEvent));
-            route = route ?? throw new ArgumentNullException(nameof(route));
-
-            if (_eventHandlers != null &&
-                _eventHandlers.TryGetValue(routedEvent, out var subscriptions))
-            {
-                foreach (var sub in subscriptions)
-                {
-                    route.Add(this, sub.Handler, sub.Routes, sub.HandledEventsToo, sub.InvokeAdapter);
-                }
-            }
         }
 
         private readonly struct EventSubscription

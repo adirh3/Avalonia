@@ -7,7 +7,6 @@ namespace Avalonia.PropertyStore
 {
     internal static class UntypedValueUtils
     {
-        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = TrimmingMessages.ImplicitTypeConvertionSupressWarningMessage)]
         public static BindingValue<T> ConvertAndValidate<T>(
             object? value,
             Type targetType,
@@ -24,7 +23,6 @@ namespace Avalonia.PropertyStore
             return v;
         }
 
-        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = TrimmingMessages.ImplicitTypeConvertionSupressWarningMessage)]
         public static bool TryConvertAndValidate<T>(
             StyledPropertyBase<T> property,
             object? value, 
