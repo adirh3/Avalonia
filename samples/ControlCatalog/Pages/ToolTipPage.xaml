@@ -47,7 +47,7 @@
               <Border.Styles>
                 <Style Selector="Border">
                   <Style.Animations>
-                    <Animation Duration="0:0:2" IterationCount="Infinite">
+                    <Animation Duration="0:0:2">
                       <KeyFrame KeyTime="0:0:0">
                         <Setter Property="ToolTip.HorizontalOffset" Value="0" />
                         <Setter Property="ToolTip.VerticalOffset" Value="-50" />
