@@ -1,37 +1,20 @@
 using System;
-using System.Numerics;
-using Avalonia.Controls;
 using Avalonia.OpenGL.Surfaces;
 
 namespace Avalonia.OpenGL.Egl
 {
     public abstract class EglGlPlatformSurfaceBase : IGlPlatformSurface
     {
-        public interface IEglWindowGlPlatformSurfaceInfo
-        {
-            IntPtr Handle { get; }
-            PixelSize Size { get; }
-            double Scaling { get; }
-            
-            Vector3 ScaleTransform { get; }
-            Vector3 CenterPoint { get; }
-            Vector3 Offset { get; }
-            float Opacity { get; }
-            
-            float CompositionPadding { get; }
-            WindowState WindowState { get; }
-        }
-
-        public abstract IGlPlatformSurfaceRenderTarget CreateGlRenderTarget();
+        public abstract IGlPlatformSurfaceRenderTarget CreateGlRenderTarget(IGlContext context);
     }
 
-    public abstract class EglPlatformSurfaceRenderTargetBase  : IGlPlatformSurfaceRenderTarget
+    public abstract class EglPlatformSurfaceRenderTargetBase : IGlPlatformSurfaceRenderTargetWithCorruptionInfo
     {
-        private readonly EglPlatformOpenGlInterface _egl;
+        protected EglContext Context { get; }
 
-        protected EglPlatformSurfaceRenderTargetBase(EglPlatformOpenGlInterface egl)
+        protected EglPlatformSurfaceRenderTargetBase(EglContext context)
         {
-            _egl = egl;
+            Context = context;
         }
 
         public virtual void Dispose()
@@ -39,25 +22,33 @@ namespace Avalonia.OpenGL.Egl
             
         }
 
-        public abstract IGlPlatformSurfaceRenderingSession BeginDraw();
+        public IGlPlatformSurfaceRenderingSession BeginDraw()
+        {
+            if (Context.IsLost)
+                throw new RenderTargetCorruptedException();
+            
+            return BeginDrawCore();
+        }
+
+        public abstract IGlPlatformSurfaceRenderingSession BeginDrawCore();
 
         protected IGlPlatformSurfaceRenderingSession BeginDraw(EglSurface surface,
-            EglGlPlatformSurfaceBase.IEglWindowGlPlatformSurfaceInfo info, Action onFinish = null, bool isYFlipped = false)
+            PixelSize size, double scaling, Action onFinish = null, bool isYFlipped = false)
         {
 
-            var restoreContext = _egl.PrimaryEglContext.MakeCurrent(surface);
+            var restoreContext = Context.MakeCurrent(surface);
             var success = false;
             try
             {
-                var egli = _egl.Display.EglInterface;
+                var egli = Context.Display.EglInterface;
                 egli.WaitClient();
                 egli.WaitGL();
                 egli.WaitNative(EglConsts.EGL_CORE_NATIVE_ENGINE);
                 
-                _egl.PrimaryContext.GlInterface.BindFramebuffer(GlConsts.GL_FRAMEBUFFER, 0);
+                Context.GlInterface.BindFramebuffer(GlConsts.GL_FRAMEBUFFER, 0);
                 
                 success = true;
-                return new Session(_egl.Display, _egl.PrimaryEglContext, surface, info,  restoreContext, onFinish, isYFlipped);
+                return new Session(Context.Display, Context, surface, size, scaling,  restoreContext, onFinish, isYFlipped);
             }
             finally
             {
@@ -70,21 +61,21 @@ namespace Avalonia.OpenGL.Egl
         {
             private readonly EglContext _context;
             private readonly EglSurface _glSurface;
-            private readonly EglGlPlatformSurfaceBase.IEglWindowGlPlatformSurfaceInfo _info;
             private readonly EglDisplay _display;
             private readonly IDisposable _restoreContext;
             private readonly Action _onFinish;
 
 
             public Session(EglDisplay display, EglContext context,
-                EglSurface glSurface, EglGlPlatformSurfaceBase.IEglWindowGlPlatformSurfaceInfo info,
+                EglSurface glSurface, PixelSize size, double scaling,
                  IDisposable restoreContext, Action onFinish, bool isYFlipped)
             {
+                Size = size;
+                Scaling = scaling;
                 IsYFlipped = isYFlipped;
                 _context = context;
                 _display = display;
                 _glSurface = glSurface;
-                _info = info;
                 _restoreContext = restoreContext;
                 _onFinish = onFinish;
             }
@@ -102,9 +93,11 @@ namespace Avalonia.OpenGL.Egl
             }
 
             public IGlContext Context => _context;
-            public PixelSize Size => _info.Size;
-            public double Scaling => _info.Scaling;
+            public PixelSize Size { get; }
+            public double Scaling { get; }
             public bool IsYFlipped { get; }
         }
+
+        public virtual bool IsCorrupted => Context.IsLost;
     }
 }
