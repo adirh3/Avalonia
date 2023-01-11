@@ -16,7 +16,7 @@ internal class WinUiCompositedWindow : IDisposable
     private readonly float? _backdropCornerRadius;
     private readonly ICompositionRoundedRectangleGeometry _compositionRoundedRectangleGeometry;
     private readonly IVisualCollection _containerChildren;
-    private IVisual _visual;
+    private readonly IVisual _visual;
     private IVisual _currentVisual;
     private Vector3 _scale = Vector3.One;
     private Vector3 _centerPoint = Vector3.Zero;
@@ -33,6 +33,8 @@ internal class WinUiCompositedWindow : IDisposable
         {
             _compositionRoundedRectangleGeometry?.Dispose();
             _currentVisual?.Dispose();
+            _containerChildren.Dispose();
+            _visual.Dispose();
             _surfaceBrush.Dispose();
             _target.Dispose();
         }
