@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Reactive.Disposables;
+using Avalonia.Reactive;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Avalonia.Controls;
@@ -257,6 +257,8 @@ namespace Avalonia.Win32
         }
 
         public bool CurrentThreadIsLoopThread => _uiThread == Thread.CurrentThread;
+
+        public TimeSpan HoldWaitDuration { get; set; } = TimeSpan.FromMilliseconds(300);
 
         public event Action<DispatcherPriority?> Signaled;
 
