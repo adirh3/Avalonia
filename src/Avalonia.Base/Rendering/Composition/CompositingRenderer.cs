@@ -288,7 +288,7 @@ public class CompositingRenderer : IRendererWithCompositor
     {
         QueueUpdate();
         CompositionTarget.RequestRedraw();
-        if(RenderOnlyOnRenderThread && Compositor.Loop.RunsInBackground)
+        if(RenderOnlyOnRenderThread && Compositor.Loop.RunsInBackground && CompositionTarget.IsEnabled)
             Compositor.Commit().Wait();
         else
             CompositionTarget.ImmediateUIThreadRender();
@@ -303,6 +303,7 @@ public class CompositingRenderer : IRendererWithCompositor
     public void Stop()
     {
         CompositionTarget.IsEnabled = false;
+        CompositionTarget.ImmediateUIThreadRender();
     }
 
     public ValueTask<object?> TryGetRenderInterfaceFeature(Type featureType) => Compositor.TryGetRenderInterfaceFeature(featureType);

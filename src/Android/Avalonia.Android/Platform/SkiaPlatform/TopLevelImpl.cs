@@ -319,7 +319,8 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                     {
                         case WindowTransparencyLevel.AcrylicBlur:
                         case WindowTransparencyLevel.ForceAcrylicBlur:
-                        case WindowTransparencyLevel.Mica:
+                        case WindowTransparencyLevel.MicaLight:
+                        case WindowTransparencyLevel.MicaDark:
                         case WindowTransparencyLevel.None:
                             if (!isBelowR)
                             {
