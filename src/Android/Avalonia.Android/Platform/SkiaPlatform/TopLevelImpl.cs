@@ -27,12 +27,14 @@ using Avalonia.Rendering.Composition;
 using Java.Lang;
 using Math = System.Math;
 using AndroidRect = Android.Graphics.Rect;
+using Window = Android.Views.Window;
 using Android.Graphics.Drawables;
 
 namespace Avalonia.Android.Platform.SkiaPlatform
 {
     class TopLevelImpl : IAndroidView, ITopLevelImpl, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo,
-        ITopLevelImplWithTextInputMethod, ITopLevelImplWithNativeControlHost, ITopLevelImplWithStorageProvider
+        ITopLevelImplWithTextInputMethod, ITopLevelImplWithNativeControlHost, ITopLevelImplWithStorageProvider,
+        ITopLevelWithSystemNavigationManager
     {
         private readonly IGlPlatformSurface _gl;
         private readonly IFramebufferPlatformSurface _framebuffer;
@@ -58,6 +60,8 @@ namespace Avalonia.Android.Platform.SkiaPlatform
 
             NativeControlHost = new AndroidNativeControlHostImpl(avaloniaView);
             StorageProvider = new AndroidStorageProvider((Activity)avaloniaView.Context);
+
+            SystemNavigationManager = new AndroidSystemNavigationManager(avaloniaView.Context as IActivityNavigationService);
         }
 
         public virtual Point GetAvaloniaPointFromEvent(MotionEvent e, int pointerIndex) =>
@@ -287,6 +291,11 @@ namespace Avalonia.Android.Platform.SkiaPlatform
 
         public WindowTransparencyLevel TransparencyLevel { get; private set; }
 
+        public void SetFrameThemeVariant(PlatformThemeVariant themeVariant)
+        {
+            // TODO adjust status bar depending on full screen mode.
+        }
+
         public AcrylicPlatformCompensationLevels AcrylicCompensationLevels => new AcrylicPlatformCompensationLevels(1, 1, 1);
 
         IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle => ((IPlatformHandle)_view).Handle;
@@ -306,6 +315,8 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         public INativeControlHostImpl NativeControlHost { get; }
         
         public IStorageProvider StorageProvider { get; }
+
+        public ISystemNavigationManager SystemNavigationManager { get; }
 
         public void SetTransparencyLevelHint(WindowTransparencyLevel transparencyLevel)
         {
