@@ -978,10 +978,8 @@ namespace Avalonia.Controls
 
                 var graphemeEnumerator = new GraphemeEnumerator(input.AsSpan());
 
-                while (graphemeEnumerator.MoveNext())
+                while (graphemeEnumerator.MoveNext(out var grapheme))
                 {
-                    var grapheme = graphemeEnumerator.Current;
-
                     if (grapheme.FirstCodepoint.IsBreakChar)
                     {
                         if (lineCount + 1 > MaxLines)
@@ -994,7 +992,7 @@ namespace Avalonia.Controls
                         }
                     }
 
-                    length += grapheme.Text.Length;
+                    length += grapheme.Length;
                 }
 
                 if (length < input.Length)

@@ -225,9 +225,9 @@ namespace Avalonia.Controls
             _pointerOverPreProcessor = new PointerOverPreProcessor(this);
             _pointerOverPreProcessorSubscription = _inputManager?.PreProcess.Subscribe(_pointerOverPreProcessor);
 
-            if(impl is ITopLevelWithSystemNavigationManager topLevelWithSystemNavigation)
+            if(impl.TryGetFeature<ISystemNavigationManagerImpl>() is {} systemNavigationManager)
             {
-                topLevelWithSystemNavigation.SystemNavigationManager.BackRequested += (s, e) =>
+                systemNavigationManager.BackRequested += (s, e) =>
                 {
                     e.RoutedEvent = BackRequestedEvent;
                     RaiseEvent(e);
@@ -400,14 +400,8 @@ namespace Avalonia.Controls
         
         public IStorageProvider StorageProvider => _storageProvider
             ??= AvaloniaLocator.Current.GetService<IStorageProviderFactory>()?.CreateProvider(this)
-            ?? (PlatformImpl as ITopLevelImplWithStorageProvider)?.StorageProvider
+            ?? PlatformImpl?.TryGetFeature<IStorageProvider>()
             ?? throw new InvalidOperationException("StorageProvider platform implementation is not available.");
-        
-        /// <inheritdoc/>
-        void IRenderRoot.Invalidate(Rect rect)
-        {
-            PlatformImpl?.Invalidate(rect);
-        }
         
         /// <inheritdoc/>
         Point IRenderRoot.PointToClient(PixelPoint p)
@@ -599,12 +593,21 @@ namespace Avalonia.Controls
         /// <param name="e">The event args.</param>
         private void HandleInput(RawInputEventArgs e)
         {
-            if (e is RawPointerEventArgs pointerArgs)
+            if (PlatformImpl != null)
             {
-                pointerArgs.InputHitTestResult = this.InputHitTest(pointerArgs.Position);
-            }
+                if (e is RawPointerEventArgs pointerArgs)
+                {
+                    pointerArgs.InputHitTestResult = this.InputHitTest(pointerArgs.Position);
+                }
 
-            _inputManager?.ProcessInput(e);
+                _inputManager?.ProcessInput(e);
+            }
+            else
+            {
+                Logger.TryGet(LogEventLevel.Warning, LogArea.Control)?.Log(
+                    this,
+                    "PlatformImpl is null, couldn't handle input.");
+            }
         }
 
         private void SceneInvalidated(object? sender, SceneInvalidatedEventArgs e)
@@ -624,7 +627,13 @@ namespace Avalonia.Controls
                 KeyboardDevice.Instance?.SetFocusedElement(null, NavigationMethod.Unspecified, KeyModifiers.None);
         }
 
-        ITextInputMethodImpl? ITextInputMethodRoot.InputMethod =>
-            (PlatformImpl as ITopLevelImplWithTextInputMethod)?.TextInputMethod;
+        protected override bool BypassFlowDirectionPolicies => true;
+
+        public override void InvalidateMirrorTransform()
+        {
+            // Do nothing becuase TopLevel should't apply MirrorTransform on himself.
+        }
+
+        ITextInputMethodImpl? ITextInputMethodRoot.InputMethod => PlatformImpl?.TryGetFeature<ITextInputMethodImpl>();
     }
 }
