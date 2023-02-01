@@ -10,7 +10,7 @@ namespace Avalonia.Reactive;
 /// <summary>
 /// Provides common observable methods as a replacement for the Rx framework.
 /// </summary>
-internal static class Observable
+public static class Observable
 {
     public static IObservable<TSource> Create<TSource>(Func<IObserver<TSource>, IDisposable> subscribe)
     {

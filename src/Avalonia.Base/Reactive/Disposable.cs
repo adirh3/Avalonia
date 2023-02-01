@@ -6,7 +6,7 @@ namespace Avalonia.Reactive;
 /// <summary>
 /// Provides a set of static methods for creating <see cref="IDisposable"/> objects.
 /// </summary>
-internal static class Disposable
+public static class Disposable
 {
     /// <summary>
     /// Represents a disposable that does nothing on disposal.

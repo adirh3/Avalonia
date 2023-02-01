@@ -64,7 +64,7 @@ abstract class SwapchainBase<TImage> : IAsyncDisposable where TImage : class, IS
         img.BeginDraw();
         _pendingImages.Remove(img);
         image = img;
-        return Disposable.Create(() =>
+        return Avalonia.Reactive.Disposable.Create(() =>
         {
             img.Present();
             _pendingImages.Add(img);
