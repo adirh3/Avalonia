@@ -6,7 +6,7 @@ namespace Avalonia.Win32.WinRT.Composition;
 
 internal static class WinUiCompositionUtils
 {
-    public static ICompositionBrush CreateMicaBackdropBrush(ICompositor compositor)
+    public static ICompositionBrush? CreateMicaBackdropBrush(ICompositor compositor)
     {
         if (Win32Platform.WindowsVersion.Build < 22000)
             return null;
@@ -18,7 +18,7 @@ internal static class WinUiCompositionUtils
         return blurredWallpaperBackdropBrush?.QueryInterface<ICompositionBrush>();
     }
 
-    public static unsafe ICompositionBrush CreateAcrylicBlurBackdropBrush(ICompositor compositor)
+    public static ICompositionBrush CreateAcrylicBlurBackdropBrush(ICompositor compositor)
     {
         using var backDropParameterFactory =
             NativeWinRTMethods.CreateActivationFactory<ICompositionEffectSourceParameterFactory>(
@@ -39,7 +39,7 @@ internal static class WinUiCompositionUtils
         return compositionEffectBrush.QueryInterface<ICompositionBrush>();
     }
 
-    public static ICompositionRoundedRectangleGeometry GetRoundedRectangle(ICompositor compositor, float? _backdropCornerRadius)
+    public static ICompositionRoundedRectangleGeometry? GetRoundedRectangle(ICompositor compositor, float? _backdropCornerRadius)
     {
         if (!_backdropCornerRadius.HasValue)
             return null;
@@ -71,9 +71,9 @@ internal static class WinUiCompositionUtils
         return visual.CloneReference();
     }
 
-    public static ICompositionBrush CreateBackdropBrush(ICompositor compositor)
+    public static ICompositionBrush? CreateBackdropBrush(ICompositor compositor)
     {
-        ICompositionBackdropBrush brush = null;
+        ICompositionBackdropBrush? brush = null;
         try
         {
             if (Win32Platform.WindowsVersion >= WinUiCompositionShared.MinHostBackdropVersion)

@@ -11,9 +11,37 @@
         ExtendClientAreaChromeHints="{Binding ChromeHints}"
         ExtendClientAreaTitleBarHeightHint="{Binding TitleBarHeight}"
         x:Name="MainWindow"
+        IsHitTestVisible="False"
+        CanResize="False"
+        WindowState="FullScreen"
+        ShowInTaskbar="False"
+        Topmost="True"
         Background="Transparent"
-        x:Class="ControlCatalog.MainWindow" WindowState="{Binding WindowState, Mode=TwoWay}"
+        TransparencyLevelHint="Transparent"
+        SystemDecorations="None"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch"
+        x:Class="ControlCatalog.MainWindow" 
         x:DataType="vm:MainWindowViewModel">
+  <Window.Styles>
+    <Style Selector="Window[CanResize=False]">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+      <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter Name="PART_ContentPresenter"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Content="{TemplateBinding Content}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </Window.Styles>
   <NativeMenu.Menu>
     <NativeMenu>
       <NativeMenuItem Header="File">

@@ -1,6 +1,6 @@
 ﻿namespace Avalonia.Win32.WinRT
 {
-    internal enum BlurEffect
+    public enum BlurEffect
     {
         None,
         Acrylic,

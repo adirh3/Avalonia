@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Avalonia.Media;
 
 namespace Avalonia.Win32.WinRT
 {
@@ -17,7 +15,7 @@ namespace Avalonia.Win32.WinRT
         public WinRTPropertyValue(uint u)
         {
             UInt32 = u;
-            Type = PropertyType.UInt32;
+            Type= PropertyType.UInt32;
         }
 
         public WinRTPropertyValue(float[] uiColor)
@@ -26,7 +24,7 @@ namespace Avalonia.Win32.WinRT
             _singleArray = uiColor;
         }
 
-        private readonly float[] _singleArray;
+        private readonly float[]? _singleArray;
 
         public PropertyType Type { get; }
         public int IsNumericScalar { get; }
@@ -75,6 +73,8 @@ namespace Avalonia.Win32.WinRT
 
         public unsafe float* GetSingleArray(uint* __valueSize)
         {
+            if (_singleArray == null)
+                throw NotImplemented;
             *__valueSize = (uint)_singleArray.Length;
             var allocCoTaskMem = Marshal.AllocCoTaskMem(_singleArray.Length * Unsafe.SizeOf<float>());
             Marshal.Copy(_singleArray, 0, allocCoTaskMem, _singleArray.Length);

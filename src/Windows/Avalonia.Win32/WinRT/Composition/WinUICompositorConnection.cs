@@ -16,7 +16,7 @@ internal class WinUiCompositorConnection : IRenderTimer
     private readonly WinUiCompositionShared _shared;
     private Action<TimeSpan>? _tick;
     private int _subscriberCount;
-    private CancellationTokenSource _renderCts;
+    private CancellationTokenSource? _renderCts;
     private readonly ManualResetEvent _manualResetEvent = new(false);
 
     public event Action<TimeSpan> Tick
@@ -50,8 +50,8 @@ internal class WinUiCompositorConnection : IRenderTimer
     private void Stop()
     {
         _manualResetEvent.Reset();
-        _renderCts.Cancel();
-        _renderCts.Dispose();
+        _renderCts?.Cancel();
+        _renderCts?.Dispose();
     }
     public bool RunsInBackground => true;
     

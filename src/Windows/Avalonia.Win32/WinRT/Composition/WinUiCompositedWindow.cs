@@ -14,10 +14,10 @@ internal class WinUiCompositedWindow : IDisposable
     public EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo WindowInfo { get; }
     private readonly WinUiCompositionShared _shared;
     private readonly float? _backdropCornerRadius;
-    private readonly ICompositionRoundedRectangleGeometry _compositionRoundedRectangleGeometry;
+    private readonly ICompositionRoundedRectangleGeometry? _compositionRoundedRectangleGeometry;
     private readonly IVisualCollection _containerChildren;
     private readonly IVisual _visual;
-    private IVisual _currentVisual;
+    private IVisual? _currentVisual;
     private Vector3 _scale = Vector3.One;
     private Vector3 _centerPoint = Vector3.Zero;
     private float _opacity = 1f;
@@ -168,9 +168,9 @@ internal class WinUiCompositedWindow : IDisposable
         }
     }
 
-    private IVisual CreateMicaLightVisual()
+    private IVisual? CreateMicaLightVisual()
     {
-        IVisual micaLight = null;
+        IVisual? micaLight = null;
         var micaBrushLight = CreateMicaBackdropBrush(242, 0.6f);
         if (micaBrushLight != null)
         {
@@ -180,7 +180,7 @@ internal class WinUiCompositedWindow : IDisposable
         return micaLight;
     }
 
-    private IVisual CreateAcrylicVisual()
+    private IVisual? CreateAcrylicVisual()
     {
         var acrylicBlurBackdropBrush = CreateAcrylicBlurBackdropBrush();
         if (acrylicBlurBackdropBrush != null)
@@ -191,9 +191,9 @@ internal class WinUiCompositedWindow : IDisposable
         return null;
     }
 
-    private IVisual CreateMicaDarkVisual()
+    private IVisual? CreateMicaDarkVisual()
     {
-        IVisual micaDark = null;
+        IVisual? micaDark = null;
         var micaBrushDark = CreateMicaBackdropBrush(32, 0.8f);
 
         if (micaBrushDark != null)
@@ -205,7 +205,7 @@ internal class WinUiCompositedWindow : IDisposable
     }
 
 
-    private ICompositionBrush CreateMicaBackdropBrush(float color, float opacity)
+    private ICompositionBrush? CreateMicaBackdropBrush(float color, float opacity)
     {
         if (Win32Platform.WindowsVersion.Build < 22000)
             return null;
@@ -289,7 +289,7 @@ internal class WinUiCompositedWindow : IDisposable
     }
 
 
-    private ICompositionBrush CreateAcrylicBlurBackdropBrush()
+    private ICompositionBrush? CreateAcrylicBlurBackdropBrush()
     {
         using var backDropParameterFactory =
             NativeWinRTMethods.CreateActivationFactory<ICompositionEffectSourceParameterFactory>(
@@ -312,7 +312,7 @@ internal class WinUiCompositedWindow : IDisposable
     }
 
 
-    private IVisual CreateBlurVisual(ICompositionBrush compositionBrush)
+    private IVisual? CreateBlurVisual(ICompositionBrush? compositionBrush)
     {
         using var spriteVisual = _shared.Compositor.CreateSpriteVisual();
         using var visual = spriteVisual.QueryInterface<IVisual>();
@@ -325,9 +325,9 @@ internal class WinUiCompositedWindow : IDisposable
         return visual.CloneReference();
     }
 
-    private ICompositionBrush CreateBackdropBrush()
+    private ICompositionBrush? CreateBackdropBrush()
     {
-        ICompositionBackdropBrush brush = null;
+        ICompositionBackdropBrush? brush = null;
         try
         {
             if (Win32Platform.WindowsVersion >= WinUiCompositionShared.MinHostBackdropVersion)
