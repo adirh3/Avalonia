@@ -35,9 +35,9 @@ namespace Avalonia.OpenGL.Egl
             return new RenderTarget(glSurface, eglContext, _info);
         }
 
-        class RenderTarget : EglPlatformSurfaceRenderTargetBase
+        private class RenderTarget : EglPlatformSurfaceRenderTargetBase
         {
-            private EglSurface _glSurface;
+            private EglSurface? _glSurface;
             private readonly IEglWindowGlPlatformSurfaceInfo _info;
             private PixelSize _currentSize;
             private readonly IntPtr _handle;
@@ -50,12 +50,12 @@ namespace Avalonia.OpenGL.Egl
                 _handle = _info.Handle;
             }
 
-            public override void Dispose() => _glSurface.Dispose();
+            public override void Dispose() => _glSurface?.Dispose();
 
             public override IGlPlatformSurfaceRenderingSession BeginDrawCore()
             {
                 if (_info.Size != _currentSize 
-                    || _handle != _info.Handle 
+                    || _handle != _info.Handle
                     || _glSurface == null)
                 {
                     _glSurface?.Dispose();
