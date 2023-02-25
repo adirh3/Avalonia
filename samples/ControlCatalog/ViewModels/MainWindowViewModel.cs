@@ -42,7 +42,7 @@ namespace ControlCatalog.ViewModels
                 IsMenuItemChecked = !IsMenuItemChecked;
             });
 
-            WindowState = WindowState.FullScreen;
+            WindowState = WindowState.Normal;
 
             WindowStates = new WindowState[]
             {
