@@ -484,7 +484,7 @@ namespace Avalonia.Controls
 
             // The layout is likely invalid. Don't create any elements and instead rely on our previous
             // element size estimates to calculate a new desired size and trigger a new layout pass.
-            if (index >= items.Count)
+            if (index >= items.Count || index < 0)
                 return;
             do
             {

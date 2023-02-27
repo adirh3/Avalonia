@@ -176,21 +176,24 @@ namespace Avalonia.Rendering.Composition.Server
 
         public void AddCompositionTarget(ServerCompositionTarget target)
         {
-            var activeTargetsCount = _activeTargets.Count;
             _activeTargets.Add(target);
-            if (activeTargetsCount == 0)
-            {
-                Dispatcher.UIThread.Post(() => _renderLoop.Add(this), DispatcherPriority.Render);
-            }
         }
 
         public void RemoveCompositionTarget(ServerCompositionTarget target)
         {
-            if (_activeTargets.Remove(target) && _activeTargets.Count == 0)
-            {
-                Dispatcher.UIThread.Post(() => _renderLoop.Remove(this), DispatcherPriority.Render);
-            }
+            _activeTargets.Remove(target);
         }
+
+        public void Start()
+        {
+            _renderLoop.Add(this);
+        }
+
+        public void Stop()
+        {
+            _renderLoop.Remove(this);
+        }
+        
         
         public void AddToClock(IServerClockItem item) =>
             _clockItems.Add(item);

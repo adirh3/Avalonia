@@ -26,11 +26,13 @@ internal class WinUiCompositedWindow : IDisposable
     private readonly ICompositionSurfaceBrush _surfaceBrush;
     private readonly ICompositionTarget _target;
     private BlurEffect _currentBlurEffect;
+    private bool _disposed;
 
     public void Dispose()
     {
         lock (_shared.SyncRoot)
         {
+            _disposed = true;
             _compositionRoundedRectangleGeometry?.Dispose();
             _currentVisual?.Dispose();
             _containerChildren.Dispose();
@@ -72,11 +74,15 @@ internal class WinUiCompositedWindow : IDisposable
     }
 
 
-    public void SetSurface(ICompositionSurface surface) => _surfaceBrush.SetSurface(surface);
+    public void SetSurface(ICompositionSurface surface)
+    {
+        if (!_disposed)
+            _surfaceBrush.SetSurface(surface);
+    }
 
     public void SetBlur(BlurEffect blurEffect)
     {
-        if (_currentBlurEffect == blurEffect)
+        if (_currentBlurEffect == blurEffect || _disposed)
             return;
         lock (_shared.SyncRoot)
         {
@@ -124,14 +130,18 @@ internal class WinUiCompositedWindow : IDisposable
         float infoCompositionPadding, Vector3 scaleTransform, Vector3 centerPoint, float opacity,
         Vector3 infoOffset)
     {
+        if (_disposed)
+            return;
         lock (_shared.SyncRoot)
         {
+            if (_disposed)
+                return;
             centerPoint *= new Vector3((float)infoScaling);
             // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (_size != size || _scale != scaleTransform || _centerPoint != centerPoint || _opacity != opacity ||
                 infoOffset != _offset)
             {
-                _visual?.SetSize(new Vector2(size.Width, size.Height));
+                _visual.SetSize(new Vector2(size.Width, size.Height));
 
                 float backdropPadding = infoWindowState == WindowState.Maximized ? 0 : infoCompositionPadding;
                 var offset = (float)Math.Ceiling(backdropPadding * infoScaling);
