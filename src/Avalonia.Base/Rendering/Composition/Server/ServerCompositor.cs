@@ -7,7 +7,6 @@ using Avalonia.Platform;
 using Avalonia.Rendering.Composition.Animations;
 using Avalonia.Rendering.Composition.Expressions;
 using Avalonia.Rendering.Composition.Transport;
-using Avalonia.Threading;
 
 // Special license applies <see href="https://raw.githubusercontent.com/AvaloniaUI/Avalonia/master/src/Avalonia.Base/Rendering/Composition/License.md">License.md</see>
 
@@ -46,6 +45,7 @@ namespace Avalonia.Rendering.Composition.Server
             RenderInterface = new PlatformRenderInterfaceContextManager(platformGraphics);
             BatchObjectPool = batchObjectPool;
             BatchMemoryPool = batchMemoryPool;
+            _renderLoop.Add(this);
         }
 
         public void EnqueueBatch(Batch batch)
@@ -183,17 +183,6 @@ namespace Avalonia.Rendering.Composition.Server
         {
             _activeTargets.Remove(target);
         }
-
-        public void Start()
-        {
-            _renderLoop.Add(this);
-        }
-
-        public void Stop()
-        {
-            _renderLoop.Remove(this);
-        }
-        
         
         public void AddToClock(IServerClockItem item) =>
             _clockItems.Add(item);

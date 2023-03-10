@@ -14,48 +14,10 @@ namespace Avalonia.Win32.WinRT.Composition;
 internal class WinUiCompositorConnection : IRenderTimer
 {
     private readonly WinUiCompositionShared _shared;
-    private Action<TimeSpan>? _tick;
-    private int _subscriberCount;
-    private CancellationTokenSource? _renderCts;
-    private readonly ManualResetEvent _manualResetEvent = new(false);
-
-    public event Action<TimeSpan> Tick
-    {
-        add
-        {
-            _tick += value;
-
-            if (_subscriberCount++ == 0)
-            {
-                Start();
-            }
-        }
-
-        remove
-        {
-            if (--_subscriberCount == 0)
-            {
-                Stop();
-            }
-
-            _tick -= value;
-        }
-    }
-        
-    private void Start()
-    {
-        _manualResetEvent.Set();
-    }
-        
-    private void Stop()
-    {
-        _manualResetEvent.Reset();
-        _renderCts?.Cancel();
-        _renderCts?.Dispose();
-    }
+    public event Action<TimeSpan>? Tick;
     public bool RunsInBackground => true;
     
-    public unsafe WinUiCompositorConnection()
+    public WinUiCompositorConnection()
     {
         using var compositor = NativeWinRTMethods.CreateInstance<ICompositor>("Windows.UI.Composition.Compositor");
         /*
@@ -77,10 +39,9 @@ internal class WinUiCompositorConnection : IRenderTimer
         _shared = new WinUiCompositionShared(compositor);
     }
 
-    static bool TryCreateAndRegisterCore()
+    private static bool TryCreateAndRegisterCore()
     {
         var tcs = new TaskCompletionSource<bool>();
-        var pumpLock = new object();
         var th = new Thread(() =>
         {
             WinUiCompositorConnection connect;
@@ -115,10 +76,10 @@ internal class WinUiCompositorConnection : IRenderTimer
         return tcs.Task.Result;
     }
 
-    class RunLoopHandler : CallbackBase, IAsyncActionCompletedHandler 
+    private class RunLoopHandler : CallbackBase, IAsyncActionCompletedHandler
     {
         private readonly WinUiCompositorConnection _parent;
-        private Stopwatch _st = Stopwatch.StartNew();
+        private readonly Stopwatch _st = Stopwatch.StartNew();
 
         public RunLoopHandler(WinUiCompositorConnection parent)
         {
@@ -127,7 +88,7 @@ internal class WinUiCompositorConnection : IRenderTimer
         
         public void Invoke(IAsyncAction asyncInfo, AsyncStatus asyncStatus)
         { 
-            _parent._tick?.Invoke(_st.Elapsed);
+            _parent.Tick?.Invoke(_st.Elapsed);
             using var act = _parent._shared.Compositor5.RequestCommitAsync();
             act.SetCompleted(this);
         }
@@ -136,7 +97,7 @@ internal class WinUiCompositorConnection : IRenderTimer
     private void RunLoop()
     {
         var cts = new CancellationTokenSource();
-        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             cts.Cancel();
 
         lock (_shared.SyncRoot)
@@ -145,14 +106,9 @@ internal class WinUiCompositorConnection : IRenderTimer
 
         while (!cts.IsCancellationRequested)
         {
-            _manualResetEvent.WaitOne();
-            _renderCts = new CancellationTokenSource();
-            while (!_renderCts.IsCancellationRequested && !cts.IsCancellationRequested)
-            {
-                UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0);
-                lock (_shared.SyncRoot)
-                    UnmanagedMethods.DispatchMessage(ref msg);
-            }
+            UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0);
+            lock (_shared.SyncRoot)
+                UnmanagedMethods.DispatchMessage(ref msg);
         }
     }
 

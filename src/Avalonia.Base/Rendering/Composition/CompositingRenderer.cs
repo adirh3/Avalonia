@@ -320,7 +320,7 @@ public class CompositingRenderer : IRendererWithCompositor
 
         QueueUpdate();
         CompositionTarget.RequestRedraw();
-        if(RenderOnlyOnRenderThread && Compositor.Loop.RunsInBackground && CompositionTarget.Server.IsEnabled)
+        if(RenderOnlyOnRenderThread && Compositor.Loop.RunsInBackground)
             Compositor.Commit().Wait();
         else
             CompositionTarget.ImmediateUIThreadRender();
@@ -332,19 +332,12 @@ public class CompositingRenderer : IRendererWithCompositor
         if (_isDisposed)
             return;
 
-        if (!CompositionTarget.IsEnabled)
-            Compositor.Server.Start();
-
         CompositionTarget.IsEnabled = true;
     }
 
     /// <inheritdoc />
     public void Stop()
-    {
-        if (CompositionTarget.IsEnabled)
-            Compositor.Server.Stop();
-        CompositionTarget.IsEnabled = false;
-    }
+        => CompositionTarget.IsEnabled = false;
 
     /// <inheritdoc />
     public ValueTask<object?> TryGetRenderInterfaceFeature(Type featureType)
@@ -361,12 +354,12 @@ public class CompositingRenderer : IRendererWithCompositor
         _recalculateChildren.Clear();
         SceneInvalidated = null;
 
+        Stop();
+        CompositionTarget.Dispose();
+        
         // Wait for the composition batch to be applied and rendered to guarantee that
         // render target is not used anymore and can be safely disposed
         if (Compositor.Loop.RunsInBackground)
-                _compositor.Commit().Wait();
-        
-        Stop();
-        CompositionTarget.Dispose();
+            _compositor.Commit().Wait();
     }
 }
