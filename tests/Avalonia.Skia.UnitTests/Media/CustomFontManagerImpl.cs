@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using Avalonia.Media;
 using Avalonia.Media.Fonts;
 using Avalonia.Platform;
 using SkiaSharp;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace Avalonia.Skia.UnitTests.Media
 {
@@ -35,9 +37,9 @@ namespace Avalonia.Skia.UnitTests.Media
             return _defaultFamilyName;
         }
 
-        public IEnumerable<string> GetInstalledFontFamilyNames(bool checkForUpdates = false)
+        public string[] GetInstalledFontFamilyNames(bool checkForUpdates = false)
         {
-            return _customTypefaces.Select(x => x.FontFamily.Name);
+            return _customTypefaces.Select(x => x.FontFamily.Name).ToArray();
         }
 
         private readonly string[] _bcp47 = { CultureInfo.CurrentCulture.ThreeLetterISOLanguageName, CultureInfo.CurrentCulture.TwoLetterISOLanguageName };
@@ -66,52 +68,62 @@ namespace Avalonia.Skia.UnitTests.Media
             return true;
         }
 
-        public IGlyphTypeface CreateGlyphTypeface(Typeface typeface)
+        public bool TryCreateGlyphTypeface(string familyName, FontStyle style, FontWeight weight,
+            FontStretch stretch, [NotNullWhen(true)] out IGlyphTypeface glyphTypeface)
         {
             SKTypeface skTypeface;
 
-            switch (typeface.FontFamily.Name)
+            Uri source = null;
+
+            switch (familyName)
             {
-                case "Twitter Color Emoji":
+                case "TWITTER COLOR EMOJI":
                     {
-                        var typefaceCollection = SKTypefaceCollectionCache.GetOrAddTypefaceCollection(_emojiTypeface.FontFamily);
-                        skTypeface = typefaceCollection.Get(typeface);
+                        source = _emojiTypeface.FontFamily.Key.Source;
                         break;
                     }
-                case "Noto Sans":
+                case "NOTO SANS":
                     {
-                        var typefaceCollection = SKTypefaceCollectionCache.GetOrAddTypefaceCollection(_italicTypeface.FontFamily);
-                        skTypeface = typefaceCollection.Get(typeface);
+                        source = _italicTypeface.FontFamily.Key.Source;
                         break;
                     }
-                case "Noto Sans Arabic":
+                case "NOTO SANS ARABIC":
                     {
-                        var typefaceCollection = SKTypefaceCollectionCache.GetOrAddTypefaceCollection(_arabicTypeface.FontFamily);
-                        skTypeface = typefaceCollection.Get(typeface);
+                        source = _arabicTypeface.FontFamily.Key.Source;
                         break;
                     }
-                case "Noto Sans Hebrew":
+                case "NOTO SANS HEBREW":
                     {
-                        var typefaceCollection = SKTypefaceCollectionCache.GetOrAddTypefaceCollection(_hebrewTypeface.FontFamily);
-                        skTypeface = typefaceCollection.Get(typeface);
-                        break;
-                    }
-                case FontFamily.DefaultFontFamilyName:
-                case "Noto Mono":
-                    {
-                        var typefaceCollection = SKTypefaceCollectionCache.GetOrAddTypefaceCollection(_defaultTypeface.FontFamily);
-                        skTypeface = typefaceCollection.Get(_defaultTypeface);
+                        source = _hebrewTypeface.FontFamily.Key.Source;
                         break;
                     }
                 default:
                     {
-                        skTypeface = SKTypeface.FromFamilyName(typeface.FontFamily.Name,
-                            (SKFontStyleWeight)typeface.Weight, SKFontStyleWidth.Normal, (SKFontStyleSlant)typeface.Style);
+                        source = _defaultTypeface.FontFamily.Key.Source;
                         break;
                     }
             }
 
-            return new GlyphTypefaceImpl(skTypeface, FontSimulations.None);
+            var assetLoader = AvaloniaLocator.Current.GetRequiredService<IAssetLoader>();
+
+            var assetUri = FontFamilyLoader.LoadFontAssets(source).First();
+
+            var stream = assetLoader.Open(assetUri);
+
+            skTypeface = SKTypeface.FromStream(stream);
+
+            glyphTypeface = new GlyphTypefaceImpl(skTypeface, FontSimulations.None);
+
+            return true;
+        }
+
+        public bool TryCreateGlyphTypeface(Stream stream, [NotNullWhen(true)] out IGlyphTypeface glyphTypeface)
+        {
+            var skTypeface = SKTypeface.FromStream(stream);
+
+            glyphTypeface = new GlyphTypefaceImpl(skTypeface, FontSimulations.None);
+
+            return true;
         }
     }
 }
