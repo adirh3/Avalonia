@@ -243,7 +243,7 @@
               </ComboBox.Items>
             </ComboBox>
             <ComboBox HorizontalAlignment="Stretch"
-                      Items="{Binding WindowStates}"
+                      ItemsSource="{Binding WindowStates}"
                       SelectedItem="{Binding WindowState}" />
           </StackPanel>
         </Flyout>
