@@ -195,7 +195,7 @@ internal class WinUiCompositedWindow : IDisposable
         var acrylicBlurBackdropBrush = CreateAcrylicBlurBackdropBrush();
         if (acrylicBlurBackdropBrush != null)
         {
-            return CreateBlurVisual(CreateAcrylicBlurBackdropBrush());
+            return CreateBlurVisual(acrylicBlurBackdropBrush);
         }
 
         return null;
@@ -284,6 +284,182 @@ internal class WinUiCompositedWindow : IDisposable
 
         using var micaBackdropBrush1 = colorBlendEffectBrush.QueryInterface<ICompositionBrush>();
         return micaBackdropBrush1.CloneReference();
+    }
+
+    ICompositionBrush CreateAcrylicBrushCompositionEffectFactory(
+        bool shouldBrushBeOpaque,
+        bool useWindowAcrylic,
+        bool useCrossFadeEffect,
+        float initialTintColor,
+        float initialLuminosityColor,
+        float initialFallbackColor)
+    {
+        // The part of the effect graph below the noise layer. This is either a semi-transparent tint (common) or an opaque tint (uncommon).
+        // Opaque tint may be used by apps wishing add the complexity of noise to their brand color, for example.
+        ICompositionEffectBrush tintOutput;
+
+        // Tint Color - either used directly or in a Color blend over a blurred backdrop
+        var tint = new[] { initialTintColor / 255f, initialTintColor / 255f, initialTintColor / 255f, 255f / 255f };
+        using var tintColorEffect = new ColorSourceEffect(tint);
+
+        using var effectSourceParameterFactory =
+            NativeWinRTMethods.CreateActivationFactory<ICompositionEffectSourceParameterFactory>(
+                "Windows.UI.Composition.CompositionEffectSourceParameter");
+        if (shouldBrushBeOpaque)
+        {
+            var effectFactory = _shared.Compositor.CreateEffectFactory(tintColorEffect);
+            tintOutput = effectFactory.CreateBrush();
+        }
+        else
+        {
+            // Load the backdrop in a brush
+
+            using var backDropParameterFactory =
+                NativeWinRTMethods.CreateActivationFactory<ICompositionEffectSourceParameterFactory>(
+                    "Windows.UI.Composition.CompositionEffectSourceParameter");
+            using var backdropString = new HStringInterop("backdrop");
+            using var backdropEffectSourceParameter =
+                backDropParameterFactory.Create(backdropString.Handle);
+
+            // Get a blurred backdrop...
+            IGraphicsEffect blurredSource;
+            if (useWindowAcrylic)
+            {
+                // ...either the shell baked the blur into the backdrop brush, and we use it directly...
+                blurredSource = backdropEffectSourceParameter.QueryInterface<IGraphicsEffect>();
+            }
+            else
+            {
+                // ...or we apply the blur ourselves
+                var gaussianBlurEffect =
+                    new WinUIGaussianBlurEffect(backdropEffectSourceParameter.QueryInterface<IGraphicsEffectSource>());
+                blurredSource = gaussianBlurEffect;
+            }
+
+            tintOutput = //SharedHelpers::Is19H1OrHigher() ?
+                CombineNoiseWithTintEffect_Luminosity(effectSourceParameterFactory,blurredSource, tintColorEffect, initialLuminosityColor);
+            //CombineNoiseWithTintEffect_Legacy(blurredSource, *tintColorEffect);
+        }
+
+        // Create noise with alpha and wrap:
+        // Noise image BorderEffect (infinitely tiles noise image)
+   
+        // using var noiseString = new HStringInterop("Noise");
+        // using var noiseEffectSourceParameter =
+        //     effectSourceParameterFactory.Create(noiseString.Handle);
+        //
+        // var noiseBorderEffect =
+        //     new BorderEffect(1, 1, noiseEffectSourceParameter.QueryInterface<IGraphicsEffectSource>());
+        //
+        //
+        // // OpacityEffect applied to wrapped noise
+        // var noiseOpacityEffect = new OpacityEffect(0.02f, noiseBorderEffect);
+        // Blend noise on top of tint
+        
+        
+        // using var destinationAsParameter =
+        //     GetParameterSource("Destination", effectSourceParameterFactory, out var destinationHandle);
+        // // using var sourceAsParameter =
+        // //     GetParameterSource("Source", effectSourceParameterFactory, out var sourceHandle);
+        // //
+        // using var blendEffectOuter =
+        //     new CompositeStepEffect(0, destinationAsParameter);
+        // using var blendEffectFactory = _shared.Compositor.CreateEffectFactory(blendEffectOuter);
+        // using var blendEffectBrush = blendEffectFactory.CreateBrush();
+        // var blendEffectBrush1 = blendEffectBrush.QueryInterface<ICompositionBrush>();
+        //
+        //
+        // blendEffectBrush.SetSourceParameter(destinationHandle, tintOutput.QueryInterface<ICompositionBrush>());
+        
+        // using var effectFactory = _shared.Compositor.CreateEffectFactory(noiseOpacityEffect);
+        // blendEffectBrush.SetSourceParameter(sourceHandle, effectFactory.CreateBrush().QueryInterface<ICompositionBrush>());
+        
+
+        // if (useCrossFadeEffect)
+        // {
+        //     // Fallback color
+        //     auto fallbackColorEffect = winrt::make_self<Microsoft::UI::Private::Composition::Effects::ColorSourceEffect>();
+        //     fallbackColorEffect->Name(L"FallbackColor");
+        //     fallbackColorEffect->Color(initialFallbackColor);
+        //
+        //     // CrossFade with the fallback color. Weight = 0 means full fallback, 1 means full acrylic.
+        //     auto fadeInOutEffect = winrt::make_self<Microsoft::UI::Private::Composition::Effects::CrossFadeEffect>();
+        //     fadeInOutEffect->Name(L"FadeInOut");
+        //     fadeInOutEffect->Source1(*fallbackColorEffect);
+        //     fadeInOutEffect->Source2(*blendEffectOuter);
+        //     fadeInOutEffect->Weight(1.0f);
+        //
+        //     animatedProperties.push_back(winrt::hstring{ FallbackColorColor });
+        //     animatedProperties.push_back(L"FadeInOut.Weight");
+        //     effectFactory = compositor.CreateEffectFactory(*fadeInOutEffect, animatedProperties);
+        // }
+        // else
+
+        // }
+        return tintOutput.QueryInterface<ICompositionBrush>();
+    }
+
+
+    ICompositionEffectBrush CombineNoiseWithTintEffect_Luminosity(
+        ICompositionEffectSourceParameterFactory compositionEffectSourceParameterFactory,
+        IGraphicsEffect blurredSource,
+        IGraphicsEffect tintColorEffect,
+        float initialLuminosityColor)
+    {
+        // Apply luminosity:
+
+        // Luminosity Color
+        var tint = new[]
+        {
+            initialLuminosityColor / 255f, initialLuminosityColor / 255f, initialLuminosityColor / 255f, 255f / 255f
+        };
+
+        // Apply tint:
+        var luminosityColorEffect = new ColorSourceEffect(tint);
+        
+        
+         var backgroundParameterAsSource =
+            GetParameterSource("Background", compositionEffectSourceParameterFactory, out var backgroundHandle);
+         var foregroundParameterAsSource =
+            GetParameterSource("Foreground", compositionEffectSourceParameterFactory, out var foregroundHandle);
+        
+         var luminosityBlendEffect =
+            new BlendEffect(22, backgroundParameterAsSource, foregroundParameterAsSource);
+            // new BlendEffect(22, blurredSource, luminosityColorEffect);
+             var luminosityBlendEffectFactory = _shared.Compositor.CreateEffectFactory(luminosityBlendEffect);
+             var luminosityBlendEffectBrush = luminosityBlendEffectFactory.CreateBrush();
+             var luminosityBlendEffectBrush1 = luminosityBlendEffectBrush.QueryInterface<ICompositionBrush>();
+
+
+            var compositionEffectFactory = _shared.Compositor.CreateEffectFactory(blurredSource);
+            var compositionEffectBrush = compositionEffectFactory.CreateBrush().QueryInterface<ICompositionBrush>();
+            
+            luminosityBlendEffectBrush.SetSourceParameter(backgroundHandle, compositionEffectBrush);
+
+            var effectFactory = _shared.Compositor.CreateEffectFactory(luminosityColorEffect);
+            luminosityBlendEffectBrush.SetSourceParameter(foregroundHandle, effectFactory.CreateBrush().QueryInterface<ICompositionBrush>());
+            
+            
+
+        // Color blend
+
+         var backgroundParameterAsSource1 =
+            GetParameterSource("Background", compositionEffectSourceParameterFactory, out var backgroundHandle1);
+         var foregroundParameterAsSource1 =
+            GetParameterSource("Foreground", compositionEffectSourceParameterFactory, out var foregroundHandle1);
+        
+        var colorBlendEffect =
+            new BlendEffect(23, backgroundParameterAsSource1, foregroundParameterAsSource1);
+            // new BlendEffect(23, luminosityBlendEffect, tintColorEffect);
+
+             var colorBlendEffectFactory = _shared.Compositor.CreateEffectFactory(colorBlendEffect);
+             var colorBlendEffectBrush = colorBlendEffectFactory.CreateBrush();
+            colorBlendEffectBrush.SetSourceParameter(backgroundHandle1, luminosityBlendEffectBrush1);
+
+            var factory = _shared.Compositor.CreateEffectFactory(tintColorEffect);
+            colorBlendEffectBrush.SetSourceParameter(foregroundHandle1, factory.CreateBrush().QueryInterface<ICompositionBrush>());
+
+        return colorBlendEffectBrush;
     }
 
 
