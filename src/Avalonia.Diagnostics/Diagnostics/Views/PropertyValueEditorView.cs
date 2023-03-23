@@ -216,7 +216,6 @@ namespace Avalonia.Diagnostics.Views
 
                 return sp;
             }
-
             if (propertyType.IsEnum)
                 return CreateControl<ComboBox>(
                     SelectingItemsControl.SelectedItemProperty, init: c =>

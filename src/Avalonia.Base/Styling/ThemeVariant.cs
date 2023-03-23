@@ -110,7 +110,7 @@ public sealed record ThemeVariant
         {
             return PlatformThemeVariant.Dark;
         }
-        else if (themeVariant.InheritVariant is { } inheritVariant)
+        else if (themeVariant?.InheritVariant is { } inheritVariant)
         {
             return (PlatformThemeVariant?)inheritVariant;
         }
