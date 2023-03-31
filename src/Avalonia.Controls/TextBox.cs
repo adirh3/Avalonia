@@ -18,6 +18,7 @@ using Avalonia.Media.TextFormatting;
 using Avalonia.Media.TextFormatting.Unicode;
 using Avalonia.Automation.Peers;
 using Avalonia.Threading;
+using Avalonia.Platform;
 
 namespace Avalonia.Controls
 {
@@ -1059,8 +1060,13 @@ namespace Avalonia.Controls
             if (!eventArgs.Handled)
             {
                 SnapshotUndoRedo();
-                await ((IClipboard)AvaloniaLocator.Current.GetRequiredService(typeof(IClipboard)))
-                    .SetTextAsync(text);
+
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+                if (clipboard == null)
+                    return;
+                
+                await clipboard.SetTextAsync(text);
                 DeleteSelection();
             }
         }
@@ -1081,8 +1087,10 @@ namespace Avalonia.Controls
             RaiseEvent(eventArgs);
             if (!eventArgs.Handled)
             {
-                await ((IClipboard)AvaloniaLocator.Current.GetRequiredService(typeof(IClipboard)))
-                    .SetTextAsync(text);
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+                if (clipboard != null)
+                    await clipboard.SetTextAsync(text);
             }
         }
 
@@ -1098,7 +1106,12 @@ namespace Avalonia.Controls
                 return;
             }
 
-            var text = await ((IClipboard)AvaloniaLocator.Current.GetRequiredService(typeof(IClipboard))).GetTextAsync();
+            string? text = null;
+
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+            if (clipboard != null)
+                text = await clipboard.GetTextAsync();
 
             if (string.IsNullOrEmpty(text))
             {

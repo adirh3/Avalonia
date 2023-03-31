@@ -25,6 +25,7 @@ using Avalonia.Win32.OpenGl;
 using Avalonia.Win32.WinRT.Composition;
 using Avalonia.Win32.WinRT;
 using static Avalonia.Win32.Interop.UnmanagedMethods;
+using Avalonia.Input.Platform;
 
 namespace Avalonia.Win32
 {
@@ -331,6 +332,11 @@ namespace Avalonia.Win32
             if (featureType == typeof(IStorageProvider))
             {
                 return _storageProvider;
+            }
+
+            if (featureType == typeof(IClipboard))
+            {
+                return AvaloniaLocator.Current.GetRequiredService<IClipboard>();
             }
 
             return null;
