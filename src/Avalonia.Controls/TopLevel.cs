@@ -304,6 +304,11 @@ namespace Avalonia.Controls
         public event EventHandler? Closed;
 
         /// <summary>
+        /// Gets or sets a method called when the TopLevel's scaling changes.
+        /// </summary>
+        public event EventHandler? ScalingChanged;
+        
+        /// <summary>
         /// Gets or sets the client size of the window.
         /// </summary>
         public Size ClientSize
@@ -446,14 +451,17 @@ namespace Avalonia.Controls
         double ILayoutRoot.LayoutScaling => PlatformImpl?.RenderScaling ?? 1;
 
         /// <inheritdoc/>
-        double IRenderRoot.RenderScaling => PlatformImpl?.RenderScaling ?? 1;
+        public double RenderScaling => PlatformImpl?.RenderScaling ?? 1;
 
         IStyleHost IStyleHost.StylingParent => _globalStyles!;
         
+        /// <summary>
+        /// File System storage service used for file pickers and bookmarks.
+        /// </summary>
         public IStorageProvider StorageProvider => _storageProvider
             ??= AvaloniaLocator.Current.GetService<IStorageProviderFactory>()?.CreateProvider(this)
             ?? PlatformImpl?.TryGetFeature<IStorageProvider>()
-            ?? throw new InvalidOperationException("StorageProvider platform implementation is not available.");
+            ?? new NoopStorageProvider();
 
         public IInsetsManager? InsetsManager => PlatformImpl?.TryGetFeature<IInsetsManager>();
 
@@ -587,7 +595,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="clientSize">The new client size.</param>
         /// <param name="reason">The reason for the resize.</param>
-        protected virtual void HandleResized(Size clientSize, PlatformResizeReason reason)
+        internal virtual void HandleResized(Size clientSize, WindowResizeReason reason)
         {
             ClientSize = clientSize;
             FrameSize = PlatformImpl!.FrameSize;
@@ -605,6 +613,7 @@ namespace Avalonia.Controls
         protected virtual void HandleScalingChanged(double scaling)
         {
             LayoutHelper.InvalidateSelfAndChildrenMeasure(this);
+            ScalingChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private static bool TransparencyLevelsMatch (WindowTransparencyLevel requested, WindowTransparencyLevel received)

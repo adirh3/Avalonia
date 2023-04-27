@@ -49,7 +49,7 @@ namespace Avalonia
         /// </summary>
         public static readonly StyledProperty<Geometry?> ClipProperty =
             AvaloniaProperty.Register<Visual, Geometry?>(nameof(Clip));
-
+        
         /// <summary>
         /// Defines the <see cref="IsVisible"/> property.
         /// </summary>
@@ -67,6 +67,12 @@ namespace Avalonia
         /// </summary>
         public static readonly StyledProperty<IBrush?> OpacityMaskProperty =
             AvaloniaProperty.Register<Visual, IBrush?>(nameof(OpacityMask));
+        
+        /// <summary>
+        /// Defines the <see cref="Effect"/> property.
+        /// </summary>
+        public static readonly StyledProperty<IEffect?> EffectProperty =
+            AvaloniaProperty.Register<Visual, IEffect?>(nameof(Effect));
 
         /// <summary>
         /// Defines the <see cref="HasMirrorTransform"/> property.
@@ -128,6 +134,8 @@ namespace Avalonia
                 ClipToBoundsProperty,
                 IsVisibleProperty,
                 OpacityProperty,
+                OpacityMaskProperty,
+                EffectProperty,
                 HasMirrorTransformProperty);
             RenderTransformProperty.Changed.Subscribe(RenderTransformChanged);
             ZIndexProperty.Changed.Subscribe(ZIndexChanged);
@@ -234,6 +242,16 @@ namespace Avalonia
             get { return GetValue(OpacityMaskProperty); }
             set { SetValue(OpacityMaskProperty, value); }
         }
+        
+        /// <summary>
+        /// Gets or sets the effect of the control.
+        /// </summary>
+        public IEffect? Effect
+        {
+            get => GetValue(EffectProperty);
+            set => SetValue(EffectProperty, value);
+        }
+
 
         /// <summary>
         /// Gets or sets a value indicating whether to apply mirror transform on this control.
