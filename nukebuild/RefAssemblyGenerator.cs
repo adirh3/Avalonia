@@ -69,8 +69,8 @@ public class RefAssemblyGenerator
             ProcessType(nested, obsoleteCtor);
         if (type.IsInterface)
         {
-            var hideMethods = type.Name.EndsWith("Impl")
-                              || (type.HasCustomAttributes && type.CustomAttributes.Any(a =>
+            var hideMethods = //type.Name.EndsWith("Impl") ||
+                              (type.HasCustomAttributes && type.CustomAttributes.Any(a =>
                                   a.AttributeType.FullName == "Avalonia.Metadata.PrivateApiAttribute"));
 
             var injectMethod = hideMethods
