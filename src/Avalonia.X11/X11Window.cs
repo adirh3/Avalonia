@@ -197,7 +197,7 @@ namespace Avalonia.X11
             _rawEventGrouper = new RawEventGrouper(DispatchInput, platform.EventGrouperDispatchQueue);
             
             _transparencyHelper = new TransparencyHelper(_x11, _handle, platform.Globals);
-            _transparencyHelper.SetTransparencyRequest(WindowTransparencyLevel.None);
+            _transparencyHelper.SetTransparencyRequest(Array.Empty<WindowTransparencyLevel>());
 
             CreateIC();
 
@@ -389,9 +389,8 @@ namespace Avalonia.X11
         public Action<PixelPoint>? PositionChanged { get; set; }
         public Action? LostFocus { get; set; }
 
-        public IRenderer CreateRenderer(IRenderRoot root) =>
-            new CompositingRenderer(root, _platform.Compositor, () => Surfaces);
-
+        public Compositor Compositor => _platform.Compositor;
+        
         private void OnEvent(ref XEvent ev)
         {
             if (_inputRoot is null)
@@ -518,7 +517,7 @@ namespace Avalonia.X11
                         if (changedSize && !updatedSizeViaScaling && !_popup)
                             Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
 
-                    }, DispatcherPriority.Layout);
+                    }, DispatcherPriority.AsyncRenderTargetResize);
                 if (_useRenderWindow)
                     XConfigureResizeWindow(_x11.Display, _renderHandle, ev.ConfigureEvent.width,
                         ev.ConfigureEvent.height);
@@ -803,7 +802,7 @@ namespace Avalonia.X11
                 {
                     _triggeredExpose = false;
                     DoPaint();
-                }, DispatcherPriority.Render);
+                }, DispatcherPriority.UiThreadRender);
             }
         }
 
@@ -1314,8 +1313,10 @@ namespace Avalonia.X11
 
         public IPopupPositioner? PopupPositioner { get; }
 
-        public void SetTransparencyLevelHint(WindowTransparencyLevel transparencyLevel) =>
-            _transparencyHelper?.SetTransparencyRequest(transparencyLevel);
+        public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)
+        {
+            _transparencyHelper?.SetTransparencyRequest(transparencyLevels);
+        }
 
         public void SetWindowManagerAddShadowHint(bool enabled)
         {
@@ -1332,7 +1333,7 @@ namespace Avalonia.X11
 
         public bool IsEnabled => !_disabled;
 
-        public class SurfacePlatformHandle : IPlatformNativeSurfaceHandle
+        public class SurfacePlatformHandle : INativePlatformHandleSurface
         {
             private readonly X11Window _owner;
 

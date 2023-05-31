@@ -18,9 +18,6 @@ using Avalonia.Media.TextFormatting;
 using Avalonia.Media.TextFormatting.Unicode;
 using Avalonia.Automation.Peers;
 using Avalonia.Threading;
-using Avalonia.Platform;
-using System.Reflection;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Avalonia.Controls
 {
@@ -28,26 +25,24 @@ namespace Avalonia.Controls
     /// Represents a control that can be used to display or edit unformatted text.
     /// </summary>
     [TemplatePart("PART_TextPresenter", typeof(TextPresenter))]
+    [TemplatePart("PART_ScrollViewer", typeof(ScrollViewer))]
     [PseudoClasses(":empty")]
     public class TextBox : TemplatedControl, UndoRedoHelper<TextBox.UndoRedoState>.IUndoRedoHost
     {
         /// <summary>
         /// Gets a platform-specific <see cref="KeyGesture"/> for the Cut action
         /// </summary>
-        public static KeyGesture? CutGesture { get; } = AvaloniaLocator.Current
-            .GetService<PlatformHotkeyConfiguration>()?.Cut.FirstOrDefault();
+        public static KeyGesture? CutGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Cut.FirstOrDefault();
 
         /// <summary>
         /// Gets a platform-specific <see cref="KeyGesture"/> for the Copy action
         /// </summary>
-        public static KeyGesture? CopyGesture { get; } = AvaloniaLocator.Current
-            .GetService<PlatformHotkeyConfiguration>()?.Copy.FirstOrDefault();
+        public static KeyGesture? CopyGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Copy.FirstOrDefault();
 
         /// <summary>
         /// Gets a platform-specific <see cref="KeyGesture"/> for the Paste action
         /// </summary>
-        public static KeyGesture? PasteGesture { get; } = AvaloniaLocator.Current
-            .GetService<PlatformHotkeyConfiguration>()?.Paste.FirstOrDefault();
+        public static KeyGesture? PasteGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Paste.FirstOrDefault();
 
         /// <summary>
         /// Defines the <see cref="AcceptsReturn"/> property
@@ -164,7 +159,7 @@ namespace Avalonia.Controls
         /// Defines see <see cref="TextPresenter.LineHeight"/> property.
         /// </summary>
         public static readonly StyledProperty<double> LineHeightProperty =
-            TextBlock.LineHeightProperty.AddOwner<TextBox>();
+            TextBlock.LineHeightProperty.AddOwner<TextBox>(new(defaultValue: double.NaN));
 
         /// <summary>
         /// Defines see <see cref="TextBlock.LetterSpacing"/> property.
@@ -316,6 +311,7 @@ namespace Avalonia.Controls
         }
 
         private TextPresenter? _presenter;
+        private ScrollViewer? _scrollViewer;
         private readonly TextBoxTextInputMethodClient _imClient = new();
         private readonly UndoRedoHelper<UndoRedoState> _undoRedoHelper;
         private bool _isUndoingRedoing;
@@ -505,7 +501,7 @@ namespace Avalonia.Controls
         }
 
         /// <summary>
-        /// Gets or sets the maximum character length of the TextBox
+        /// Gets or sets the maximum number of visible lines.
         /// </summary>
         public int MaxLength
         {
@@ -818,6 +814,8 @@ namespace Avalonia.Controls
         {
             _presenter = e.NameScope.Get<TextPresenter>("PART_TextPresenter");
 
+            _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+
             _imClient.SetPresenter(_presenter, this);
 
             if (IsFocused)
@@ -869,6 +867,10 @@ namespace Avalonia.Controls
             else if (change.Property == SelectionEndProperty)
             {
                 OnSelectionEndChanged(change);
+            }
+            else if (change.Property == MaxLinesProperty)
+            {
+                InvalidateMeasure();
             }
             else if (change.Property == UndoLimitProperty)
             {
@@ -957,39 +959,9 @@ namespace Avalonia.Controls
             {
                 return;
             }
+
             _selectedTextChangesMadeSinceLastUndoSnapshot++;
             SnapshotUndoRedo(ignoreChangeCount: false);
-
-            if (_presenter != null && MaxLines > 0)
-            {
-                var lineCount = _presenter.TextLayout.TextLines.Count;
-
-                var length = 0;
-
-                var graphemeEnumerator = new GraphemeEnumerator(input.AsSpan());
-
-                while (graphemeEnumerator.MoveNext(out var grapheme))
-                {
-                    if (grapheme.FirstCodepoint.IsBreakChar)
-                    {
-                        if (lineCount + 1 > MaxLines)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            lineCount++;
-                        }
-                    }
-
-                    length += grapheme.Length;
-                }
-
-                if (length < input.Length)
-                {
-                    input = input.Remove(Math.Max(0, length));
-                }
-            }
 
             var currentText = Text ?? string.Empty;
             var selectionLength = Math.Abs(SelectionStart - SelectionEnd);
@@ -1032,7 +1004,7 @@ namespace Avalonia.Controls
             }
         }
 
-        public string? RemoveInvalidCharacters(string? text)
+        private string? RemoveInvalidCharacters(string? text)
         {
             if (text is null)
                 return null;
@@ -1143,7 +1115,7 @@ namespace Avalonia.Controls
             var handled = false;
             var modifiers = e.KeyModifiers;
 
-            var keymap = AvaloniaLocator.Current.GetRequiredService<PlatformHotkeyConfiguration>();
+            var keymap = Application.Current!.PlatformSettings!.HotkeyConfiguration;
 
             bool Match(List<KeyGesture> gestures) => MatchHotKeys && gestures.Any(g => g.Matches(e));
             bool DetectSelection() => MatchHotKeys && e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
@@ -1534,7 +1506,7 @@ namespace Avalonia.Controls
                 _presenter.MoveCaretToPoint(point);
 
                 var caretIndex = _presenter.CaretIndex;
-         
+
                 var selectionStart = SelectionStart;
                 var selectionEnd = SelectionEnd;
 
@@ -1991,6 +1963,48 @@ namespace Avalonia.Controls
         void UndoRedoHelper<UndoRedoState>.IUndoRedoHost.OnRedoStackChanged()
         {
             CanRedo = _undoRedoHelper.CanRedo;
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            if(_scrollViewer != null)
+            {
+                var maxHeight = double.PositiveInfinity;
+
+                if (MaxLines > 0 && double.IsNaN(Height))
+                {
+                    var fontSize = FontSize;
+                    var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+                    var paragraphProperties = TextLayout.CreateTextParagraphProperties(typeface, fontSize, null, default, default, null, default, LineHeight, default);
+                    var textLayout = new TextLayout(new MaxLinesTextSource(MaxLines), paragraphProperties);
+
+                    maxHeight = Math.Ceiling(textLayout.Height);
+                }
+
+                _scrollViewer.SetCurrentValue(MaxHeightProperty, maxHeight);
+            }
+
+            return base.MeasureOverride(availableSize);
+        }
+
+        private class MaxLinesTextSource : ITextSource
+        {
+            private readonly int _maxLines;
+
+            public MaxLinesTextSource(int maxLines)
+            {
+                _maxLines = maxLines;
+            }
+
+            public TextRun? GetTextRun(int textSourceIndex)
+            {
+                if (textSourceIndex >= _maxLines)
+                {
+                    return null;
+                }
+
+                return new TextEndOfLine(1);
+            }
         }
     }
 }
