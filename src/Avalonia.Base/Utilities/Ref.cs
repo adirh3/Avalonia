@@ -8,7 +8,7 @@ namespace Avalonia.Utilities
     /// A ref-counted wrapper for a disposable object.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal interface IRef<out T> : IDisposable where T : class
+    public interface IRef<out T> : IDisposable where T : class
     {
         /// <summary>
         /// The item that is being ref-counted.

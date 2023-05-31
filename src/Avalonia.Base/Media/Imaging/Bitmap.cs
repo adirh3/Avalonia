@@ -139,7 +139,7 @@ namespace Avalonia.Media.Imaging
         /// <summary>
         /// Gets the platform-specific bitmap implementation.
         /// </summary>
-        internal IRef<IBitmapImpl> PlatformImpl { get; }
+        public IRef<IBitmapImpl> PlatformImpl { get; }
 
         IRef<IBitmapImpl> IBitmap.PlatformImpl => PlatformImpl;
 
