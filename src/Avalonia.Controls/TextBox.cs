@@ -15,7 +15,6 @@ using Avalonia.Layout;
 using Avalonia.Utilities;
 using Avalonia.Controls.Metadata;
 using Avalonia.Media.TextFormatting;
-using Avalonia.Media.TextFormatting.Unicode;
 using Avalonia.Automation.Peers;
 using Avalonia.Threading;
 
@@ -1232,22 +1231,52 @@ namespace Avalonia.Controls
             }
             else if (MatchHotKeys)
             {
-                bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers);
-                switch (e.Key)
+                if (Match(keymap.PageLeft))
                 {
-                    case Key.Left:
-                        selection = DetectSelection();
-                        MoveHorizontal(-1, hasWholeWordModifiers, selection);
-                        movement = true;
-                        break;
+                    MovePageLeft();
+                    movement = true;
+                    selection = false;
+                    handled = true;
+                }
+                else if (Match(keymap.PageRight))
+                {
+                    MovePageRight();
+                    movement = true;
+                    selection = false;
+                    handled = true;
+                }
+                else if (Match(keymap.PageUp))
+                {
+                    MovePageUp();
+                    movement = true;
+                    selection = false;
+                    handled = true;
+                }
+                else if (Match(keymap.PageDown))
+                {
+                    MovePageDown();
+                    movement = true;
+                    selection = false;
+                    handled = true;
+                }
+                else
+                {
+                    bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers);
+                    switch (e.Key)
+                    {
+                        case Key.Left:
+                            selection = DetectSelection();
+                            MoveHorizontal(-1, hasWholeWordModifiers, selection);
+                            movement = true;
+                            break;
 
-                    case Key.Right:
-                        selection = DetectSelection();
-                        MoveHorizontal(1, hasWholeWordModifiers, selection);
-                        movement = true;
-                        break;
+                        case Key.Right:
+                            selection = DetectSelection();
+                            MoveHorizontal(1, hasWholeWordModifiers, selection);
+                            movement = true;
+                            break;
 
-                    case Key.Up:
+                        case Key.Up:
                         {
                             selection = DetectSelection();
 
@@ -1269,7 +1298,7 @@ namespace Avalonia.Controls
 
                             break;
                         }
-                    case Key.Down:
+                        case Key.Down:
                         {
                             selection = DetectSelection();
 
@@ -1291,7 +1320,7 @@ namespace Avalonia.Controls
 
                             break;
                         }
-                    case Key.Back:
+                        case Key.Back:
                         {
                             SnapshotUndoRedo();
 
@@ -1328,69 +1357,70 @@ namespace Avalonia.Controls
                             handled = true;
                             break;
                         }
-                    case Key.Delete:
-                        SnapshotUndoRedo();
+                        case Key.Delete:
+                            SnapshotUndoRedo();
 
-                        if (hasWholeWordModifiers && SelectionStart == SelectionEnd)
-                        {
-                            SetSelectionForControlDelete();
-                        }
-
-                        if (!DeleteSelection())
-                        {
-                            var characterHit = _presenter.GetNextCharacterHit();
-
-                            var nextPosition = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
-
-                            if (nextPosition != caretIndex)
+                            if (hasWholeWordModifiers && SelectionStart == SelectionEnd)
                             {
-                                var start = Math.Min(nextPosition, caretIndex);
-                                var end = Math.Max(nextPosition, caretIndex);
-
-                                var sb = StringBuilderCache.Acquire(text.Length);
-                                sb.Append(text);
-                                sb.Remove(start, end - start);
-
-                                SetCurrentValue(TextProperty, StringBuilderCache.GetStringAndRelease(sb));
+                                SetSelectionForControlDelete();
                             }
-                        }
 
-                        SnapshotUndoRedo();
+                            if (!DeleteSelection())
+                            {
+                                var characterHit = _presenter.GetNextCharacterHit();
 
-                        handled = true;
-                        break;
+                                var nextPosition = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
 
-                    case Key.Enter:
-                        if (AcceptsReturn)
-                        {
+                                if (nextPosition != caretIndex)
+                                {
+                                    var start = Math.Min(nextPosition, caretIndex);
+                                    var end = Math.Max(nextPosition, caretIndex);
+
+                                    var sb = StringBuilderCache.Acquire(text.Length);
+                                    sb.Append(text);
+                                    sb.Remove(start, end - start);
+
+                                    SetCurrentValue(TextProperty, StringBuilderCache.GetStringAndRelease(sb));
+                                }
+                            }
+
                             SnapshotUndoRedo();
-                            HandleTextInput(NewLine);
+
                             handled = true;
-                        }
+                            break;
 
-                        break;
+                        case Key.Enter:
+                            if (AcceptsReturn)
+                            {
+                                SnapshotUndoRedo();
+                                HandleTextInput(NewLine);
+                                handled = true;
+                            }
 
-                    case Key.Tab:
-                        if (AcceptsTab)
-                        {
-                            SnapshotUndoRedo();
-                            HandleTextInput("\t");
-                            handled = true;
-                        }
-                        else
-                        {
-                            base.OnKeyDown(e);
-                        }
+                            break;
 
-                        break;
+                        case Key.Tab:
+                            if (AcceptsTab)
+                            {
+                                SnapshotUndoRedo();
+                                HandleTextInput("\t");
+                                handled = true;
+                            }
+                            else
+                            {
+                                base.OnKeyDown(e);
+                            }
 
-                    case Key.Space:
-                        SnapshotUndoRedo(); // always snapshot in between words
-                        break;
+                            break;
 
-                    default:
-                        handled = false;
-                        break;
+                        case Key.Space:
+                            SnapshotUndoRedo(); // always snapshot in between words
+                            break;
+
+                        default:
+                            handled = false;
+                            break;
+                    }
                 }
             }
 
@@ -1419,8 +1449,6 @@ namespace Avalonia.Controls
                 !(clickInfo.Pointer?.Captured is Border))
             {
                 var point = e.GetPosition(_presenter);
-
-                var oldIndex = CaretIndex;
 
                 _presenter.MoveCaretToPoint(point);
 
@@ -1752,6 +1780,25 @@ namespace Avalonia.Controls
 
                 _presenter.MoveCaretToTextPosition(textPosition, true);
             }
+        }
+
+        private void MovePageRight()
+        {
+            _scrollViewer?.PageRight();
+        }
+
+        private void MovePageLeft()
+        {
+            _scrollViewer?.PageLeft();
+        }
+        private void MovePageUp()
+        {
+            _scrollViewer?.PageUp();
+        }
+
+        private void MovePageDown()
+        {
+            _scrollViewer?.PageDown();
         }
 
         /// <summary>
