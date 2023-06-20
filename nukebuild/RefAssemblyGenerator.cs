@@ -71,8 +71,8 @@ public class RefAssemblyGenerator
         foreach (var nested in type.NestedTypes)
             ProcessType(nested, obsoleteCtor);
 
-        var hideMembers =// type.IsInterface && type.Name.EndsWith("Impl")||
-                          HasPrivateApi(type.CustomAttributes);
+        var hideMembers = false;// type.IsInterface && type.Name.EndsWith("Impl")||
+                          //HasPrivateApi(type.CustomAttributes);
 
         var injectMethod = hideMembers
                            || type.CustomAttributes.Any(a =>

@@ -226,7 +226,6 @@
                 <WindowTransparencyLevel>Transparent</WindowTransparencyLevel>
                 <WindowTransparencyLevel>Blur</WindowTransparencyLevel>
                 <WindowTransparencyLevel>AcrylicBlur</WindowTransparencyLevel>
-                <WindowTransparencyLevel>ForceAcrylicBlur</WindowTransparencyLevel>
                 <WindowTransparencyLevel>MicaLight</WindowTransparencyLevel>
                 <WindowTransparencyLevel>MicaDark</WindowTransparencyLevel>
               </ComboBox.Items>
