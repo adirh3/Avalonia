@@ -535,7 +535,7 @@ namespace Avalonia.Controls
             return true;
         }
 
-        private void HandleWindowStateChanged(WindowState state)
+        protected virtual  void HandleWindowStateChanged(WindowState state)
         {
             WindowState = state;
 

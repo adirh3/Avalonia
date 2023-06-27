@@ -53,13 +53,13 @@ namespace Avalonia.Animation
         /// <summary>
         /// Apply interpolation to the property.
         /// </summary>
-        internal abstract IObservable<T> DoTransition(IObservable<double> progress, T oldValue, T newValue);
+        public abstract IObservable<T> DoTransition(IObservable<double> progress, T oldValue, T newValue);
 
         /// <inheritdocs/>
         IDisposable ITransition.Apply(Animatable control, IClock clock, object? oldValue, object? newValue)
             => Apply(control, clock, oldValue, newValue);
         
-        internal virtual IDisposable Apply(Animatable control, IClock clock, object? oldValue, object? newValue)
+        public virtual IDisposable Apply(Animatable control, IClock clock, object? oldValue, object? newValue)
         {
             if (Property is null)
                 throw new InvalidOperationException("Transition has no property specified.");

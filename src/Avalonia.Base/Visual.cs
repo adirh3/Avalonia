@@ -537,10 +537,10 @@ namespace Avalonia
                 var serverCompositionDrawListVisual = new ServerCompositionDrawListVisual(compositor.Server, this);
                 CompositionVisual = new CompositionDrawListVisual(compositor,
                     serverCompositionDrawListVisual, this);
-                _getScale = () => serverCompositionDrawListVisual.Scale;
+                _getScale = () => serverCompositionDrawListVisual.Scale.ToVector3();
                 _getOpacity = () => serverCompositionDrawListVisual.Opacity;
-                _getCenterPoint = () => serverCompositionDrawListVisual.CenterPoint;
-                _getOffset = () => serverCompositionDrawListVisual.Offset;
+                _getCenterPoint = () => serverCompositionDrawListVisual.CenterPoint.ToVector3();
+                _getOffset = () => serverCompositionDrawListVisual.Offset.ToVector3();
             }
 
             return CompositionVisual;
