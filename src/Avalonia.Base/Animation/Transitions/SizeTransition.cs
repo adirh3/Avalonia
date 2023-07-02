@@ -8,7 +8,7 @@ namespace Avalonia.Animation
     /// </summary>  
     public class SizeTransition : Transition<Size>
     {
-        internal override IObservable<Size> DoTransition(IObservable<double> progress, Size oldValue, Size newValue) => 
+        public override IObservable<Size> DoTransition(IObservable<double> progress, Size oldValue, Size newValue) => 
             AnimatorDrivenTransition<Size, SizeAnimator>.Transition(Easing, progress, oldValue, newValue);
     }
 }
