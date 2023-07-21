@@ -183,7 +183,7 @@ namespace Avalonia.Win32
             _storageProvider = new Win32StorageProvider(this);
 
             _nativeControlHost = new Win32NativeControlHost(this, _isUsingComposition);
-            _transparencyLevel = WindowTransparencyLevel.Transparent;
+            _transparencyLevel = _isUsingComposition ? WindowTransparencyLevel.Transparent : WindowTransparencyLevel.None;
             s_instances.Add(this);
         }
 
@@ -384,9 +384,17 @@ namespace Avalonia.Win32
                 return;
             }
 
-            // If we get here, we didn't find a supported level. Use the defualt of Transparent
-            SetTransparencyTransparent(windowsVersion);
-            TransparencyLevel = WindowTransparencyLevel.Transparent;
+            // If we get here, we didn't find a supported level. Use the defualt of Transparent or
+            // None, depending on whether composition is enabled.
+            if (_isUsingComposition)
+            {
+                SetTransparencyTransparent(windowsVersion);
+                TransparencyLevel = WindowTransparencyLevel.Transparent;
+            }
+            else
+            {
+                TransparencyLevel = WindowTransparencyLevel.None;
+            }
         }
 
         private bool IsSupported(WindowTransparencyLevel level, Version windowsVersion)
