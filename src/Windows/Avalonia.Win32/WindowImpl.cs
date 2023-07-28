@@ -416,7 +416,7 @@ namespace Avalonia.Win32
                 return windowsVersion >= WinUiCompositionShared.MinAcrylicVersion;
 
             // Mica is supported on Windows >= 10.0.22000.
-            if (_isUsingComposition && (level == WindowTransparencyLevel.MicaLight || level == WindowTransparencyLevel.MicaDark))
+            if (level == WindowTransparencyLevel.Mica)
                 return windowsVersion >= WinUiCompositionShared.MinHostBackdropVersion;
 
             return false;
