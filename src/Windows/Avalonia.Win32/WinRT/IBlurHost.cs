@@ -4,8 +4,8 @@
     {
         None,
         Acrylic,
-        MicaDark,
-        MicaLight
+        MicaLight,
+        MicaDark
     }
     
     public interface IBlurHost
