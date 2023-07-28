@@ -35,8 +35,7 @@ public readonly record struct WindowTransparencyLevel
     /// <summary>
     /// The window background is based on desktop wallpaper tint with a blur. This will only work on Windows 11 
     /// </summary>
-    public static WindowTransparencyLevel MicaLight { get; } = new(nameof(MicaLight));
-    public static WindowTransparencyLevel MicaDark { get; } = new(nameof(MicaDark));
+    public static WindowTransparencyLevel Mica { get; } = new(nameof(Mica));
 
     public override string ToString()
     {
