@@ -258,6 +258,7 @@ namespace Avalonia.X11
             }
 
             public double Scaling => _window.RenderScaling;
+            public float CompositionCornerRadius { get; }
             public Vector3 ScaleTransform { get; }
             public Vector3 CenterPoint { get; }
             public Vector3 Offset { get; }

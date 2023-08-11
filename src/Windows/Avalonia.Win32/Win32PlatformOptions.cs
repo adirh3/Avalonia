@@ -108,13 +108,6 @@ public class Win32PlatformOptions
     };
 
     /// <summary>
-    /// When <see cref="CompositionMode"/> is set to <see cref="Win32CompositionMode.WinUIComposition"/>, create rounded corner blur brushes
-    /// If set to null the brushes will be created using default settings (sharp corners)
-    /// This can be useful when you need a rounded-corner blurred Windows 10 app, or borderless Windows 11 app.
-    /// </summary>
-    public float? WinUICompositionBackdropCornerRadius { get; set; }
-
-    /// <summary>
     /// Render directly on the UI thread instead of using a dedicated render thread.
     /// Only applicable if <see cref="CompositionMode"/> is set to <see cref="Win32CompositionMode.RedirectionSurface"/>.
     /// This setting is only recommended for interop with systems that must render on the UI thread, such as WPF.

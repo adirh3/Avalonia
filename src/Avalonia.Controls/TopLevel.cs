@@ -22,6 +22,7 @@ using Avalonia.Styling;
 using Avalonia.Utilities;
 using Avalonia.Input.Platform;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Avalonia.Metadata;
 using Avalonia.Rendering.Composition;
@@ -58,7 +59,14 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly DirectProperty<TopLevel, float> CompositionPaddingProperty =
             AvaloniaProperty.RegisterDirect<TopLevel, float>(nameof(CompositionPadding), o => o.CompositionPadding,
-                (o, v) => o.CompositionPadding = v);
+                (o, v) => o.CompositionPadding = v);    
+        
+        /// <summary>
+        /// Defines the <see cref="ClientSize"/> property.
+        /// </summary>
+        public static readonly DirectProperty<TopLevel, float> CompositionCornerRadiusProperty =
+            AvaloniaProperty.RegisterDirect<TopLevel, float>(nameof(CompositionCornerRadius), o => o.CompositionCornerRadius,
+                (o, v) => o.CompositionCornerRadius = v);
 
         /// <summary>
         /// Defines the <see cref="FrameSize"/> property.
@@ -295,6 +303,15 @@ namespace Avalonia.Controls
         {
             get { return _compositionPadding; }
             set { SetAndRaise(CompositionPaddingProperty, ref _compositionPadding, value); }
+        }        
+        
+        /// <summary>
+        /// Gets or sets the client size of the window.
+        /// </summary>
+        public float CompositionCornerRadius
+        {
+            get { return _compositionCornerRadius; }
+            set { SetAndRaise(CompositionCornerRadiusProperty, ref _compositionCornerRadius, value); }
         }
 
         /// <summary>
@@ -423,6 +440,7 @@ namespace Avalonia.Controls
         // that don't want to set up a proper hit-testable visual tree
         // and should be removed after fixing those tests
         internal IHitTester? HitTesterOverride;
+        private float _compositionCornerRadius;
 
         IRenderer IRenderRoot.Renderer => Renderer;
         IHitTester IRenderRoot.HitTester => HitTester;

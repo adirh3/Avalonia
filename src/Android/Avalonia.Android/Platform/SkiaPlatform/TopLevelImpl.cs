@@ -320,6 +320,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         public Vector3 Offset { get; }
         public float Opacity { get; }
         public float CompositionPadding { get; }
+        public float CompositionCornerRadius { get; }
         public WindowState WindowState { get; }
 
         public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)

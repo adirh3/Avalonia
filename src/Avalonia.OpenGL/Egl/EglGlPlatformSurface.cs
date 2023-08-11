@@ -14,6 +14,7 @@ namespace Avalonia.OpenGL.Egl
             double Scaling { get; }
             WindowState WindowState { get; }
             float CompositionPadding { get; }
+            float CompositionCornerRadius { get; }
             Vector3 ScaleTransform { get; }
             Vector3 CenterPoint { get; }
             float Opacity { get; }
