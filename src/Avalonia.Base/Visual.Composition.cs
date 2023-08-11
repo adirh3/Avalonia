@@ -1,3 +1,5 @@
+using System;
+using System.Numerics;
 using Avalonia.Collections;
 using Avalonia.Collections.Pooled;
 using Avalonia.Media;
@@ -16,12 +18,29 @@ public partial class Visual
     private protected virtual CompositionDrawListVisual CreateCompositionVisual(Compositor compositor)
         => new CompositionDrawListVisual(compositor,
             new ServerCompositionDrawListVisual(compositor.Server, this), this);
+    
         
+    private Func<Vector3> _getScale = ()=> Vector3.One;
+    private Func<Vector3> _getCenterPoint = ()=> Vector3.One;
+    private Func<Vector3> _getOffset = ()=> Vector3.One;
+    private Func<float> _getOpacity = ()=> 1f;
+
+    public Vector3 CurrentCompositionScale => _getScale();
+    public Vector3 CurrentCompositionCenterPoint => _getCenterPoint();
+    public Vector3 CurrentOffset => _getOffset();
+    public float CurrentCompositionOpacity => _getOpacity();
+
     internal CompositionVisual AttachToCompositor(Compositor compositor)
     {
         if (CompositionVisual == null || CompositionVisual.Compositor != compositor)
         {
-            CompositionVisual = CreateCompositionVisual(compositor);
+            var serverCompositionDrawListVisual = new ServerCompositionDrawListVisual(compositor.Server, this);
+            CompositionVisual = new CompositionDrawListVisual(compositor,
+                serverCompositionDrawListVisual, this);
+            _getScale = () => serverCompositionDrawListVisual.Scale.ToVector3();
+            _getOpacity = () => serverCompositionDrawListVisual.Opacity;
+            _getCenterPoint = () => serverCompositionDrawListVisual.CenterPoint.ToVector3();
+            _getOffset = () => serverCompositionDrawListVisual.Offset.ToVector3();
         }
 
         return CompositionVisual;
