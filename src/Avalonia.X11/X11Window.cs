@@ -18,7 +18,6 @@ using Avalonia.OpenGL;
 using Avalonia.OpenGL.Egl;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
-using Avalonia.Rendering;
 using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
 using Avalonia.X11.Glx;
@@ -37,6 +36,7 @@ namespace Avalonia.X11
     {
         private readonly AvaloniaX11Platform _platform;
         private readonly bool _popup;
+        private readonly bool _overrideRedirect;
         private readonly X11Info _x11;
         private XConfigureEvent? _configure;
         private PixelPoint? _configurePoint;
@@ -73,10 +73,11 @@ namespace Avalonia.X11
             WaitPaint
         }
         
-        public X11Window(AvaloniaX11Platform platform, IWindowImpl? popupParent)
+        public X11Window(AvaloniaX11Platform platform, IWindowImpl? popupParent, bool overrideRedirect = false)
         {
             _platform = platform;
             _popup = popupParent != null;
+			_overrideRedirect = _popup || overrideRedirect;
             _x11 = platform.Info;
             _mouse = new MouseDevice();
             _touch = new TouchDevice();
@@ -93,7 +94,7 @@ namespace Avalonia.X11
                          | SetWindowValuemask.BackPixmap | SetWindowValuemask.BackingStore
                          | SetWindowValuemask.BitGravity | SetWindowValuemask.WinGravity;
 
-            if (_popup)
+            if (_overrideRedirect)
             {
                 attr.override_redirect = 1;
                 valueMask |= SetWindowValuemask.OverrideRedirect;
@@ -156,7 +157,7 @@ namespace Avalonia.X11
             else
                 _renderHandle = _handle;
 
-            Handle = new SurfacePlatformHandle(this);
+            Handle = new PlatformHandle(_handle, "XID");
             _realSize = new PixelSize(defaultWidth, defaultHeight);
             platform.Windows[_handle] = OnEvent;
             XEventMask ignoredMask = XEventMask.SubstructureRedirectMask
@@ -166,15 +167,18 @@ namespace Avalonia.X11
                 ignoredMask |= platform.XI2.AddWindow(_handle, this);
             var mask = new IntPtr(0xffffff ^ (int)ignoredMask);
             XSelectInput(_x11.Display, _handle, mask);
-            var protocols = new[]
+            if (!_overrideRedirect)
             {
-                _x11.Atoms.WM_DELETE_WINDOW
-            };
-            XSetWMProtocols(_x11.Display, _handle, protocols, protocols.Length);
-            XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_WINDOW_TYPE, _x11.Atoms.XA_ATOM,
-                32, PropertyMode.Replace, new[] {_x11.Atoms._NET_WM_WINDOW_TYPE_NORMAL}, 1);
+                var protocols = new[]
+                {
+                    _x11.Atoms.WM_DELETE_WINDOW
+                };
+                XSetWMProtocols(_x11.Display, _handle, protocols, protocols.Length);
+                XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_WINDOW_TYPE, _x11.Atoms.XA_ATOM,
+                    32, PropertyMode.Replace, new[] { _x11.Atoms._NET_WM_WINDOW_TYPE_NORMAL }, 1);
 
-            SetWmClass(_platform.Options.WmClass);
+                SetWmClass(_platform.Options.WmClass);
+            }
 
             var surfaces = new List<object>
             {
@@ -188,7 +192,7 @@ namespace Avalonia.X11
             if (glx != null)
                 surfaces.Insert(0, new GlxGlPlatformSurface(new SurfaceInfo(this, _x11.DeferredDisplay, _handle, _renderHandle)));
 
-            surfaces.Add(Handle);
+            surfaces.Add(new SurfacePlatformHandle(this));
 
             Surfaces = surfaces.ToArray();
             UpdateMotifHints();
@@ -264,6 +268,8 @@ namespace Avalonia.X11
 
         private void UpdateMotifHints()
         {
+            if(_overrideRedirect)
+                return;
             var functions = MotifFunctions.Move | MotifFunctions.Close | MotifFunctions.Resize |
                             MotifFunctions.Minimize | MotifFunctions.Maximize;
             var decorations = MotifDecorations.Menu | MotifDecorations.Title | MotifDecorations.Border |
@@ -293,6 +299,8 @@ namespace Avalonia.X11
 
         private void UpdateSizeHints(PixelSize? preResize)
         {
+            if(_overrideRedirect)
+                return;
             var min = _minMaxSize.minSize;
             var max = _minMaxSize.maxSize;
 
@@ -514,7 +522,7 @@ namespace Avalonia.X11
                         }
                         UpdateImePosition();
 
-                        if (changedSize && !updatedSizeViaScaling && !_popup)
+                        if (changedSize && !updatedSizeViaScaling && !_overrideRedirect)
                             Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
 
                     }, DispatcherPriority.AsyncRenderTargetResize);
@@ -991,7 +999,7 @@ namespace Avalonia.X11
                 XConfigureResizeWindow(_x11.Display, _renderHandle, pixelSize);
             XFlush(_x11.Display);
 
-            if (force || !_wasMappedAtLeastOnce || (_popup && needImmediatePopupResize))
+            if (force || !_wasMappedAtLeastOnce || (_overrideRedirect && needImmediatePopupResize))
             {
                 _realSize = pixelSize;
                 Resized?.Invoke(ClientSize, reason);
