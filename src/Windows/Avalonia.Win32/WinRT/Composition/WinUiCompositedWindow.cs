@@ -13,7 +13,6 @@ internal class WinUiCompositedWindow : IDisposable
 {
     public EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo WindowInfo { get; }
     private readonly WinUiCompositionShared _shared;
-    private readonly float? _backdropCornerRadius;
     private readonly ICompositionRoundedRectangleGeometry? _compositionRoundedRectangleGeometry;
     private readonly IVisualCollection _containerChildren;
     private readonly IVisual _visual;
@@ -27,6 +26,7 @@ internal class WinUiCompositedWindow : IDisposable
     private readonly ICompositionTarget _target;
     private BlurEffect _currentBlurEffect;
     private bool _disposed;
+    private float _cornerRadius;
 
     public void Dispose()
     {
@@ -43,11 +43,10 @@ internal class WinUiCompositedWindow : IDisposable
     }
 
     public WinUiCompositedWindow(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info,
-        WinUiCompositionShared shared, float? backdropCornerRadius)
+        WinUiCompositionShared shared)
     {
         WindowInfo = info;
         _shared = shared;
-        _backdropCornerRadius = backdropCornerRadius;
         using var desktopTarget = shared.DesktopInterop.CreateDesktopWindowTarget(WindowInfo.Handle, 0);
         _target = desktopTarget.QueryInterface<ICompositionTarget>();
 
@@ -61,7 +60,7 @@ internal class WinUiCompositedWindow : IDisposable
         _target.SetRoot(containerVisual);
 
         _compositionRoundedRectangleGeometry =
-            WinUiCompositionUtils.GetRoundedRectangle(shared.Compositor, backdropCornerRadius);
+            WinUiCompositionUtils.GetRoundedRectangle(shared.Compositor);
 
         using var spriteVisual = shared.Compositor.CreateSpriteVisual();
         _visual = spriteVisual.QueryInterface<IVisual>();
@@ -128,7 +127,7 @@ internal class WinUiCompositedWindow : IDisposable
 
     public void ResizeIfNeeded(PixelSize size, double infoScaling, WindowState infoWindowState,
         float infoCompositionPadding, Vector3 scaleTransform, Vector3 centerPoint, float opacity,
-        Vector3 infoOffset)
+        Vector3 infoOffset, float infoWindowCornerRadius)
     {
         if (_disposed)
             return;
@@ -139,7 +138,7 @@ internal class WinUiCompositedWindow : IDisposable
             centerPoint *= new Vector3((float)infoScaling);
             // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (_size != size || _scale != scaleTransform || _centerPoint != centerPoint || _opacity != opacity ||
-                infoOffset != _offset)
+                infoOffset != _offset || infoWindowCornerRadius != _cornerRadius)
             {
                 _visual.SetSize(new Vector2(size.Width, size.Height));
 
@@ -166,14 +165,16 @@ internal class WinUiCompositedWindow : IDisposable
                 _currentVisual?.SetOpacity(opacity);
 
                 _compositionRoundedRectangleGeometry?.SetCornerRadius(
-                    infoWindowState == WindowState.Maximized || !_backdropCornerRadius.HasValue ?
+                    infoWindowState == WindowState.Maximized?
                         Vector2.Zero :
-                        new Vector2((float)Math.Ceiling(_backdropCornerRadius.Value * infoScaling)));
+                        new Vector2((float)(infoWindowCornerRadius * infoScaling),
+                            (float)(infoWindowCornerRadius * infoScaling)));
                 _size = size;
                 _scale = scaleTransform;
                 _centerPoint = centerPoint;
                 _opacity = opacity;
                 _offset = infoOffset;
+                _cornerRadius = infoWindowCornerRadius;
             }
         }
     }

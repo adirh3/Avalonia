@@ -1478,6 +1478,9 @@ namespace Avalonia.Win32
         double EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Scaling => RenderScaling;
         float EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.CompositionPadding => _owner is TopLevel topLevel? topLevel.CompositionPadding: 0;
 
+        float EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.CompositionCornerRadius =>
+            _owner is TopLevel topLevel ? topLevel.CompositionCornerRadius : 0;
+
         IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle => Handle.Handle;
 
         public void SetExtendClientAreaToDecorationsHint(bool hint)

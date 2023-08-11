@@ -95,13 +95,10 @@ internal static class WinUiCompositionUtils
         return compositionEffectBrush.QueryInterface<ICompositionBrush>();
     }
 
-    public static ICompositionRoundedRectangleGeometry? GetRoundedRectangle(ICompositor compositor, float? _backdropCornerRadius)
+    public static ICompositionRoundedRectangleGeometry? GetRoundedRectangle(ICompositor compositor)
     {
-        if (!_backdropCornerRadius.HasValue)
-            return null;
         using var compositor5 = compositor.QueryInterface<ICompositor5>();
         using var roundedRectangleGeometry = compositor5.CreateRoundedRectangleGeometry();
-        roundedRectangleGeometry.SetCornerRadius(new Vector2(_backdropCornerRadius.Value, _backdropCornerRadius.Value));
 
         using var compositor6 = compositor.QueryInterface<ICompositor6>();
         using var compositionGeometry = roundedRectangleGeometry
