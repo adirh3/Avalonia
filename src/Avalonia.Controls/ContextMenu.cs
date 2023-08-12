@@ -216,16 +216,16 @@ namespace Avalonia.Controls
             if (e.OldValue is ContextMenu oldMenu)
             {
                 control.ContextRequested -= ControlContextRequested;
+                control.AttachedToVisualTree -= ControlOnAttachedToVisualTree;
                 control.DetachedFromVisualTree -= ControlDetachedFromVisualTree;
                 oldMenu._attachedControls?.Remove(control);
                 ((ISetLogicalParent?)oldMenu._popup)?.SetParent(null);
             }
 
-            if (e.NewValue is ContextMenu newMenu)
+            if (e.NewValue is ContextMenu)
             {
-                newMenu._attachedControls ??= new List<Control>();
-                newMenu._attachedControls.Add(control);
                 control.ContextRequested += ControlContextRequested;
+                control.AttachedToVisualTree += ControlOnAttachedToVisualTree;
                 control.DetachedFromVisualTree += ControlDetachedFromVisualTree;
             }
         }
@@ -428,11 +428,20 @@ namespace Avalonia.Controls
                 e.Handled = true;
             }
         }
+        
+        
+        private static void ControlOnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+        {
+            if (sender is Control { ContextMenu: {} contextMenu } control)
+            {
+                contextMenu._attachedControls ??= new List<Control>();
+                contextMenu._attachedControls.Add(control);
+            }
+        }
 
         private static void ControlDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
         {
-            if (sender is Control control
-                && control.ContextMenu is ContextMenu contextMenu)
+            if (sender is Control { ContextMenu: { } contextMenu } control)
             {
                 if (contextMenu._popup?.Parent == control)
                 {
@@ -440,6 +449,7 @@ namespace Avalonia.Controls
                 }
 
                 contextMenu.Close();
+                contextMenu._attachedControls?.Remove(control);
             }
         }
 
