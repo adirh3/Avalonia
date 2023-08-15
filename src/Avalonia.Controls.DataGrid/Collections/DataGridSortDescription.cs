@@ -16,11 +16,11 @@ namespace Avalonia.Collections
         public bool HasPropertyPath => !String.IsNullOrEmpty(PropertyPath);
         public abstract IComparer<object> Comparer { get; }
 
-        public virtual IOrderedEnumerable<object> OrderBy(IEnumerable<object> seq)
+        public virtual IOrderedEnumerable<DataGridItemWrapper> OrderBy(IEnumerable<DataGridItemWrapper> seq)
         {
             return seq.OrderBy(o => o, Comparer);
         }
-        public virtual IOrderedEnumerable<object> ThenBy(IOrderedEnumerable<object> seq)
+        public virtual IOrderedEnumerable<DataGridItemWrapper> ThenBy(IOrderedEnumerable<DataGridItemWrapper> seq)
         {
             return seq.ThenBy(o => o, Comparer);
         }
@@ -216,7 +216,7 @@ namespace Avalonia.Collections
                 if (_internalComparer == null && _propertyType != null)
                     _internalComparer = GetComparerForType(_propertyType);
             }
-            public override IOrderedEnumerable<object> OrderBy(IEnumerable<object> seq)
+            public override IOrderedEnumerable<DataGridItemWrapper> OrderBy(IEnumerable<DataGridItemWrapper> seq)
             {
                 if (Direction == ListSortDirection.Descending)
                 {
@@ -227,7 +227,7 @@ namespace Avalonia.Collections
                     return seq.OrderBy(o => GetValue(o), InternalComparer);
                 }
             }
-            public override IOrderedEnumerable<object> ThenBy(IOrderedEnumerable<object> seq)
+            public override IOrderedEnumerable<DataGridItemWrapper> ThenBy(IOrderedEnumerable<DataGridItemWrapper> seq)
             {
                 if (Direction == ListSortDirection.Descending)
                 {

@@ -58,7 +58,7 @@ namespace ControlCatalog.Pages
             DataGrid3Source = list;
 
             var addButton = this.Get<Button>("btnAdd");
-            addButton.Click += (a, b) => list.Add(new Person());
+            addButton.Click += (a, b) => list.Add(   new Person { FirstName = "John", LastName = "Doe" , Age = 30});
 
             DataContext = this;
         }

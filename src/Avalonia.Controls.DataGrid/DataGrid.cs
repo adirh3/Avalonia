@@ -2602,7 +2602,7 @@ namespace Avalonia.Controls
                 CancelEdit(DataGridEditingUnit.Row, raiseEvents: false);
 
                 // We want to persist selection throughout a reset, so store away the selected items
-                List<object> selectedItemsCache = new List<object>(_selectedItems.SelectedItemsCache);
+                List<DataGridItemWrapper> selectedItemsCache = new List<DataGridItemWrapper>(_selectedItems.SelectedItemsCache);
 
                 if (recycleRows)
                 {

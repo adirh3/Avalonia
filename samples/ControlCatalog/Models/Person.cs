@@ -121,5 +121,18 @@ namespace ControlCatalog.Models
             else
                 return Array.Empty<object>();
         }
+
+        protected bool Equals(Person other)
+        {
+            return _firstName == other._firstName && _lastName == other._lastName && _isBanned == other._isBanned && _age == other._age;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Person)obj);
+        }
     }
 }

@@ -18,6 +18,27 @@ using System.Text;
 
 namespace Avalonia.Collections
 {
+    public sealed class DataGridItemWrapper
+    {
+        public object Item { get; init; }
+
+        private bool Equals(DataGridItemWrapper other)
+        {
+            return ReferenceEquals(Item, other.Item);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj)) return true;
+            return obj is DataGridItemWrapper other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return (Item != null ? Item.GetHashCode() : 0);
+        }
+    }
+    
     /// <summary>
     /// Event argument used for page index change notifications. The requested page move
     /// can be canceled by setting e.Cancel to True.
@@ -122,7 +143,7 @@ namespace Avalonia.Collections
         /// <summary>
         /// Private accessor for the InternalList
         /// </summary>
-        private IList _internalList;
+        private IList<DataGridItemWrapper> _internalList;
 
         /// <summary>
         /// Keeps track of whether groups have been applied to the
@@ -227,7 +248,7 @@ namespace Avalonia.Collections
             // set currency
             if (_internalList.Count > 0)
             {
-                SetCurrent(_internalList[0], 0, 1);
+                SetCurrent(_internalList[0].Item, 0, 1);
             }
             else
             {
@@ -996,7 +1017,7 @@ namespace Avalonia.Collections
         /// <summary>
         /// Gets the InternalList
         /// </summary>
-        private IList InternalList
+        private IList<DataGridItemWrapper> InternalList
         {
             get { return _internalList; }
         }
@@ -1011,7 +1032,7 @@ namespace Avalonia.Collections
             {
                 if (IsCurrentInView)
                 {
-                    return GetItemAt(CurrentPosition).Equals(CurrentItem);
+                    return ReferenceEquals(GetItemAt(CurrentPosition), CurrentItem);
                 }
                 else
                 {
@@ -1245,7 +1266,7 @@ namespace Avalonia.Collections
             }
 
             // add the new item to the internal list
-            _internalList.Insert(ConvertToInternalIndex(addIndex), newItem);
+            _internalList.Insert(ConvertToInternalIndex(addIndex), new DataGridItemWrapper { Item = newItem });
             OnPropertyChanged(nameof(ItemCount));
 
             object oldCurrentItem = CurrentItem;
@@ -1382,7 +1403,7 @@ namespace Avalonia.Collections
                 }
 
                 // remove the new item from the internal list 
-                InternalList.Remove(newItem);
+                InternalList.Remove(new DataGridItemWrapper { Item = newItem });
 
                 if (IsGrouping)
                 {
@@ -1467,7 +1488,7 @@ namespace Avalonia.Collections
                 // first remove the item from the array so that we can insert into the correct position
                 int removeIndex = IndexOf(editItem);
                 int internalRemoveIndex = InternalIndexOf(editItem);
-                _internalList.Remove(editItem);
+                _internalList.RemoveAt(internalRemoveIndex);
 
                 // check whether to restore currency to the item being edited
                 object restoreCurrencyTo = (editItem == CurrentItem) ? editItem : null;
@@ -1613,7 +1634,7 @@ namespace Avalonia.Collections
             else if (!Contains(editItem))
             {
                 // if the item did not belong to the collection, add it
-                InternalList.Add(editItem);
+                InternalList.Add(new DataGridItemWrapper { Item = editItem });
             }
         }
 
@@ -1651,8 +1672,8 @@ namespace Avalonia.Collections
             {
                 // first remove the item from the array so that we can insert into the correct position
                 int removeIndex = Count - 1;
-                int internalIndex = _internalList.IndexOf(newItem);
-                _internalList.Remove(newItem);
+                int internalIndex = InternalIndexOf(newItem);
+                _internalList.RemoveAt(internalIndex);
 
                 if (IsGrouping)
                 {
@@ -1864,7 +1885,7 @@ namespace Avalonia.Collections
 
             if (IsAddingNew)
             {
-                if (Object.Equals(item, CurrentAddItem))
+                if (ReferenceEquals(item, CurrentAddItem))
                 {
                     // EditItem(newItem) is a no-op
                     return;
@@ -1917,7 +1938,7 @@ namespace Avalonia.Collections
                     index < (int)Math.Min(_pageSize * (PageIndex + 1), InternalList.Count);
                     index++)
                 {
-                    list.Add(InternalList[index]);
+                    list.Add(InternalList[index].Item);
                 }
 
                 return new NewItemAwareEnumerator(this, list.GetEnumerator(), CurrentAddItem);
@@ -1985,7 +2006,7 @@ namespace Avalonia.Collections
             {
                 return RootGroup?.LeafIndexOf(item) ?? -1;
             }
-            if (IsAddingNew && Object.Equals(item, CurrentAddItem) && UsesLocalArray)
+            if (IsAddingNew && ReferenceEquals(item, CurrentAddItem) && UsesLocalArray)
             {
                 return Count - 1;
             }
@@ -2020,7 +2041,7 @@ namespace Avalonia.Collections
             VerifyRefreshNotDeferred();
 
             // if already on item, don't do anything
-            if (Object.Equals(CurrentItem, item))
+            if (ReferenceEquals(CurrentItem, item))
             {
                 // also check that we're not fooled by a false null currentItem
                 if (item != null || IsCurrentInView)
@@ -2393,7 +2414,7 @@ namespace Avalonia.Collections
             Debug.Assert(index == IndexOf(item), "IndexOf returned unexpected value");
 
             // remove the item from the internal list
-            _internalList.Remove(item);
+            _internalList.Remove(new DataGridItemWrapper { Item = item });
 
             if (IsGrouping)
             {
@@ -2676,13 +2697,13 @@ namespace Avalonia.Collections
         /// </summary>
         private void CopySourceToInternalList()
         {
-            _internalList = new List<object>();
+            _internalList = new List<DataGridItemWrapper>();
 
             IEnumerator enumerator = SourceCollection.GetEnumerator();
 
             while (enumerator.MoveNext())
             {
-                _internalList.Add(enumerator.Current);
+                _internalList.Add(new DataGridItemWrapper { Item = enumerator.Current });
             }
         }
 
@@ -2859,7 +2880,7 @@ namespace Avalonia.Collections
         /// <returns>Integer value on where in the InternalList the object is located</returns>
         private int InternalIndexOf(object item)
         {
-            return InternalList.IndexOf(item);
+            return InternalList.IndexOf(new DataGridItemWrapper { Item = item });
         }
 
         /// <summary>
@@ -2871,7 +2892,7 @@ namespace Avalonia.Collections
         {
             if (index >= 0 && index < InternalList.Count)
             {
-                return InternalList[index];
+                return InternalList[index].Item;
             }
             else
             {
@@ -3070,11 +3091,11 @@ namespace Avalonia.Collections
             {
                 if (groupRoot.ActiveComparer is DataGridCollectionViewGroupInternal.ListComparer listComparer)
                 {
-                    listComparer.ResetList(InternalList);
+                    listComparer.ResetList((IList)InternalList);
                 }
                 else
                 {
-                    groupRoot.ActiveComparer = new DataGridCollectionViewGroupInternal.ListComparer(InternalList);
+                    groupRoot.ActiveComparer = new DataGridCollectionViewGroupInternal.ListComparer((IList)InternalList);
                 }
             }
             else if (groupRoot == _group)
@@ -3107,10 +3128,10 @@ namespace Avalonia.Collections
             {
                 for (int num = 0, count = _internalList.Count; num < count; ++num)
                 {
-                    object item = _internalList[num];
-                    if (item != null && (!IsAddingNew || !object.Equals(CurrentAddItem, item)))
+                    var item = _internalList[num];
+                    if (item != null && (!IsAddingNew || !ReferenceEquals(CurrentAddItem, item.Item)))
                     {
-                        _group.AddToSubgroups(item, loading: true);
+                        _group.AddToSubgroups(item.Item, loading: true);
                     }
                 }
                 if (IsAddingNew)
@@ -3157,10 +3178,10 @@ namespace Avalonia.Collections
             {
                 for (int num = 0, count = _internalList.Count; num < count; ++num)
                 {
-                    object item = _internalList[num];
-                    if (item != null && (!IsAddingNew || !object.Equals(CurrentAddItem, item)))
+                    var item = _internalList[num];
+                    if (item != null && (!IsAddingNew || !ReferenceEquals(CurrentAddItem, item.Item)))
                     {
-                        _temporaryGroup.AddToSubgroups(item, loading: true);
+                        _temporaryGroup.AddToSubgroups(item.Item, loading: true);
                     }
                 }
                 if (IsAddingNew)
@@ -3199,7 +3220,7 @@ namespace Avalonia.Collections
                 for (int num = 0, count = Count; num < count; ++num)
                 {
                     object item = GetItemAt(num);
-                    if (item != null && (!IsAddingNew || !object.Equals(CurrentAddItem, item)))
+                    if (item != null && (!IsAddingNew || !ReferenceEquals(CurrentAddItem, item)))
                     {
                         _group.AddToSubgroups(item, loading: true);
                     }
@@ -3229,18 +3250,18 @@ namespace Avalonia.Collections
         /// </summary>
         /// <param name="enumerable">new IEnumerable to associate this view with</param>
         /// <returns>new local array to use for this view</returns>
-        private IList PrepareLocalArray(IEnumerable enumerable)
+        private IList<DataGridItemWrapper> PrepareLocalArray(IEnumerable enumerable)
         {
             Debug.Assert(enumerable != null, "Input list to filter/sort should not be null");
 
             // filter the collection's array into the local array
-            List<object> localList = new List<object>();
+            List<DataGridItemWrapper> localList = new List<DataGridItemWrapper>();
 
             foreach (object item in enumerable)
             {
                 if (Filter == null || PassesFilter(item))
                 {
-                    localList.Add(item);
+                    localList.Add(new DataGridItemWrapper { Item = item });
                 }
             }
 
@@ -3466,7 +3487,7 @@ namespace Avalonia.Collections
             int removeIndex = IndexOf(removedItem);
 
             // remove the item from the collection
-            _internalList.Remove(removedItem);
+            _internalList.Remove(new DataGridItemWrapper { Item = removedItem });
 
             // only fire the remove if it was removed from either the current page, or a previous page
             bool needToRemove = (PageSize == 0 && removeIndex >= 0) || (internalRemoveIndex < (PageIndex + 1) * PageSize);
@@ -3563,7 +3584,7 @@ namespace Avalonia.Collections
                         (index > 0 && (sortFieldComparer.Compare(item, InternalItemAt(index - 1)) < 0)) || /* item has moved up in the list */
                         ((index < InternalList.Count - 1) && (sortFieldComparer.Compare(item, InternalItemAt(index)) > 0))) /* item has moved down in the list */
                     {
-                        index = sortFieldComparer.FindInsertIndex(item, _internalList);
+                        index = sortFieldComparer.FindInsertIndex(item, (IList)_internalList);
                     }
                 }
 
@@ -3576,7 +3597,7 @@ namespace Avalonia.Collections
                     index = _internalList.Count;
                 }
 
-                _internalList.Insert(index, item);
+                _internalList.Insert(index, new DataGridItemWrapper { Item = item });
             }
         }
 
@@ -3941,19 +3962,18 @@ namespace Avalonia.Collections
         /// </summary>
         /// <param name="list">List of objects to sort</param>
         /// <returns>The sorted list</returns>
-        private List<object> SortList(List<object> list)
+        private List<DataGridItemWrapper> SortList(List<DataGridItemWrapper> list)
         {
             Debug.Assert(list != null, "Input list to sort should not be null");
 
-            IEnumerable<object> seq = (IEnumerable<object>)list;
-            IComparer<object> comparer = new CultureSensitiveComparer(Culture);
+            IEnumerable<DataGridItemWrapper> seq = list;
             var itemType = ItemType;
 
             foreach (DataGridSortDescription sort in SortDescriptions)
             {
                 sort.Initialize(itemType); 
 
-                if (seq is IOrderedEnumerable<object> orderedEnum)
+                if (seq is IOrderedEnumerable<DataGridItemWrapper> orderedEnum)
                 {
                     seq = sort.ThenBy(orderedEnum);
                 }
