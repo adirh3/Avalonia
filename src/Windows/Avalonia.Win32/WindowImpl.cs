@@ -695,8 +695,9 @@ namespace Avalonia.Win32
             if (parentHwnd == IntPtr.Zero && !_windowProperties.ShowInTaskbar)
             {
                 parentHwnd = OffscreenParentWindow.Handle;
-                _hiddenWindowIsParent = true;
             }
+
+            _hiddenWindowIsParent = parentHwnd == OffscreenParentWindow.Handle;
 
             SetWindowLongPtr(_hwnd, (int)WindowLongParam.GWL_HWNDPARENT, parentHwnd);
         }

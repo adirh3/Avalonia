@@ -114,7 +114,6 @@ namespace Avalonia.Controls
         /// </summary>
         static ContextMenu()
         {
-            ItemsPanelProperty.OverrideDefaultValue<ContextMenu>(DefaultPanel);
             PlacementProperty.OverrideDefaultValue<ContextMenu>(PlacementMode.Pointer);
             ContextMenuProperty.Changed.Subscribe(ContextMenuChanged);
             AutomationProperties.AccessibilityViewProperty.OverrideDefaultValue<ContextMenu>(AccessibilityView.Control);
@@ -227,6 +226,11 @@ namespace Avalonia.Controls
                 control.ContextRequested += ControlContextRequested;
                 control.AttachedToVisualTree += ControlOnAttachedToVisualTree;
                 control.DetachedFromVisualTree += ControlDetachedFromVisualTree;
+            }
+            
+            if (control.IsAttachedToVisualTree)
+            {
+                AttachControlToContextMenu(control); 
             }
         }
 
@@ -432,7 +436,12 @@ namespace Avalonia.Controls
         
         private static void ControlOnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
         {
-            if (sender is Control { ContextMenu: {} contextMenu } control)
+            AttachControlToContextMenu(sender);
+        }
+
+        private static void AttachControlToContextMenu(object? sender)
+        {
+            if (sender is Control { ContextMenu: { } contextMenu } control)
             {
                 contextMenu._attachedControls ??= new List<Control>();
                 contextMenu._attachedControls.Add(control);
