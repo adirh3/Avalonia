@@ -26,6 +26,23 @@ namespace Avalonia.Skia
                     throw new ArgumentOutOfRangeException(nameof(interpolationMode), interpolationMode, null);
             }
         }
+        
+        public static SKSamplingOptions ToSKSamplingOptions(this BitmapInterpolationMode interpolationMode)
+        {
+            switch (interpolationMode)
+            {
+                case BitmapInterpolationMode.None:
+                case BitmapInterpolationMode.Unspecified:
+                case BitmapInterpolationMode.LowQuality:
+                    return new SKSamplingOptions();
+                case BitmapInterpolationMode.MediumQuality:
+                    return new SKSamplingOptions(SKFilterMode.Linear);
+                case BitmapInterpolationMode.HighQuality:
+                    return new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(interpolationMode), interpolationMode, null);
+            }
+        }
 
         public static SKBlendMode ToSKBlendMode(this BitmapBlendingMode blendingMode)
         {
@@ -194,6 +211,26 @@ namespace Avalonia.Skia
                 case TextAlignment.Center: return SKTextAlign.Center;
                 case TextAlignment.Right: return SKTextAlign.Right;
             }
+        }
+
+        public static SKStrokeCap ToSKStrokeCap(this PenLineCap cap)
+        {
+            return cap switch
+            {
+                PenLineCap.Round => SKStrokeCap.Round,
+                PenLineCap.Square => SKStrokeCap.Square,
+                _ => SKStrokeCap.Butt
+            };
+        }
+
+        public static SKStrokeJoin ToSKStrokeJoin(this PenLineJoin join)
+        {
+            return join switch
+            {
+                PenLineJoin.Bevel => SKStrokeJoin.Bevel,
+                PenLineJoin.Round => SKStrokeJoin.Round,
+                _ => SKStrokeJoin.Miter
+            };
         }
 
         public static TextAlignment ToAvalonia(this SKTextAlign a)
