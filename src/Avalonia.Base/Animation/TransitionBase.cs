@@ -95,6 +95,6 @@ namespace Avalonia.Animation
         IDisposable ITransition.Apply(Animatable control, IClock clock, object? oldValue, object? newValue)
             => Apply(control, clock, oldValue, newValue);
         
-        internal abstract IDisposable Apply(Animatable control, IClock clock, object? oldValue, object? newValue);
+        public abstract IDisposable Apply(Animatable control, IClock clock, object? oldValue, object? newValue);
     }
 }
