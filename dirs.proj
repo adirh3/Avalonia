@@ -6,6 +6,7 @@
     <ProjectReference Include="samples/**/*.*proj" />
     <ProjectReference Include="tests/**/*.*proj" />
     <ProjectReference Include="packages/**/*.*proj" />
+    <ProjectReference Remove="**/*Tizen.*proj" />
     <ProjectReference Remove="**/*.shproj" />
     <ProjectReference Remove="src/Markup/Avalonia.Markup.Xaml/PortableXaml/**/*.*proj" />
     <ProjectReference Remove="src/Markup/Avalonia.Markup.Xaml.Loader/xamlil.github/**/*.*proj" />

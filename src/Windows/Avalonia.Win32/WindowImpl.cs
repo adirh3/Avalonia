@@ -1419,9 +1419,9 @@ namespace Avalonia.Win32
                     SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE |
                     SetWindowPosFlags.SWP_FRAMECHANGED);
             }
-
+            
             // Ensure window state if decorations change
-            if (oldProperties.Decorations != newProperties.Decorations)
+            if (_shown && oldProperties.Decorations != newProperties.Decorations)
                 ShowWindow(WindowState, false);
         }
 
