@@ -17,8 +17,8 @@ public static class ApiDiffValidation
     private static readonly (string oldTfm, string newTfm)[] s_tfmRedirects = new[]
     {
         // We use StartsWith below comparing these tfm, as we ignore platform versions (like, net6.0-ios16.1)
-        ("net6.0-android", "net7.0-android"),
-        ("net6.0-ios", "net7.0-ios")
+        ("net6.0-android", "net8.0-android"),
+        ("net6.0-ios", "net8.0-ios")
     };
 
     public static async Task ValidatePackage(

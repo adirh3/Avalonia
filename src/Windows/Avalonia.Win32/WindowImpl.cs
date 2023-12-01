@@ -402,7 +402,7 @@ namespace Avalonia.Win32
             if (level == WindowTransparencyLevel.Blur)
                 return CompositionEffectsSurface?.IsBlurSupported(BlurEffect.GaussianBlur) ?? false;
 
-            if (_isUsingComposition && level == WindowTransparencyLevel.AcrylicBlur)
+            if (level == WindowTransparencyLevel.AcrylicBlur)
                 return CompositionEffectsSurface?.IsBlurSupported(BlurEffect.Acrylic) ?? false;
 
             if (level == WindowTransparencyLevel.Mica)
@@ -465,8 +465,6 @@ namespace Avalonia.Win32
             blurInfo.fEnable = enabled;
             blurInfo.dwFlags = DWM_BB.Enable | DWM_BB.BlurRegion;
             blurInfo.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
-            accent.AccentFlags = 2;
-            accent.GradientColor = 0x01000000;
 
             var result = DwmEnableBlurBehindWindow(_hwnd, ref blurInfo);
 
@@ -1383,7 +1381,7 @@ namespace Avalonia.Win32
                     SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE |
                     SetWindowPosFlags.SWP_FRAMECHANGED);
             }
-            
+
             // Ensure window state if decorations change
             if (_shown && oldProperties.Decorations != newProperties.Decorations)
                 ShowWindow(WindowState, false);

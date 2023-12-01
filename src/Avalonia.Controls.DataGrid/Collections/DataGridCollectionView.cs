@@ -4015,7 +4015,7 @@ namespace Avalonia.Collections
         int IList.Add(object value) => throw new NotSupportedException();
         void IList.Clear() => throw new NotSupportedException();
         void IList.Insert(int index, object value) => throw new NotSupportedException();
-        void ICollection.CopyTo(Array array, int index) => InternalList.CopyTo(array, index);
+        void ICollection.CopyTo(Array array, int index) => InternalList.CopyTo(array as DataGridItemWrapper[] , index);
 
         /// <summary>
         /// Creates a comparer class that takes in a CultureInfo as a parameter,

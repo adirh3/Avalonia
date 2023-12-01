@@ -2,7 +2,7 @@
   <Import Project="../../src/Browser/Avalonia.Browser/Avalonia.Browser.props" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
     <WasmMainJSPath>AppBundle/main.js</WasmMainJSPath>
     <OutputType>Exe</OutputType>

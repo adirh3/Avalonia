@@ -18,7 +18,5 @@ namespace Avalonia.Input
         /// </summary>
         [Unstable("This API might be removed in 11.x minor updates. Please consider focusing another element instead of removing focus at all for better UX.")]
         void ClearFocus();
-
-        void RemoveFocusScope(IFocusScope scope);
     }
 }
