@@ -355,7 +355,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                     {
                         activity.SetTranslucent(true);
                         SetBlurBehind(activity, 0);
-                        activity.Window.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
+                        activity.Window?.SetBackgroundDrawable(new ColorDrawable(Color.Transparent));
                     }
                 }
                 else if (level == WindowTransparencyLevel.Blur)
@@ -403,7 +403,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                 return _nativeControlHost;
             }
 
-            if (featureType == typeof(IInsetsManager))
+            if (featureType == typeof(IInsetsManager) || featureType == typeof(IInputPane))
             {
                 return _insetsManager;
             }
@@ -455,8 +455,6 @@ namespace Avalonia.Android.Platform.SkiaPlatform
     internal class EditableWrapper : SpannableStringBuilder
     {
         private readonly AvaloniaInputConnection _inputConnection;
-
-        public event EventHandler<int> SelectionChanged;
 
         public EditableWrapper(AvaloniaInputConnection inputConnection)
         {
@@ -630,6 +628,12 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                 case ImeAction.Done:
                     {
                         _inputMethod.IMM.HideSoftInputFromWindow(_inputMethod.View.WindowToken, HideSoftInputFlags.ImplicitOnly);
+                        break;
+                    }
+                case ImeAction.Next:
+                    {
+                        FocusManager.GetFocusManager(_toplevel.InputRoot)?
+                            .TryMoveFocus(NavigationDirection.Next);
                         break;
                     }
             }
