@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.Versioning;
 using System.Threading;
 using Android.App;
 using System.Numerics;
 using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.OS;
 using Android.Runtime;
 using Android.Text;
 using Android.Views;
@@ -28,10 +26,8 @@ using Avalonia.OpenGL.Egl;
 using Avalonia.OpenGL.Surfaces;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
-using Avalonia.Rendering;
 using Avalonia.Rendering.Composition;
 using Java.Lang;
-using static System.Net.Mime.MediaTypeNames;
 using ClipboardManager = Android.Content.ClipboardManager;
 
 namespace Avalonia.Android.Platform.SkiaPlatform
@@ -46,7 +42,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         private readonly AndroidInputMethod<ViewImpl> _textInputMethod;
         private readonly INativeControlHostImpl _nativeControlHost;
         private readonly IStorageProvider _storageProvider;
-        private readonly ISystemNavigationManagerImpl _systemNavigationManager;
+        private readonly AndroidSystemNavigationManagerImpl _systemNavigationManager;
         private readonly AndroidInsetsManager _insetsManager;
         private readonly ClipboardImpl _clipboard;
         private ViewImpl _view;
@@ -77,6 +73,8 @@ namespace Avalonia.Android.Platform.SkiaPlatform
             _transparencyLevel = WindowTransparencyLevel.None;
 
             _systemNavigationManager = new AndroidSystemNavigationManagerImpl(avaloniaView.Context as IActivityNavigationService);
+
+            Surfaces = new object[] { _gl, _framebuffer, Handle };
         }
 
         public virtual Point GetAvaloniaPointFromEvent(MotionEvent e, int pointerIndex) =>
@@ -108,7 +106,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
 
         public IPlatformHandle Handle => _view;
 
-        public IEnumerable<object> Surfaces => new object[] { _gl, _framebuffer, Handle };
+        public IEnumerable<object> Surfaces { get; }
 
         public Compositor Compositor => AndroidPlatform.Compositor;
         
@@ -156,6 +154,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         
         public virtual void Dispose()
         {
+            _systemNavigationManager.Dispose();
             _view.Dispose();
             _view = null;
         }

@@ -166,7 +166,7 @@ namespace Avalonia.Win32
 
             Screen = new ScreenImpl();
             _storageProvider = new Win32StorageProvider(this);
-            _inputPane = Win32Platform.WindowsVersion >= PlatformConstants.Windows10 ? new WindowsInputPane(this) : null;
+            _inputPane = WindowsInputPane.TryCreate(this);
             _nativeControlHost = new Win32NativeControlHost(this, !UseRedirectionBitmap);
             _defaultTransparencyLevel = UseRedirectionBitmap ? WindowTransparencyLevel.None : WindowTransparencyLevel.Transparent;
             _transparencyLevel = _defaultTransparencyLevel;
@@ -1349,7 +1349,7 @@ namespace Avalonia.Win32
             else
                 SetFullScreen(newProperties.IsFullScreen);
 
-            if (!_isFullScreenActive)
+            if (!_isFullScreenActive && ((oldProperties.Decorations != newProperties.Decorations) || forceChanges))
             {
                 var style = GetStyle();
 
