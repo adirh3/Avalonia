@@ -410,18 +410,6 @@ namespace Avalonia.Controls.Primitives
         }
 
         /// <summary>
-        /// Scrolls the specified item into view.
-        /// </summary>
-        /// <param name="index">The index of the item.</param>
-        public void ScrollIntoView(int index) => Presenter?.ScrollIntoView(index);
-
-        /// <summary>
-        /// Scrolls the specified item into view.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        public void ScrollIntoView(object item) => ScrollIntoView(ItemsView.IndexOf(item));
-
-        /// <summary>
         /// Gets the value of the <see cref="IsSelectedProperty"/> on the specified control.
         /// </summary>
         /// <param name="control">The control.</param>
@@ -690,7 +678,7 @@ namespace Avalonia.Controls.Primitives
                 if (value is null)
                 {
                     // Clearing SelectedValueBinding makes the SelectedValue the item itself
-                    SelectedValue = SelectedItem;
+                    SetCurrentValue(SelectedValueProperty, SelectedItem);
                     return;
                 }
 
@@ -710,7 +698,7 @@ namespace Avalonia.Controls.Primitives
                     }
 
                     // Re-evaluate SelectedValue with the new binding
-                    SelectedValue = _bindingHelper.Evaluate(selectedItem);
+                    SetCurrentValue(SelectedValueProperty, _bindingHelper.Evaluate(selectedItem));
                 }
                 finally
                 {
@@ -1080,7 +1068,7 @@ namespace Avalonia.Controls.Primitives
             {
                 var itemValue = _bindingHelper.Evaluate(item);
 
-                if (itemValue.Equals(value))
+                if (Equals(itemValue, value))
                 {
                     return item;
                 }
@@ -1103,7 +1091,7 @@ namespace Avalonia.Controls.Primitives
                 try
                 {
                     _isSelectionChangeActive = true;
-                    SelectedValue = item;
+                    SetCurrentValue(SelectedValueProperty, item);
                 }
                 finally
                 {
@@ -1117,7 +1105,7 @@ namespace Avalonia.Controls.Primitives
             try
             {
                 _isSelectionChangeActive = true;
-                SelectedValue = _bindingHelper.Evaluate(item);
+                SetCurrentValue(SelectedValueProperty, _bindingHelper.Evaluate(item));
             }
             finally
             {
@@ -1381,7 +1369,7 @@ namespace Avalonia.Controls.Primitives
             public static readonly StyledProperty<object> ValueProperty =
                 AvaloniaProperty.Register<BindingHelper, object>("Value");
 
-            public object Evaluate(object? dataContext)
+            public object? Evaluate(object? dataContext)
             {
                 // Only update the DataContext if necessary
                 if (!Equals(dataContext, DataContext))
