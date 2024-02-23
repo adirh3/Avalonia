@@ -93,7 +93,7 @@ namespace Avalonia.Rendering.Composition
         /// Requests pending changes in the composition objects to be serialized and sent to the render thread
         /// </summary>
         /// <returns>A task that completes when sent changes are applied on the render thread</returns>
-        public Task RequestCommitAsync() => RequestCompositionBatchCommitAsync().Processed;
+        public Task RequestCommitAsync() => RequestCompositionBatchCommitAsync()?.Processed ?? Task.CompletedTask;
 
         /// <summary>
         /// Requests pending changes in the composition objects to be serialized and sent to the render thread
