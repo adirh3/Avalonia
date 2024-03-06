@@ -92,6 +92,11 @@ namespace Avalonia.Skia
         {
             return new SKRect((float)r.X, (float)r.Y, (float)r.Right, (float)r.Bottom);
         }
+        
+        public static SKRectI ToSKRectI(this PixelRect r)
+        {
+            return new SKRectI(r.X, r.Y, r.Right, r.Bottom);
+        }
 
         public static SKRoundRect ToSKRoundRect(this RoundedRect r)
         {
@@ -111,6 +116,11 @@ namespace Avalonia.Skia
         public static Rect ToAvaloniaRect(this SKRect r)
         {
             return new Rect(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
+        }
+        
+        public static PixelRect ToAvaloniaPixelRect(this SKRectI r)
+        {
+            return new PixelRect(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
         }
 
         public static SKMatrix ToSKMatrix(this Matrix m)

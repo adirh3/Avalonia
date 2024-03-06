@@ -3,6 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -35,10 +37,6 @@
     <Content Include="build\Avalonia.Browser.targets">
       <Pack>true</Pack>
       <PackagePath>build/;buildTransitive/</PackagePath>
-    </Content>
-    <Content Include="build\interop.js">
-      <Pack>true</Pack>
-      <PackagePath>build/interop.js;buildTransitive/interop.js</PackagePath>
     </Content>
     <Content Include="staticwebassets/**/*.*">
       <Pack>true</Pack>

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>$(AvsCurrentTargetFramework)</TargetFramework>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);AVP1012</NoWarn>
   </PropertyGroup>
