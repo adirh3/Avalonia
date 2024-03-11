@@ -305,6 +305,12 @@ namespace Avalonia.X11
             if (!IsEnabled)
             {
                 functions &= ~(MotifFunctions.Resize | MotifFunctions.Minimize);
+
+                UpdateSizeHints(null, true);
+            }
+            else
+            {
+                UpdateSizeHints(null);
             }
 
             var hints = new MotifWmHints
@@ -319,14 +325,14 @@ namespace Avalonia.X11
                 PropertyMode.Replace, ref hints, 5);
         }
 
-        private void UpdateSizeHints(PixelSize? preResize)
+        private void UpdateSizeHints(PixelSize? preResize, bool forceDisableResize = false)
         {
             if (_overrideRedirect)
                 return;
             var min = _minMaxSize.minSize;
             var max = _minMaxSize.maxSize;
 
-            if (!_canResize)
+            if (!_canResize || forceDisableResize)
             {
                 if (preResize.HasValue)
                 {
@@ -1034,7 +1040,11 @@ namespace Avalonia.X11
 
 
         public void Resize(Size clientSize, WindowResizeReason reason) => Resize(clientSize, false, reason);
-        public void Move(PixelPoint point) => Position = point;
+        public void Move(PixelPoint point)
+        {
+            Position = point;
+            UpdateScaling();
+        }
         private void MoveResize(PixelPoint position, Size size, double scaling)
         {
             Move(position);
@@ -1297,6 +1307,13 @@ namespace Avalonia.X11
 
             UpdateWMHints();
             UpdateMotifHints();
+
+            if (enable)
+            {
+                // Some window managers ignore Motif hints when switching from disabled to enabled on the first update
+                // so setting it again forces the update
+                UpdateMotifHints();
+            }
         }
 
         private void UpdateWMHints()

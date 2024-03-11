@@ -139,7 +139,7 @@ namespace Avalonia.Skia
                 {
                     if (!_isDisposed)
                     {
-                        _context.Canvas.SetMatrix(_revertTransform);
+                        SkiaCompat.SetMatrix(_context.Canvas, _revertTransform);
                         _context._leased = false;
                         _isDisposed = true;
                     }
@@ -327,7 +327,7 @@ namespace Avalonia.Skia
             {
                 var ac = shadow.Color;
 
-                var filter = SKImageFilter.CreateBlur(SkBlurRadiusToSigma(shadow.Blur), SkBlurRadiusToSigma(shadow.Blur));
+                var filter = SkiaCompat.CreateBlur(SkBlurRadiusToSigma(shadow.Blur), SkBlurRadiusToSigma(shadow.Blur));
                 var color = new SKColor(ac.R, ac.G, ac.B, (byte)(ac.A * opacity));
 
                 paint.Reset();
@@ -852,7 +852,7 @@ namespace Avalonia.Skia
                     transform *= _postTransform.Value;
                 }
 
-                Canvas.SetMatrix(transform.ToSKMatrix());
+                SkiaCompat.SetMatrix(Canvas, transform.ToSKMatrix());
             }
         }
 
@@ -1395,7 +1395,6 @@ namespace Avalonia.Skia
         /// Create new render target compatible with this drawing context.
         /// </summary>
         /// <param name="pixelSize">The size of the render target.</param>
-        /// <param name="dpi">The DPI of the render target.</param>
         /// <param name="isLayer">Whether the render target is being created for a layer.</param>
         /// <param name="format">Pixel format.</param>
         /// <returns></returns>
