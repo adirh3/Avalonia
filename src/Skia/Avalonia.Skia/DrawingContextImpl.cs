@@ -30,7 +30,7 @@ namespace Avalonia.Skia
         private readonly Matrix? _postTransform;
         private double _currentOpacity = 1.0f;
         private readonly bool _disableSubpixelTextRendering;
-        private Matrix _currentTransform;
+        private Matrix? _currentTransform;
         private bool _disposed;
         private GRContext? _grContext;
         public GRContext? GrContext => _grContext;
@@ -465,7 +465,7 @@ namespace Avalonia.Skia
                             Transform = oldTransform;
                         }
 
-                        Canvas.Restore();
+                        RestoreCanvas();
                     }
                 }
             }
@@ -508,7 +508,7 @@ namespace Avalonia.Skia
                         using (var outerRRect = new SKRoundRect(outerRect))
                             Canvas.DrawRoundRectDifference(outerRRect, shadowRect, shadow.Paint);
                         Transform = oldTransform;
-                        Canvas.Restore();
+                        RestoreCanvas();
                         SKRoundRectCache.Shared.Return(shadowRect);
                     }
                 }
@@ -671,11 +671,17 @@ namespace Avalonia.Skia
             Canvas.ClipRegion(r);
         }
 
+        private void RestoreCanvas()
+        {
+            _currentTransform = null;
+            Canvas.Restore();
+        }
+        
         /// <inheritdoc />
         public void PopClip()
         {
             CheckLease();
-            Canvas.Restore();
+            RestoreCanvas();
         }
 
         public void PushLayer(Rect bounds)
@@ -687,7 +693,7 @@ namespace Avalonia.Skia
         public void PopLayer()
         {
             CheckLease();
-            Canvas.Restore();
+            RestoreCanvas();
         }
 
         /// <inheritdoc />
@@ -730,7 +736,7 @@ namespace Avalonia.Skia
 
             if (useOpacitySaveLayer)
             {
-                Canvas.Restore();
+                RestoreCanvas();
             }
 
             _currentOpacity = _opacityStack.Pop();
@@ -795,7 +801,7 @@ namespace Avalonia.Skia
         public void PopGeometryClip()
         {
             CheckLease();
-            Canvas.Restore();
+            RestoreCanvas();
         }
 
         /// <inheritdoc />
@@ -828,15 +834,15 @@ namespace Avalonia.Skia
             // Return the paint wrapper's paint less the reset since the paint is already reset in the Dispose method above.
             SKPaintCache.Shared.Return(paintWrapper.Paint);
 
-            Canvas.Restore();
+            RestoreCanvas();
 
-            Canvas.Restore();
+            RestoreCanvas();
         }
 
         /// <inheritdoc />
         public Matrix Transform
         {
-            get { return _currentTransform; }
+            get { return _currentTransform ??= Canvas.TotalMatrix.ToAvaloniaMatrix(); }
             set
             {
                 CheckLease();
@@ -1151,7 +1157,10 @@ namespace Avalonia.Skia
 
             if (content.Transform is not null)
             {
-                transform = content.Transform.Value * transform;
+                var transformOrigin = content.TransformOrigin.ToPixels(targetRect);
+                var offset = Matrix.CreateTranslation(transformOrigin);
+
+                transform *= -offset * content.Transform.Value * offset;
             }
 
             var calc = new TileBrushCalculator(tileBrush, contentSize, targetRect.Size);
