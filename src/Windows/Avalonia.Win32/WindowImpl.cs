@@ -608,7 +608,7 @@ namespace Avalonia.Win32
 
             windowPlacement.NormalPosition = requestedWindowRect;
 
-            windowPlacement.ShowCmd = _lastWindowState switch
+            windowPlacement.ShowCmd = !_shown ? ShowWindowCommand.Hide : _lastWindowState switch
             {
                 WindowState.Minimized => ShowWindowCommand.ShowMinNoActive,
                 WindowState.Maximized => ShowWindowCommand.ShowMaximized,
