@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using System.Windows.Input;
-using Avalonia.Data.Converters;
-using Avalonia.Threading;
+using Avalonia.Utilities;
 
 namespace Avalonia.Data.Core.ExpressionNodes;
 
@@ -12,14 +11,13 @@ namespace Avalonia.Data.Core.ExpressionNodes;
 /// A node in an <see cref="BindingExpression"/> which converts methods to an
 /// <see cref="ICommand"/>.
 /// </summary>
-internal sealed class MethodCommandNode : ExpressionNode
+internal sealed class MethodCommandNode : ExpressionNode, IWeakEventSubscriber<PropertyChangedEventArgs>
 {
     private readonly string _methodName;
     private readonly Action<object, object?> _execute;
     private readonly Func<object, object?, bool>? _canExecute;
     private readonly ISet<string> _dependsOnProperties;
     private Command? _command;
-    private MethodToCommandConverter.WeakPropertyChangedProxy? _weakPropertyChanged;
 
     public MethodCommandNode(
         string methodName,
@@ -44,9 +42,7 @@ internal sealed class MethodCommandNode : ExpressionNode
     protected override void OnSourceChanged(object source, Exception? dataValidationError)
     {
         if (source is INotifyPropertyChanged newInpc)
-        {
-            _weakPropertyChanged = new MethodToCommandConverter.WeakPropertyChangedProxy(newInpc, OnPropertyChanged);
-        }
+            WeakEvents.ThreadSafePropertyChanged.Subscribe(newInpc, this);
 
         _command = new Command(source, _execute, _canExecute);
         SetValue(_command);
@@ -54,14 +50,11 @@ internal sealed class MethodCommandNode : ExpressionNode
 
     protected override void Unsubscribe(object oldSource)
     {
-        if (oldSource is INotifyPropertyChanged)
-        {
-            _weakPropertyChanged?.Unsubscribe();
-            _weakPropertyChanged = null;
-        }
+        if (oldSource is INotifyPropertyChanged oldInpc)
+            WeakEvents.ThreadSafePropertyChanged.Unsubscribe(oldInpc, this);
     }
 
-    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    public void OnEvent(object? sender, WeakEvent ev, PropertyChangedEventArgs e)
     {
         if (string.IsNullOrEmpty(e.PropertyName) || _dependsOnProperties.Contains(e.PropertyName))
         {
@@ -86,8 +79,8 @@ internal sealed class MethodCommandNode : ExpressionNode
 
         public void RaiseCanExecuteChanged()
         {
-            Dispatcher.UIThread.Post(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty)
-               , DispatcherPriority.Input);
+            Threading.Dispatcher.UIThread.Post(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty)
+               , Threading.DispatcherPriority.Input);
         }
 
         public bool CanExecute(object? parameter)
