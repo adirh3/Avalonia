@@ -608,6 +608,10 @@ namespace Avalonia.Win32
                 case WindowsMessage.WM_ENTERSIZEMOVE:
                     _resizeReason = WindowResizeReason.User;
                     break;
+                
+                case WindowsMessage.WM_SHOWWINDOW:
+                    _shown = wParam != default;
+                    break;
 
                 case WindowsMessage.WM_SIZE:
                     {
