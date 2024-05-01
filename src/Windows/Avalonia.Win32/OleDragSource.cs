@@ -8,7 +8,6 @@ namespace Avalonia.Win32
 {
     internal class OleDragSource : CallbackBase, IDropSource
     {
-        private const int DRAGDROP_S_USEDEFAULTCURSORS = 0x00040102;
         private const int DRAGDROP_S_DROP = 0x00040100;
         private const int DRAGDROP_S_CANCEL = 0x00040101;
 
