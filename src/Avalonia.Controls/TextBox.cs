@@ -1289,9 +1289,13 @@ namespace Avalonia.Controls
             }
             else if (Match(keymap.MoveCursorToTheEndOfLine))
             {
+                selection = SelectionEnd != 0; // means selection was canceled
+                if (selection)
+                {
+                    ClearSelection();
+                }
                 MoveEnd(false);
                 movement = true;
-                selection = false;
                 handled = true;
                 SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
             }
