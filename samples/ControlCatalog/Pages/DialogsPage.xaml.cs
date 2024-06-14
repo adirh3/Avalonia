@@ -1,8 +1,11 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -43,7 +46,7 @@ namespace ControlCatalog.Pages
                 {
                     lastSelectedDirectory = await GetStorageProvider().TryGetWellKnownFolderAsync(folderEnum);
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(currentFolderBox.Text))
                 {
                     if (!Uri.TryCreate(currentFolderBox.Text, UriKind.Absolute, out var folderLink))
                     {
@@ -52,7 +55,14 @@ namespace ControlCatalog.Pages
 
                     if (folderLink is not null)
                     {
-                        lastSelectedDirectory = await GetStorageProvider().TryGetFolderFromPathAsync(folderLink);
+                        try
+                        {
+                            lastSelectedDirectory = await GetStorageProvider().TryGetFolderFromPathAsync(folderLink);
+                        }
+                        catch (SecurityException)
+                        {
+                            
+                        }
                     }
                 }
             };
@@ -239,7 +249,6 @@ namespace ControlCatalog.Pages
                     FileTypeChoices = fileTypes,
                     SuggestedStartLocation = lastSelectedDirectory,
                     SuggestedFileName = "FileName",
-                    DefaultExtension = fileTypes?.Any() == true ? "txt" : null,
                     ShowOverwritePrompt = true
                 });
 
@@ -248,12 +257,12 @@ namespace ControlCatalog.Pages
                     // Sync disposal of StreamWriter is not supported on WASM
 #if NET6_0_OR_GREATER
                     await using var stream = await file.OpenWriteAsync();
-                    await using var reader = new System.IO.StreamWriter(stream);
+                    await using var writer = new System.IO.StreamWriter(stream);
 #else
-                                using var stream = await file.OpenWriteAsync();
-                                using var reader = new System.IO.StreamWriter(stream);
+                    using var stream = await file.OpenWriteAsync();
+                    using var writer = new System.IO.StreamWriter(stream);
 #endif
-                    await reader.WriteLineAsync(openedFileContent.Text);
+                    await writer.WriteLineAsync(openedFileContent.Text);
 
                     SetFolder(await file.GetParentAsync());
                 }
@@ -468,8 +477,8 @@ CanPickFolder: {storageProvider.CanPickFolder}";
         private IStorageProvider GetStorageProvider()
         {
             var forceManaged = this.Get<CheckBox>("ForceManaged").IsChecked ?? false;
-            return forceManaged
-                ? new ManagedStorageProvider(GetWindow())
+            return forceManaged 
+                ? new ManagedStorageProvider(GetWindow()) // NOTE: In your production App use 'AppBuilder.UseManagedSystemDialogs()'
                 : GetTopLevel().StorageProvider;
         }
 

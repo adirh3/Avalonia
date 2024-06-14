@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ResolveStaticWebAssetsInputsDependsOn>_IncludeGeneratedAvaloniaStaticFiles;$(ResolveStaticWebAssetsInputsDependsOn)</ResolveStaticWebAssetsInputsDependsOn>
     <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <ResolveStaticWebAssetsInputsDependsOn>_IncludeGeneratedAvaloniaStaticFiles;$(ResolveStaticWebAssetsInputsDependsOn)</ResolveStaticWebAssetsInputsDependsOn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -61,15 +61,7 @@ namespace MiniMvvm
             var prop = (PropertyInfo)ma.Member;
             return new PropertyObservable<TRes>(model, prop);
         }
-        
-        public static IObservable<TRes> WhenAnyValue<TModel, T1, TRes>(this TModel model,
-            Expression<Func<TModel, T1>> v1,
-            Func<T1,  TRes> cb
-        ) where TModel : INotifyPropertyChanged
-        {
-            return model.WhenAnyValue(v1).Select(cb);
-        }
-        
+
         public static IObservable<TRes> WhenAnyValue<TModel, T1, T2, TRes>(this TModel model,
             Expression<Func<TModel, T1>> v1,
             Expression<Func<TModel, T2>> v2,
@@ -86,25 +78,18 @@ namespace MiniMvvm
         ) where TModel : INotifyPropertyChanged =>
             model.WhenAnyValue(v1, v2, (a1, a2) => (a1, a2));
 
-        public static IObservable<TRes> WhenAnyValue<TModel, T1, T2, T3, TRes>(this TModel model,
+        public static IObservable<TRes>WhenAnyValue<TModel, T1, T2, T3, TRes>(this TModel model,
             Expression<Func<TModel, T1>> v1,
             Expression<Func<TModel, T2>> v2,
             Expression<Func<TModel, T3>> v3,
             Func<T1, T2, T3, TRes> cb
-        ) where TModel : INotifyPropertyChanged =>
-            model.WhenAnyValue(v1)
-                .CombineLatest(
-                    model.WhenAnyValue(v2),
-                    (l, r) => (l, r))
-                .CombineLatest(
-                    model.WhenAnyValue(v3),
-                    (t, r) => cb(t.l, t.r, r));
-
-        public static IObservable<ValueTuple<T1, T2, T3>> WhenAnyValue<TModel, T1, T2, T3>(this TModel model,
-            Expression<Func<TModel, T1>> v1,
-            Expression<Func<TModel, T2>> v2,
-            Expression<Func<TModel, T3>> v3
-        ) where TModel : INotifyPropertyChanged =>
-            model.WhenAnyValue(v1, v2, v3, (a1, a2, a3) => (a1, a2, a3));
+        ) where TModel : INotifyPropertyChanged
+        {
+            var whenAnyValue = model.WhenAnyValue(v1);
+            var combineLatest = Observable.CombineLatest(whenAnyValue,   model.WhenAnyValue(v2),
+                (l, r) => (l, r));
+            return Observable.CombineLatest(combineLatest, model.WhenAnyValue(v3),
+                (t, r) => cb(t.l, t.r, r));
+        }
     }
 }
