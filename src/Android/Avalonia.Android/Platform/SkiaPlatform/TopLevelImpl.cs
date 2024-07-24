@@ -102,7 +102,6 @@ namespace Avalonia.Android.Platform.SkiaPlatform
         internal InvalidationAwareSurfaceView InternalView => _view;
 
         public double DesktopScaling => RenderScaling;
-        public IScreenImpl? Screen { get; }
         public IPlatformHandle Handle => _view;
 
         public IEnumerable<object> Surfaces { get; }

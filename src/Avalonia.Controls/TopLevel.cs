@@ -153,6 +153,7 @@ namespace Avalonia.Controls
         private Border? _transparencyFallbackBorder;
         private TargetWeakEventSubscriber<TopLevel, ResourcesChangedEventArgs>? _resourcesChangesSubscriber;
         private IStorageProvider? _storageProvider;
+        private Screens? _screens;
         private LayoutDiagnosticBridge? _layoutDiagnosticBridge;
         
         private float _compositionPadding;
@@ -577,7 +578,7 @@ namespace Avalonia.Controls
         public double RenderScaling => PlatformImpl?.RenderScaling ?? 1;
 
         IStyleHost IStyleHost.StylingParent => _globalStyles!;
-        
+
         /// <summary>
         /// File System storage service used for file pickers and bookmarks.
         /// </summary>
@@ -589,6 +590,12 @@ namespace Avalonia.Controls
         public IInsetsManager? InsetsManager => PlatformImpl?.TryGetFeature<IInsetsManager>();
         public IInputPane? InputPane => PlatformImpl?.TryGetFeature<IInputPane>();
         public ILauncher Launcher => PlatformImpl?.TryGetFeature<ILauncher>() ?? new NoopLauncher();
+
+        /// <summary>
+        /// Gets platform screens implementation.
+        /// </summary>
+        public Screens? Screens => _screens ??=
+            PlatformImpl?.TryGetFeature<IScreenImpl>() is { } screenImpl ? new Screens(screenImpl) : null;
 
         /// <summary>
         /// Gets the platform's clipboard implementation
