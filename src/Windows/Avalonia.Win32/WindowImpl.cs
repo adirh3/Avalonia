@@ -580,14 +580,6 @@ namespace Avalonia.Win32
                 return;
             }
 
-            if (_lastWindowState == WindowState.FullScreen)
-            {
-                // Fullscreen mode is really a restored window without a frame filling the whole monitor.
-                // It doesn't make sense to resize the window in this state, so ignore this request.
-                Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(this, "Ignoring resize event on fullscreen window.");
-                return;
-            }
-
             GetWindowPlacement(_hwnd, out var windowPlacement);
 
             var clientScreenOrigin = new POINT();
@@ -616,6 +608,7 @@ namespace Avalonia.Win32
                 WindowState.Minimized => ShowWindowCommand.ShowMinNoActive,
                 WindowState.Maximized => ShowWindowCommand.ShowMaximized,
                 WindowState.Normal => ShowWindowCommand.ShowNoActivate,
+                WindowState.FullScreen => ShowWindowCommand.Show,
                 _ => throw new NotImplementedException(),
             };
 
