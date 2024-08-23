@@ -58,9 +58,15 @@ internal class BrowserWindowingPlatform : IWindowingPlatform
 
     public IWindowImpl CreateWindow() => throw new NotSupportedException("Browser doesn't support windowing platform. In order to display a single-view content, set ISingleViewApplicationLifetime.MainView.");
 
+
     IWindowImpl IWindowingPlatform.CreateEmbeddableWindow()
     {
         throw new NotImplementedException("Browser doesn't support embeddable windowing platform.");
+    }
+
+    ITopLevelImpl IWindowingPlatform.CreateEmbeddableTopLevel()
+    {
+        throw new NotImplementedException();
     }
 
     public ITrayIconImpl? CreateTrayIcon()
@@ -82,6 +88,7 @@ internal class BrowserWindowingPlatform : IWindowingPlatform
             .Bind<IKeyboardDevice>().ToConstant(s_keyboard)
             .Bind<IPlatformSettings>().ToSingleton<BrowserPlatformSettings>()
             .Bind<ISystemNavigationManagerImpl>().ToSingleton<BrowserSystemNavigationManagerImpl>()
+            .Bind<IScreenImpl>().ToSingleton<BrowserScreens>()
             .Bind<IWindowingPlatform>().ToConstant(instance)
             .Bind<IPlatformIconLoader>().ToSingleton<IconLoaderStub>()
             .Bind<PlatformHotkeyConfiguration>().ToSingleton<PlatformHotkeyConfiguration>()

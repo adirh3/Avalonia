@@ -124,6 +124,8 @@ namespace Avalonia.Browser
         {
         }
 
+        public double DesktopScaling => RenderScaling;
+        public IPlatformHandle? Handle { get; }
         public Size ClientSize => _surface?.ClientSize ?? new Size(1, 1);
         public Size? FrameSize => null;
         public double RenderScaling => _surface?.Scaling ?? 1;
@@ -163,6 +165,11 @@ namespace Avalonia.Browser
                 return AvaloniaLocator.Current.GetService<ISystemNavigationManagerImpl>();
             }
 
+            if (featureType == typeof(IScreenImpl))
+            {
+                return AvaloniaLocator.Current.GetService<IScreenImpl>();
+            }
+
             if (featureType == typeof(INativeControlHostImpl))
             {
                 return _nativeControlHost;
@@ -181,6 +188,11 @@ namespace Avalonia.Browser
             if (featureType == typeof(IInputPane))
             {
                 return _inputHandler.InputPane;
+            }
+
+            if (featureType == typeof(ILauncher))
+            {
+                return new BrowserLauncher();
             }
 
             return null;
