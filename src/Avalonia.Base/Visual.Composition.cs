@@ -54,6 +54,7 @@ public partial class Visual
                 CompositionVisual.Children.Remove(ChildCompositionVisual);
                 
             CompositionVisual.DrawList = null;
+            CompositionVisual.OpacityMask = null;
             CompositionVisual = null;
         }
     }
@@ -160,7 +161,7 @@ public partial class Visual
         comp.Clip = Clip?.PlatformImpl;
         
         if (!Equals(comp.OpacityMask, OpacityMask))
-            comp.OpacityMask = OpacityMask?.ToImmutable();
+            comp.OpacityMask = OpacityMask;
 
         if (!comp.Effect.EffectEquals(Effect))
             comp.Effect = Effect?.ToImmutable();
