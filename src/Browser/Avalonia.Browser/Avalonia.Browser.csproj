@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <TargetFramework>net7.0</TargetFramework>
     <TargetFramework>$(AvsCurrentBrowserTargetFramework)</TargetFramework>
+    <TargetFrameworks>$(AvsCurrentTargetFramework);$(AvsCurrentBrowserTargetFramework)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
