@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Emit;
 using Avalonia.Markup.Parsers;
@@ -717,6 +718,8 @@ namespace Avalonia.Markup.Xaml.XamlIl.CompilerExtensions
 
             public IXamlType Type { get; }
 
+            [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "bla")]
+            [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "bla")]
             public void Emit(XamlIlEmitContext context, IXamlILEmitter codeGen)
             {
                 IXamlTypeBuilder<IXamlILEmitter>? newDelegateTypeBuilder = null;

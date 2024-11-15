@@ -37,10 +37,10 @@ partial class Build : NukeBuild
     [PackageExecutable("Microsoft.DotNet.ApiCompat.Tool", "Microsoft.DotNet.ApiCompat.Tool.dll", Framework = "net6.0")]
     Tool ApiCompatTool;
     
-    [PackageExecutable("Microsoft.DotNet.GenAPI.Tool", "Microsoft.DotNet.GenAPI.Tool.dll", Framework = "net8.0")]
+    [PackageExecutable("Microsoft.DotNet.GenAPI.Tool", "Microsoft.DotNet.GenAPI.Tool.dll", Framework = "net9.0")]
     Tool ApiGenTool;
 
-    [PackageExecutable("dotnet-ilrepack", "ILRepackTool.dll", Framework = "net8.0")]
+    [PackageExecutable("dotnet-ilrepack", "ILRepackTool.dll", Framework = "net9.0")]
     Tool IlRepackTool;
     
     protected override void OnBuildInitialized()
@@ -196,7 +196,7 @@ partial class Build : NukeBuild
             var tfm = fw;
             if (tfm == "$(AvsCurrentTargetFramework)")
             {
-                tfm = "net8.0";
+                tfm = "net9.0";
             }
             if (tfm == "$(AvsLegacyTargetFrameworks)")
             {

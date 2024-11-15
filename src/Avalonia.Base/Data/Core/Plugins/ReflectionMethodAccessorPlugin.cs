@@ -83,6 +83,7 @@ namespace Avalonia.Data.Core.Plugins
 
         private sealed class Accessor : PropertyAccessorBase
         {
+            [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = TrimmingMessages.IgnoreNativeAotSupressWarningMessage)]
             public Accessor(WeakReference<object?> reference, MethodInfo method)
             {
                 _ = reference ?? throw new ArgumentNullException(nameof(reference));
@@ -105,9 +106,7 @@ namespace Avalonia.Data.Core.Plugins
                 }
 
                 paramTypes[paramTypes.Length - 1] = returnType;
-
                 PropertyType = Expression.GetDelegateType(paramTypes);
-
                 if (method.IsStatic)
                 {
                     Value = method.CreateDelegate(PropertyType);

@@ -1516,6 +1516,7 @@ namespace Metsys.Bson.Configuration
                 return null;
             }
 
+            [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "bla")]
             private string Visit(BinaryExpression expression)
             {
                 string result = null;
@@ -1538,6 +1539,7 @@ namespace Metsys.Bson.Configuration
                 return name;
             }
 
+            [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "bla")]
             private string Visit(MethodCallExpression expression)
             {
                 string name = null;

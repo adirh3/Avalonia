@@ -110,11 +110,11 @@ public static class ApiDiffHelper
     private static readonly (string package, string oldTfm, string newTfm)[] s_tfmRedirects = new[]
     {
         // We use StartsWith below comparing these tfm, as we ignore platform versions (like, net6.0-ios16.1).
-        ("Avalonia.Android", "net6.0-android", "net8.0-android"),
-        ("Avalonia.iOS", "net6.0-ios", "net8.0-ios"),
-        // Browser was changed from net7.0 to net8.0-browser. 
-        ("Avalonia.Browser", "net7.0", "net8.0-browser"),
-        ("Avalonia.Browser.Blazor", "net7.0", "net8.0-browser"),
+        ("Avalonia.Android", "net6.0-android", "net9.0-android"),
+        ("Avalonia.iOS", "net6.0-ios", "net9.0-ios"),
+        // Browser was changed from net7.0 to net9.0-browser. 
+        ("Avalonia.Browser", "net7.0", "net9.0-browser"),
+        ("Avalonia.Browser.Blazor", "net7.0", "net9.0-browser"),
         // Designer was moved from netcoreapp to netstandard.
         ("Avalonia", "netcoreapp2.0", "netstandard2.0"),
         ("Avalonia", "net461", "netstandard2.0")

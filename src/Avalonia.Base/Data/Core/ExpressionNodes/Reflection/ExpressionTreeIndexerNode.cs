@@ -16,6 +16,7 @@ internal sealed class ExpressionTreeIndexerNode : CollectionNodeBase, ISettableN
     private readonly Delegate _getDelegate;
     private readonly Delegate _firstArgumentDelegate;
 
+    [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = TrimmingMessages.IgnoreNativeAotSupressWarningMessage)]
     public ExpressionTreeIndexerNode(IndexExpression expression)
     {
         var valueParameter = Expression.Parameter(expression.Type);

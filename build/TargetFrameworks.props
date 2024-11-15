@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
-    <AvsCurrentTargetFramework>net8.0</AvsCurrentTargetFramework>
+    <PublishAot>false</PublishAot>
+    <AvsCurrentTargetFramework>net9.0</AvsCurrentTargetFramework>
     <AvsCurrentWindowsTargetFramework>$(AvsCurrentTargetFramework)-windows</AvsCurrentWindowsTargetFramework>
     <AvsCurrentMacOSTargetFramework>$(AvsCurrentTargetFramework)-macos</AvsCurrentMacOSTargetFramework>
     <AvsCurrentAndroidTargetFramework>$(AvsCurrentTargetFramework)-android34.0</AvsCurrentAndroidTargetFramework>

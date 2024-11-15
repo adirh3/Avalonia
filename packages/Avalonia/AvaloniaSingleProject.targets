@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- For projects that want to treat "netx.0-windows" as a "netx.0" -->
     <AvaloniaSingleProjectTreatWindowsAsShared Condition="'$(AvaloniaSingleProjectTreatWindowsAsShared)' == ''">false</AvaloniaSingleProjectTreatWindowsAsShared>
-    <!-- "net8.0" target without specific platform should be treated as a desktop target by default for executable projects.  -->
+    <!-- "net9.0" target without specific platform should be treated as a desktop target by default for executable projects.  -->
     <AvaloniaSingleProjectTreatSharedAsDesktop Condition="'$(AvaloniaSingleProjectTreatSharedAsDesktop)' == '' AND ('$(OutputType)' == 'Exe' OR '$(OutputType)' == 'WinExe')">true</AvaloniaSingleProjectTreatSharedAsDesktop>
   </PropertyGroup>
 
@@ -29,7 +29,7 @@
 
   <PropertyGroup Condition=" '$(_AvaloniaWindowsTarget)' == 'true' ">
     <OutputType Condition="'$(OutputType)' == 'Exe'">WinExe</OutputType>
-    <BuiltInComInteropSupport Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</BuiltInComInteropSupport>
+    <BuiltInComInteropSupport Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">true</BuiltInComInteropSupport>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
@@ -74,7 +74,7 @@
     <EnableDefaultTizenItems>false</EnableDefaultTizenItems>
     <TizenProjectFolder Condition=" '$(TizenProjectFolder)' == '' ">$(PlatformsProjectFolder)Tizen\</TizenProjectFolder>
     <TizenProjectFolder>$([MSBuild]::EnsureTrailingSlash('$(TizenProjectFolder)'))</TizenProjectFolder>
-    <!-- Desktop (NET8.0 without specific target) -->
+    <!-- Desktop (net9.0 without specific target) -->
     <DesktopProjectFolder Condition=" '$(DesktopProjectFolder)' == '' ">$(PlatformsProjectFolder)Desktop\</DesktopProjectFolder>
     <DesktopProjectFolder>$([MSBuild]::EnsureTrailingSlash('$(DesktopProjectFolder)'))</DesktopProjectFolder>
   </PropertyGroup>
