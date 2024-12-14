@@ -1429,7 +1429,8 @@ namespace Avalonia.Controls
             }
             else
             {
-                bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers);
+                // It's not secure to rely on password field content when moving.
+                bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers) && !IsPasswordBox;
                 switch (e.Key)
                 {
                     case Key.Left:
