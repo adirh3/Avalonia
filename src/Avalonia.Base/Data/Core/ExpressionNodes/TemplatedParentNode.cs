@@ -30,7 +30,10 @@ internal sealed class TemplatedParentNode : SourceNode
         if (source is StyledElement newElement)
         {
             newElement.PropertyChanged += OnPropertyChanged;
-            SetValue(newElement.TemplatedParent);
+            if (newElement.TemplatedParent != null)
+            {
+                SetValue(newElement.TemplatedParent);
+            }
         }
         else
         {

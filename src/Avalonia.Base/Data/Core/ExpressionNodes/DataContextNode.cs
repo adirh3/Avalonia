@@ -12,7 +12,11 @@ internal sealed class DataContextNode : DataContextNodeBase
         if (source is IDataContextProvider && source is AvaloniaObject ao)
         {
             ao.PropertyChanged += OnPropertyChanged;
-            SetValue(ao.GetValue(StyledElement.DataContextProperty));
+            var dataContext = ao.GetValue(StyledElement.DataContextProperty);
+            if (dataContext != null)
+            {
+                SetValue(dataContext);
+            }
         }
         else
         {
