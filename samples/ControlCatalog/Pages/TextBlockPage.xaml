@@ -118,6 +118,19 @@
         </StackPanel>
       </Border>
       <Border>
+        <TextBlock TextTrimming="CharacterEllipsis">
+          <Run Text="אחד"/>
+          <Run Text="שתיים"/>
+          <Run Text="שלוש"/>
+          <Run Text="ארבע"/>
+          <Run Text="חמש"/>
+          <Run Text="שש"/>
+          <Run Text="שבע"/>
+          <Run Text="שמונה"/>
+          <Run Text="תשע"/>
+        </TextBlock> 
+      </Border>
+      <Border>
         <SelectableTextBlock Margin="10" TextWrapping="Wrap">
           This <Span FontWeight="Bold">is</Span> a
           <Span Background="Silver" Foreground="Maroon">TextBlock</Span>

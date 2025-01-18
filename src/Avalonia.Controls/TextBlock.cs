@@ -724,7 +724,7 @@ namespace Avalonia.Controls
                 InvalidateArrange();
             }
             
-            UpdateTextRuns();
+            UpdateTextRuns(true);
 
             //This implicitly recreated the TextLayout with a new constraint if we previously reset it.
             var textLayout = TextLayout;
@@ -734,11 +734,11 @@ namespace Avalonia.Controls
             return size;
         }
 
-        protected void UpdateTextRuns()
+        protected void UpdateTextRuns(bool force = false)
         {
             var inlines = Inlines;
 
-            if (HasComplexContent && _textRuns == null)
+            if (HasComplexContent && (force || _textRuns == null))
             {
                 var textRuns = new List<TextRun>();
 
