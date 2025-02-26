@@ -154,6 +154,8 @@ namespace Avalonia.Controls
         private IStorageProvider? _storageProvider;
         private Screens? _screens;
         private LayoutDiagnosticBridge? _layoutDiagnosticBridge;
+        private Cursor? _cursor;
+        private Cursor? _cursorOverride;
         
         private float _compositionPadding;
 
@@ -196,7 +198,7 @@ namespace Avalonia.Controls
 
                 if (e.NewValue is InputElement newInputElement)
                 {
-                    topLevel.PlatformImpl?.SetCursor(newInputElement.Cursor?.PlatformImpl);
+                    topLevel.SetCursor(newInputElement.Cursor);
                     newInputElement.PropertyChanged += topLevel.PointerOverElementOnPropertyChanged;
                 }
             });
@@ -904,11 +906,28 @@ namespace Avalonia.Controls
             return candidate;
         }
 
+        private void UpdateCursor() => PlatformImpl?.SetCursor(_cursorOverride?.PlatformImpl ?? _cursor?.PlatformImpl);
+
+        private void SetCursor(Cursor? cursor)
+        {
+            _cursor = cursor;
+            UpdateCursor();
+        }
+        
+        /// <summary>
+        /// This should only be used by InProcessDragSource
+        /// </summary>
+        internal void SetCursorOverride(Cursor? cursor)
+        {
+            _cursorOverride = cursor;
+            UpdateCursor();
+        }
+        
         private void PointerOverElementOnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
             if (e.Property == CursorProperty && sender is InputElement inputElement)
             {
-                PlatformImpl?.SetCursor(inputElement.Cursor?.PlatformImpl);
+                SetCursor(inputElement.Cursor);
             }
         }
 

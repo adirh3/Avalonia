@@ -15,7 +15,9 @@ namespace Avalonia.Skia
     internal class WriteableBitmapImpl : IWriteableBitmapImpl, IDrawableBitmapImpl
     {
         private static readonly SKBitmapReleaseDelegate s_releaseDelegate = ReleaseProc;
-        private readonly SKBitmap _bitmap;
+        private SKBitmap _bitmap;
+        private SKImage? _image;
+        private bool _imageValid;
         private readonly object _lock = new();
         
         /// <summary>
@@ -121,13 +123,31 @@ namespace Avalonia.Skia
         {
             // Can't draw SKBitmap with SKSamplingOptions, need to change to use SKImage? 
             lock (_lock)
-                context.Canvas.DrawBitmap(_bitmap, sourceRect, destRect, paint);
+            {
+                if (_image == null || !_imageValid)
+                {
+                    _image?.Dispose();
+                    _image = null;
+                    // NOTE: this does a snapshot of the bitmap. If SKCanvas is not GPU-backed we might want to avoid
+                    // that by force-sharing the pixel data with SKBitmap, but that would require manual pixel
+                    // buffer management
+                    _image = GetSnapshot();
+                    _imageValid = true;
+                }
+                context.Canvas.DrawImage(_image, sourceRect, destRect, paint);
+            }
         }
 
         /// <inheritdoc />
         public virtual void Dispose()
         {
-            _bitmap.Dispose();
+            lock (_lock)
+            {
+                _image?.Dispose();
+                _image = null;
+                _bitmap.Dispose();
+                _bitmap = null!;
+            }
         }
 
         /// <inheritdoc />
@@ -200,6 +220,7 @@ namespace Avalonia.Skia
             {
                 _bitmap.NotifyPixelsChanged();
                 _parent.Version++;
+                _parent._imageValid = false;
                 Monitor.Exit(_parent._lock);
                 _bitmap = null!;
                 _parent = null!;
