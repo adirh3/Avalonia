@@ -25,6 +25,8 @@ namespace Avalonia.Controls
         static Grid()
         {
             ShowGridLinesProperty.Changed.AddClassHandler<Grid>(OnShowGridLinesPropertyChanged);
+            ColumnSpacingProperty.Changed.AddClassHandler<Control>(OnSpacingPropertyChanged);
+            RowSpacingProperty.Changed.AddClassHandler<Control>(OnSpacingPropertyChanged);
 
             IsSharedSizeScopeProperty.Changed.AddClassHandler<Control>(DefinitionBase.OnIsSharedSizeScopePropertyChanged);
             ColumnProperty.Changed.AddClassHandler<Control>(OnCellAttachedPropertyChanged);
@@ -32,6 +34,7 @@ namespace Avalonia.Controls
             RowProperty.Changed.AddClassHandler<Control>(OnCellAttachedPropertyChanged);
             RowSpanProperty.Changed.AddClassHandler<Control>(OnCellAttachedPropertyChanged);
 
+            AffectsMeasure<Grid>(ColumnSpacingProperty, RowSpacingProperty);
             AffectsParentMeasure<Grid>(ColumnProperty, ColumnSpanProperty, RowProperty, RowSpanProperty);
         }
 
@@ -159,6 +162,24 @@ namespace Avalonia.Controls
         {
             get => GetValue(ShowGridLinesProperty);
             set => SetValue(ShowGridLinesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the spacing to place between grid rows.
+        /// </summary>
+        public double RowSpacing
+        {
+            get => GetValue(RowSpacingProperty);
+            set => SetValue(RowSpacingProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the spacing to place between grid columns.
+        /// </summary>
+        public double ColumnSpacing
+        {
+            get => GetValue(ColumnSpacingProperty);
+            set => SetValue(ColumnSpacingProperty, value);
         }
 
         /// <summary>
@@ -299,7 +320,7 @@ namespace Avalonia.Controls
                     //  the cells belonging to them.
                     //
                     //  However, there are cases when topology of a grid causes cyclical
-                    //  size dependences. For example:
+                    //  size dependencies. For example:
                     //
                     //
                     //                         column width="Auto"      column width="*"
@@ -425,17 +446,21 @@ namespace Avalonia.Controls
                     //
 
                     MeasureCellsGroup(extData.CellGroup1, constraint, false, false);
-
+                    double rowSpacing = RowSpacing;
+                    double columnSpacing = ColumnSpacing;
+                    double combinedRowSpacing = RowSpacing * (RowDefinitions.Count - 1);
+                    double combinedColumnSpacing = ColumnSpacing * (ColumnDefinitions.Count - 1);
+                    Size innerAvailableSize = new Size(constraint.Width - combinedColumnSpacing, constraint.Height - combinedRowSpacing);
                     {
                         //  after Group1 is measured,  only Group3 may have cells belonging to Auto rows.
                         bool canResolveStarsV = !HasGroup3CellsInAutoRows;
 
                         if (canResolveStarsV)
                         {
-                            if (HasStarCellsV) { ResolveStar(DefinitionsV, constraint.Height); }
-                            MeasureCellsGroup(extData.CellGroup2, constraint, false, false);
-                            if (HasStarCellsU) { ResolveStar(DefinitionsU, constraint.Width); }
-                            MeasureCellsGroup(extData.CellGroup3, constraint, false, false);
+                            if (HasStarCellsV) { ResolveStar(DefinitionsV, innerAvailableSize.Height); }
+                            MeasureCellsGroup(extData.CellGroup2, innerAvailableSize, false, false);
+                            if (HasStarCellsU) { ResolveStar(DefinitionsU, innerAvailableSize.Width); }
+                            MeasureCellsGroup(extData.CellGroup3, innerAvailableSize, false, false);
                         }
                         else
                         {
@@ -444,9 +469,9 @@ namespace Avalonia.Controls
                             bool canResolveStarsU = extData.CellGroup2 > PrivateCells.Length;
                             if (canResolveStarsU)
                             {
-                                if (HasStarCellsU) { ResolveStar(DefinitionsU, constraint.Width); }
-                                MeasureCellsGroup(extData.CellGroup3, constraint, false, false);
-                                if (HasStarCellsV) { ResolveStar(DefinitionsV, constraint.Height); }
+                                if (HasStarCellsU) { ResolveStar(DefinitionsU, innerAvailableSize.Width); }
+                                MeasureCellsGroup(extData.CellGroup3, innerAvailableSize, false, false);
+                                if (HasStarCellsV) { ResolveStar(DefinitionsV, innerAvailableSize.Height); }
                             }
                             else
                             {
@@ -462,7 +487,7 @@ namespace Avalonia.Controls
                                 double[] group2MinSizes = CacheMinSizes(extData.CellGroup2, false);
                                 double[] group3MinSizes = CacheMinSizes(extData.CellGroup3, true);
 
-                                MeasureCellsGroup(extData.CellGroup2, constraint, false, true);
+                                MeasureCellsGroup(extData.CellGroup2, innerAvailableSize, false, true);
 
                                 do
                                 {
@@ -472,14 +497,14 @@ namespace Avalonia.Controls
                                         ApplyCachedMinSizes(group3MinSizes, true);
                                     }
 
-                                    if (HasStarCellsU) { ResolveStar(DefinitionsU, constraint.Width); }
-                                    MeasureCellsGroup(extData.CellGroup3, constraint, false, false);
+                                    if (HasStarCellsU) { ResolveStar(DefinitionsU, innerAvailableSize.Width); }
+                                    MeasureCellsGroup(extData.CellGroup3, innerAvailableSize, false, false);
 
                                     // Reset cached Group2Widths
                                     ApplyCachedMinSizes(group2MinSizes, false);
 
-                                    if (HasStarCellsV) { ResolveStar(DefinitionsV, constraint.Height); }
-                                    MeasureCellsGroup(extData.CellGroup2, constraint, cnt == c_layoutLoopMaxCount, false, out hasDesiredSizeUChanged);
+                                    if (HasStarCellsV) { ResolveStar(DefinitionsV, innerAvailableSize.Height); }
+                                    MeasureCellsGroup(extData.CellGroup2, innerAvailableSize, cnt == c_layoutLoopMaxCount, false, out hasDesiredSizeUChanged);
                                 }
                                 while (hasDesiredSizeUChanged && ++cnt <= c_layoutLoopMaxCount);
                             }
@@ -489,8 +514,8 @@ namespace Avalonia.Controls
                     MeasureCellsGroup(extData.CellGroup4, constraint, false, false);
 
                     gridDesiredSize = new Size(
-                            CalculateDesiredSize(DefinitionsU),
-                            CalculateDesiredSize(DefinitionsV));
+                        CalculateDesiredSize(DefinitionsU) + ColumnSpacing * (DefinitionsU.Count - 1),
+                        CalculateDesiredSize(DefinitionsV) + RowSpacing * (DefinitionsV.Count - 1));
                 }
             }
             finally
@@ -524,9 +549,12 @@ namespace Avalonia.Controls
                 else
                 {
                     Debug.Assert(DefinitionsU.Count > 0 && DefinitionsV.Count > 0);
-
-                    SetFinalSize(DefinitionsU, arrangeSize.Width, true);
-                    SetFinalSize(DefinitionsV, arrangeSize.Height, false);
+                    double rowSpacing = RowSpacing;
+                    double columnSpacing = ColumnSpacing;
+                    double combinedRowSpacing = rowSpacing * (RowDefinitions.Count - 1);
+                    double combinedColumnSpacing = columnSpacing * (ColumnDefinitions.Count - 1);
+                    SetFinalSize(DefinitionsU, arrangeSize.Width - combinedColumnSpacing, true);
+                    SetFinalSize(DefinitionsV, arrangeSize.Height - combinedRowSpacing, false);
 
                     var children = Children;
 
@@ -540,14 +568,12 @@ namespace Avalonia.Controls
                         int rowSpan = PrivateCells[currentCell].RowSpan;
 
                         Rect cellRect = new Rect(
-                            columnIndex == 0 ? 0.0 : DefinitionsU[columnIndex].FinalOffset,
-                            rowIndex == 0 ? 0.0 : DefinitionsV[rowIndex].FinalOffset,
-                            GetFinalSizeForRange(DefinitionsU, columnIndex, columnSpan),
-                            GetFinalSizeForRange(DefinitionsV, rowIndex, rowSpan));
-
+                            columnIndex == 0 ? 0d : DefinitionsU[columnIndex].FinalOffset,
+                            rowIndex == 0 ? 0d : DefinitionsV[rowIndex].FinalOffset,
+                            GetFinalSizeForRange(DefinitionsU, columnIndex, columnSpan, columnSpacing),
+                            GetFinalSizeForRange(DefinitionsV, rowIndex, rowSpan, rowSpacing));
 
                         cell.Arrange(cellRect);
-
                     }
 
                     //  update render bound on grid lines renderer visual
@@ -1107,9 +1133,10 @@ namespace Avalonia.Controls
             {
                 //  otherwise...
                 cellMeasureWidth = GetMeasureSizeForRange(
-                                        DefinitionsU,
-                                        PrivateCells[cell].ColumnIndex,
-                                        PrivateCells[cell].ColumnSpan);
+                    DefinitionsU,
+                    PrivateCells[cell].ColumnIndex,
+                    PrivateCells[cell].ColumnSpan,
+                    ColumnSpacing);
             }
 
             if (forceInfinityV)
@@ -1127,9 +1154,10 @@ namespace Avalonia.Controls
             else
             {
                 cellMeasureHeight = GetMeasureSizeForRange(
-                                        DefinitionsV,
-                                        PrivateCells[cell].RowIndex,
-                                        PrivateCells[cell].RowSpan);
+                    DefinitionsV,
+                    PrivateCells[cell].RowIndex,
+                    PrivateCells[cell].RowSpan,
+                    RowSpacing);
             }
 
 
@@ -1144,6 +1172,7 @@ namespace Avalonia.Controls
         /// <param name="definitions">Source array of definitions to read values from.</param>
         /// <param name="start">Starting index of the range.</param>
         /// <param name="count">Number of definitions included in the range.</param>
+        /// <param name="spacing"><see cref="ColumnSpacing"/> or <see cref="RowSpacing"/></param>
         /// <returns>Calculated measure size.</returns>
         /// <remarks>
         /// For "Auto" definitions MinWidth is used in place of PreferredSize.
@@ -1151,21 +1180,24 @@ namespace Avalonia.Controls
         private static double GetMeasureSizeForRange(
             IReadOnlyList<DefinitionBase> definitions,
             int start,
-            int count)
+            int count,
+            double spacing)
         {
             Debug.Assert(0 < count && 0 <= start && (start + count) <= definitions.Count);
 
-            double measureSize = 0;
+            double measureSize = -spacing;
             int i = start + count - 1;
 
             do
             {
-                measureSize += (definitions[i].SizeType == LayoutTimeSizeType.Auto)
-                    ? definitions[i].MinSize
-                    : definitions[i].MeasureSize;
+                measureSize +=
+                    spacing +
+                    (definitions[i].SizeType == LayoutTimeSizeType.Auto ?
+                        definitions[i].MinSize :
+                        definitions[i].MeasureSize);
             } while (--i >= start);
 
-            return (measureSize);
+            return measureSize;
         }
 
         /// <summary>
@@ -2088,7 +2120,7 @@ namespace Avalonia.Controls
                 // double dpi = columns ? dpiScale.DpiScaleX : dpiScale.DpiScaleY;
                 var dpi = (VisualRoot as ILayoutRoot)?.LayoutScaling ?? 1.0;
                 double[] roundingErrors = RoundingErrors;
-                double roundedTakenSize = 0.0;
+                double roundedTakenSize = 0;
 
                 // round each of the allocated sizes, keeping track of the deltas
                 for (int i = 0; i < definitions.Count; ++i)
@@ -2191,11 +2223,12 @@ namespace Avalonia.Controls
                 }
             }
 
+            double spacing = columns ? ColumnSpacing : RowSpacing;
             // Phase 6.  Compute final offsets
             definitions[0].FinalOffset = 0.0;
             for (int i = 0; i < definitions.Count; ++i)
             {
-                definitions[(i + 1) % definitions.Count].FinalOffset = definitions[i].FinalOffset + definitions[i].SizeCache;
+                definitions[(i + 1) % definitions.Count].FinalOffset = definitions[i].FinalOffset + definitions[i].SizeCache + spacing;
             }
         }
 
@@ -2271,21 +2304,23 @@ namespace Avalonia.Controls
         /// <param name="definitions">Array of definitions to process.</param>
         /// <param name="start">Start of the range.</param>
         /// <param name="count">Number of items in the range.</param>
+        /// <param name="spacing"><see cref="ColumnSpacing"/> or <see cref="RowSpacing"/></param>
         /// <returns>Final size.</returns>
         private static double GetFinalSizeForRange(
             IReadOnlyList<DefinitionBase> definitions,
             int start,
-            int count)
+            int count,
+            double spacing)
         {
-            double size = 0;
+            double size = -spacing;
             int i = start + count - 1;
 
             do
             {
-                size += definitions[i].SizeCache;
+                size += spacing + definitions[i].SizeCache;
             } while (--i >= start);
 
-            return (size);
+            return size;
         }
 
         /// <summary>
@@ -2361,6 +2396,17 @@ namespace Avalonia.Controls
             }
 
             grid.SetFlags((bool)e.NewValue!, Flags.ShowGridLinesPropertyValue);
+        }
+
+        private static void OnSpacingPropertyChanged(AvaloniaObject d, AvaloniaPropertyChangedEventArgs e)
+        {
+            Grid grid = (Grid)d;
+
+            if (grid._extData != null
+                && grid.ListenToNotifications)
+            {
+                grid.CellsStructureDirty = true;
+            }
         }
 
         private static void OnCellAttachedPropertyChanged(AvaloniaObject d, AvaloniaPropertyChangedEventArgs e)
@@ -2675,6 +2721,18 @@ namespace Avalonia.Controls
             AvaloniaProperty.Register<Grid, bool>(nameof(ShowGridLines));
 
         /// <summary>
+        /// Defines the <see cref="RowSpacing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> RowSpacingProperty =
+            AvaloniaProperty.Register<Grid, double>(nameof(RowSpacing));
+
+        /// <summary>
+        /// Defines the <see cref="ColumnSpacing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> ColumnSpacingProperty =
+            AvaloniaProperty.Register<Grid, double>(nameof(ColumnSpacingProperty));
+
+        /// <summary>
         /// Column property. This is an attached property.
         /// Grid defines Column property, so that it can be set
         /// on any element treated as a cell. Column property
@@ -2722,7 +2780,7 @@ namespace Avalonia.Controls
             AvaloniaProperty.RegisterAttached<Grid, Control, int>(
                 "ColumnSpan",
                 defaultValue: 1,
-                validate: v => v >= 0);
+                validate: v => v > 0);
 
         /// <summary>
         /// RowSpan property. This is an attached property.
@@ -2738,7 +2796,7 @@ namespace Avalonia.Controls
             AvaloniaProperty.RegisterAttached<Grid, Control, int>(
                 "RowSpan",
                 defaultValue: 1,
-                validate: v => v >= 0);
+                validate: v => v > 0);
 
         /// <summary>
         /// IsSharedSizeScope property marks scoping element for shared size.
@@ -3269,6 +3327,14 @@ namespace Avalonia.Controls
                         drawingContext,
                         grid.ColumnDefinitions[i].FinalOffset, 0.0,
                         grid.ColumnDefinitions[i].FinalOffset, _lastArrangeSize.Height);
+
+                    if (grid.ColumnSpacing != 0)
+                    {
+                        DrawGridLine(
+                            drawingContext,
+                            grid.ColumnDefinitions[i].FinalOffset - grid.ColumnSpacing, 0.0,
+                            grid.ColumnDefinitions[i].FinalOffset - grid.ColumnSpacing, _lastArrangeSize.Height);
+                    }
                 }
 
                 for (int i = 1; i < grid.RowDefinitions.Count; ++i)
@@ -3277,6 +3343,14 @@ namespace Avalonia.Controls
                         drawingContext,
                         0.0, grid.RowDefinitions[i].FinalOffset,
                         _lastArrangeSize.Width, grid.RowDefinitions[i].FinalOffset);
+
+                    if (grid.RowSpacing != 0)
+                    {
+                        DrawGridLine(
+                            drawingContext,
+                            0.0, grid.RowDefinitions[i].FinalOffset - grid.RowSpacing,
+                            _lastArrangeSize.Width, grid.RowDefinitions[i].FinalOffset - grid.RowSpacing);
+                    }
                 }
             }
 
