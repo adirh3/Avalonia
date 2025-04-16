@@ -213,8 +213,6 @@ namespace Avalonia.Controls
                     };
             }
 
-            UpdateTextRuns();
-            
             ITextSource textSource;
 
             if (_textRuns != null)

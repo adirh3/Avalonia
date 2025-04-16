@@ -665,7 +665,6 @@ namespace Avalonia.Controls
             {
                 LineSpacing = LineSpacing
             };
-            UpdateTextRuns();
 
             ITextSource textSource;
 
@@ -723,20 +722,7 @@ namespace Avalonia.Controls
                 //Force arrange so text will be properly alligned.
                 InvalidateArrange();
             }
-            
-            UpdateTextRuns(true);
-
-            //This implicitly recreated the TextLayout with a new constraint if we previously reset it.
-            var textLayout = TextLayout;
-
-            // The textWidth used here is matching that TextPresenter uses to measure the text.
-            var size = LayoutHelper.RoundLayoutSizeUp(new Size(textLayout.WidthIncludingTrailingWhitespace, textLayout.Height).Inflate(padding), 1);
-
-            return size;
-        }
-
-        protected void UpdateTextRuns(bool force = false)
-        {
+           
             var inlines = Inlines;
 
             if (HasComplexContent)
@@ -750,6 +736,14 @@ namespace Avalonia.Controls
 
                 _textRuns = textRuns;
             }
+
+            //This implicitly recreated the TextLayout with a new constraint if we previously reset it.
+            var textLayout = TextLayout;
+
+            // The textWidth used here is matching that TextPresenter uses to measure the text.
+            var size = LayoutHelper.RoundLayoutSizeUp(new Size(textLayout.WidthIncludingTrailingWhitespace, textLayout.Height).Inflate(padding), 1);
+
+            return size;
         }
 
         protected override Size ArrangeOverride(Size finalSize)
