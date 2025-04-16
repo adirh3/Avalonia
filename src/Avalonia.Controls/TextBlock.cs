@@ -729,7 +729,8 @@ namespace Avalonia.Controls
             //This implicitly recreated the TextLayout with a new constraint if we previously reset it.
             var textLayout = TextLayout;
 
-            var size = LayoutHelper.RoundLayoutSizeUp(new Size(textLayout.MinTextWidth, textLayout.Height).Inflate(padding), 1, 1);
+            // The textWidth used here is matching that TextPresenter uses to measure the text.
+            var size = LayoutHelper.RoundLayoutSizeUp(new Size(textLayout.WidthIncludingTrailingWhitespace, textLayout.Height).Inflate(padding), 1);
 
             return size;
         }
@@ -738,7 +739,7 @@ namespace Avalonia.Controls
         {
             var inlines = Inlines;
 
-            if (HasComplexContent && (force || _textRuns == null))
+            if (HasComplexContent)
             {
                 var textRuns = new List<TextRun>();
 
