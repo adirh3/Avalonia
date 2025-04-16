@@ -628,7 +628,7 @@ namespace Avalonia.Controls
 
         protected virtual void RenderTextLayout(DrawingContext context, Point origin)
         {
-            TextLayout.Draw(context, origin + new Point(TextLayout.OverhangLeading, 0));
+            TextLayout.Draw(context, origin);
         }
 
         private bool _clearTextInternal;
@@ -749,13 +749,6 @@ namespace Avalonia.Controls
 
                 _textRuns = textRuns;
             }
-
-            //This implicitly recreated the TextLayout with a new constraint if we previously reset it.
-            var textLayout = TextLayout;
-
-            var size = LayoutHelper.RoundLayoutSizeUp(new Size(textLayout.MinTextWidth, textLayout.Height).Inflate(padding), 1);
-
-            return size;
         }
 
         protected override Size ArrangeOverride(Size finalSize)
