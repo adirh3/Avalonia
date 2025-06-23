@@ -101,76 +101,36 @@ namespace Avalonia.Media.TextFormatting
         public bool TryMeasureCharacters(double availableWidth, out int length)
         {
             length = 0;
+            var currentWidth = 0.0;
+            var charactersSpan = GlyphRun.Characters.Span;
 
-            if (IsReversed)
+            for (var i = 0; i < ShapedBuffer.Length; i++)
             {
-                var currentWidth = GlyphRun.Metrics.WidthIncludingTrailingWhitespace;
-                var charactersSpan = GlyphRun.Characters.Span;
+                var advance = ShapedBuffer[i].GlyphAdvance;
+                var currentCluster = ShapedBuffer[i].GlyphCluster;
 
-                for (var i = 0; i < ShapedBuffer.Length; i++)
+                if (currentWidth + advance > availableWidth)
                 {
-                    var advance = ShapedBuffer[i].GlyphAdvance;
-                    var currentCluster = ShapedBuffer[i].GlyphCluster;
-
-                    if (i + 1 < ShapedBuffer.Length)
-                    {
-                        var nextCluster = ShapedBuffer[i + 1].GlyphCluster;
-
-                        //Higher cluster comes first
-                        var count = currentCluster - nextCluster;
-
-                        length += count;
-                    }
-                    else
-                    {
-                        Codepoint.ReadAt(charactersSpan, length, out var count);
-
-                        length += count;
-                    }
-
-                    currentWidth -= advance;
-
-                    if (currentWidth < availableWidth)
-                    {
-                        break;
-                    }
+                    break;
                 }
 
-                length = ShapedBuffer.Length - length;
-            }
-            else
-            {
-                var currentWidth = 0.0;
-                var charactersSpan = GlyphRun.Characters.Span;
-
-                for (var i = 0; i < ShapedBuffer.Length; i++)
+                if(i + 1 < ShapedBuffer.Length)
                 {
-                    var advance = ShapedBuffer[i].GlyphAdvance;
-                    var currentCluster = ShapedBuffer[i].GlyphCluster;
+                    var nextCluster = ShapedBuffer[i + 1].GlyphCluster;
 
-                    if (currentWidth + advance > availableWidth)
-                    {
-                        break;
-                    }
+                    var count = nextCluster - currentCluster;
 
-                    if (i + 1 < ShapedBuffer.Length)
-                    {
-                        var nextCluster = ShapedBuffer[i + 1].GlyphCluster;
-
-                        var count = nextCluster - currentCluster;
-
-                        length += count;
-                    }
-                    else
-                    {
-                        Codepoint.ReadAt(charactersSpan, length, out var count);
-
-                        length += count;
-                    }
-
-
-                    currentWidth += advance;
+                    length += count;
                 }
+                else
+                {
+                    Codepoint.ReadAt(charactersSpan, length, out var count);
+
+                    length += count;
+                }
+
+             
+                currentWidth += advance;
             }
 
             return length > 0;
