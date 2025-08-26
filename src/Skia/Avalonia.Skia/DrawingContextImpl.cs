@@ -16,7 +16,7 @@ namespace Avalonia.Skia
     /// <summary>
     /// Skia based drawing context.
     /// </summary>
-    public partial class DrawingContextImpl : IDrawingContextImpl,
+    internal partial class DrawingContextImpl : IDrawingContextImpl,
         IDrawingContextWithAcrylicLikeSupport,
         IDrawingContextImplWithEffects
     {
@@ -244,13 +244,15 @@ namespace Avalonia.Skia
             var drawableImage = (IDrawableBitmapImpl)source;
             var s = sourceRect.ToSKRect();
             var d = destRect.ToSKRect();
+            var isUpscaling = d.Width > s.Width || d.Height > s.Height;
 
             var paint = SKPaintCache.Shared.Get();
+            var samplingOptions = RenderOptions.BitmapInterpolationMode.ToSKSamplingOptions(isUpscaling);
 
             paint.Color = new SKColor(255, 255, 255, (byte)(255 * opacity * _currentOpacity));
             paint.BlendMode = RenderOptions.BitmapBlendingMode.ToSKBlendMode();
 
-            drawableImage.Draw(this, s, d, RenderOptions.BitmapInterpolationMode.ToSKSamplingOptions(), paint);
+            drawableImage.Draw(this, s, d, samplingOptions, paint);
             SKPaintCache.Shared.ReturnReset(paint);
         }
 
@@ -843,7 +845,9 @@ namespace Avalonia.Skia
         /// <inheritdoc />
         public Matrix Transform
         {
-            get { return _currentTransform ??= Canvas.TotalMatrix.ToAvaloniaMatrix(); }
+            // There is a Canvas.TotalMatrix (non 4x4 overload), but internally it still uses 4x4 matrix.
+            // We want to avoid SKMatrix4x4 -> SKMatrix -> Matrix conversion by directly going SKMatrix4x4 -> Matrix.
+            get { return _currentTransform ??= Canvas.TotalMatrix44.ToAvaloniaMatrix(); }
             set
             {
                 CheckLease();
@@ -859,7 +863,9 @@ namespace Avalonia.Skia
                     transform *= _postTransform.Value;
                 }
 
-                Canvas.SetMatrix(transform.ToSKMatrix());
+                // Canvas.SetMatrix internally uses 4x4 matrix, even with SKMatrix(3x3) overload.
+                // We want to avoid Matrix -> SKMatrix -> SKMatrix4x4 conversion by directly going Matrix -> SKMatrix4x4.
+                Canvas.SetMatrix(transform.ToSKMatrix44());
             }
         }
 
@@ -1302,18 +1308,6 @@ namespace Avalonia.Skia
             return (byte)(r * 255);
         }
 
-        private static Color Blend(Color left, Color right)
-        {
-            var aa = left.A / 255d;
-            var ab = right.A / 255d;
-            return new Color(
-                (byte)((aa + ab * (1 - aa)) * 255),
-                Blend(left.R, left.A, right.R, right.A),
-                Blend(left.G, left.A, right.G, right.A),
-                Blend(left.B, left.A, right.B, right.A)                
-            );
-        }
-
         internal PaintWrapper CreateAcrylicPaint (SKPaint paint, IExperimentalAcrylicMaterial material)
         {
             var paintWrapper = new PaintWrapper(paint);
@@ -1531,16 +1525,6 @@ namespace Avalonia.Skia
                 _disposable1 = null;
                 _disposable2 = null;
                 _disposable3 = null;
-            }
-
-            public IDisposable ApplyTo(SKPaint paint)
-            {
-                var state = new PaintState(paint, paint.Color, paint.Shader);
-
-                paint.Color = Paint.Color;
-                paint.Shader = Paint.Shader;
-
-                return state;
             }
 
             /// <summary>

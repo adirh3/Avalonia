@@ -627,7 +627,7 @@ namespace Avalonia.Controls
         public IClipboard? Clipboard => PlatformImpl?.TryGetFeature<IClipboard>();
 
         /// <inheritdoc />
-        public IFocusManager? FocusManager => AvaloniaLocator.Current.GetService<IFocusManager>();
+        public IFocusManager? FocusManager => _focusManager ??= new FocusManager(this);
 
         /// <inheritdoc />
         public IPlatformSettings? PlatformSettings => AvaloniaLocator.Current.GetService<IPlatformSettings>();
@@ -702,6 +702,7 @@ namespace Avalonia.Controls
         }
 
         private IDisposable? _insetsPaddings;
+        private FocusManager? _focusManager;
 
         private void InvalidateChildInsetsPadding()
         {
