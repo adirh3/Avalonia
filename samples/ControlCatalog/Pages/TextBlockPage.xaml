@@ -131,7 +131,7 @@
         </TextBlock> 
       </Border>
       <Border>
-        <SelectableTextBlock Margin="10" TextWrapping="Wrap">
+        <SelectableTextBlock Margin="10" TextWrapping="Wrap" FontFamily="Segoe UI Variable Text">
           This <Span FontWeight="Bold">is</Span> a
           <Span Background="Silver" Foreground="Maroon">TextBlock</Span>
           with <Span TextDecorations="Underline">several</Span>

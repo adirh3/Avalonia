@@ -37,6 +37,11 @@ namespace Avalonia.Controls.Presenters
 
         public static readonly StyledProperty<IBrush?> CaretBrushProperty =
             AvaloniaProperty.Register<TextPresenter, IBrush?>(nameof(CaretBrush));
+        
+        // New property to toggle full-height caret
+        public static readonly StyledProperty<bool> ShowVerticalCaretProperty =
+            AvaloniaProperty.Register<TextPresenter, bool>(
+                nameof(ShowVerticalCaret), defaultValue: false);
 
         public static readonly StyledProperty<TimeSpan> CaretBlinkIntervalProperty =
             TextBox.CaretBlinkIntervalProperty.AddOwner<TextPresenter>();
@@ -108,7 +113,7 @@ namespace Avalonia.Controls.Presenters
 
         static TextPresenter()
         {
-            AffectsRender<TextPresenter>(CaretBrushProperty, SelectionBrushProperty, SelectionForegroundBrushProperty, TextElement.ForegroundProperty, ShowSelectionHighlightProperty);
+            AffectsRender<TextPresenter>(CaretBrushProperty, SelectionBrushProperty, SelectionForegroundBrushProperty, TextElement.ForegroundProperty, ShowSelectionHighlightProperty,ShowVerticalCaretProperty);
         }
 
         public TextPresenter() { }
@@ -330,6 +335,15 @@ namespace Avalonia.Controls.Presenters
             get => GetValue(SelectionEndProperty);
             set => SetValue(SelectionEndProperty, value);
         }
+        
+        /// <summary>
+        /// If true, draws the caret spanning the full height of the presenter.
+        /// </summary>
+        public bool ShowVerticalCaret
+        {
+            get => GetValue(ShowVerticalCaretProperty);
+            set => SetValue(ShowVerticalCaretProperty, value);
+        }
 
         protected override bool BypassFlowDirectionPolicies => true;
 
@@ -448,9 +462,21 @@ namespace Avalonia.Controls.Presenters
                 }
             }
 
-            var (p1, p2) = GetCaretPoints();
-
-            context.DrawLine(new ImmutablePen(caretBrush), p1, p2);
+            if (ShowVerticalCaret)
+            {
+                // Draw a caret line the full height of the control
+                var rect = GetCursorRectangle();
+                var x = Math.Floor(rect.X) + 0.5;
+                var top = new Point(x, 0);
+                var bottom = new Point(x, Bounds.Height);
+                context.DrawLine(new ImmutablePen(caretBrush), top, bottom);
+            }
+            else
+            {
+                // Default, text-height caret
+                var (p1, p2) = GetCaretPoints();
+                context.DrawLine(new ImmutablePen(caretBrush), p1, p2);
+            }
         }
 
         internal (Point, Point) GetCaretPoints()
