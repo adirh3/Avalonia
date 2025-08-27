@@ -16,7 +16,7 @@ namespace Avalonia.Skia
     /// <summary>
     /// Skia based drawing context.
     /// </summary>
-    internal partial class DrawingContextImpl : IDrawingContextImpl,
+    public partial class DrawingContextImpl : IDrawingContextImpl,
         IDrawingContextWithAcrylicLikeSupport,
         IDrawingContextImplWithEffects
     {
