@@ -4,7 +4,6 @@
     <TargetFrameworks>$(AvsCurrentTargetFramework);$(AvsLegacyTargetFrameworks)</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <IsAotCompatible>false</IsAotCompatible>
-    <NoWarn>IL3050;IL2062;IL2111</NoWarn>
     <DefineConstants>$(DefineConstants);XAMLX_INTERNAL;XAML_RUNTIME_LOADER</DefineConstants>
   </PropertyGroup>
 

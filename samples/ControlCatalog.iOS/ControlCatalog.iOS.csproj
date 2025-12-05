@@ -3,9 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ProvisioningType>manual</ProvisioningType>
-    <TargetFramework>net9.0-ios</TargetFramework>
-    <TargetFramework>net7.0-ios</TargetFramework>
-<!--    <TargetFramework>net7.0-tvos</TargetFramework>-->
     <TargetFramework>$(AvsCurrentIOSTargetFramework)</TargetFramework>
     <SupportedOSPlatformVersion>$(AvsMinSupportedIOSVersion)</SupportedOSPlatformVersion>
   </PropertyGroup>

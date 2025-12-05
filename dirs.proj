@@ -14,6 +14,7 @@
     <ProjectReference Remove="samples/*.Android/*.csproj" />
     <ProjectReference Remove="samples/*.Browser/*.csproj" />
     <ProjectReference Remove="samples/SingleProjectSandbox/*.csproj" />
+    <ProjectReference Remove="samples/ControlCatalog.Desktop/*.*proj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,7 +23,6 @@
     <ProjectReference Remove="src/iOS/**/*.*proj" />
     <ProjectReference Remove="src/Browser/**/*.*proj" />
   </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SlnGen" Version="8.5.17" PrivateAssets="all" />

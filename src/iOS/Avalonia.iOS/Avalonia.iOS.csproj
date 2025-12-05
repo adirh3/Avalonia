@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0-ios16.0</TargetFramework>
-    <SupportedOSPlatformVersion>13.0</SupportedOSPlatformVersion>
-    <TargetFrameworks>net7.0-ios16.0;net7.0-tvos</TargetFrameworks>
-    <TargetFrameworks>$(AvsCurrentIOSTargetFramework);$(AvsCurrentTvOSTargetFramework)</TargetFrameworks>
     <TargetFrameworks>$(AvsCurrentMacCatalystTargetFramework);$(AvsCurrentIOSTargetFramework);$(AvsCurrentTvOSTargetFramework)</TargetFrameworks>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">$(AvsMinSupportedIOSVersion)</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tvos'">$(AvsMinSupportedTvOSVersion)</SupportedOSPlatformVersion>

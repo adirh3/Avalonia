@@ -1,15 +1,13 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
-    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <TrimmerSingleWarn>false</TrimmerSingleWarn>
     <IsTrimmable>true</IsTrimmable>
-    <WarningsNotAsErrors>IL2111;IL2062</WarningsNotAsErrors>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <IsAotCompatible Condition="'$(IsAotCompatible)' == ''">true</IsAotCompatible>
   </PropertyGroup>
 
@@ -21,10 +19,10 @@
     <WarningsAsErrors Condition="'$(IsAotCompatible)' == 'true'">$(WarningsAsErrors);IL3050;IL3051;IL3052;IL3053;IL3054;IL3055;IL3056</WarningsAsErrors>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0')) AND '$(EnableRuntimeMarshalling)' != 'true'">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) AND '$(EnableRuntimeMarshalling)' != 'true'">
     <WarningsAsErrors>$(WarningsAsErrors);CA1420;CA1421</WarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0')) AND '$(EnableRuntimeMarshalling)' != 'true'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) AND '$(EnableRuntimeMarshalling)' != 'true'">
     <AssemblyAttribute Include="System.Runtime.CompilerServices.DisableRuntimeMarshallingAttribute" />
   </ItemGroup>
 </Project>
