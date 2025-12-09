@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -89,8 +88,6 @@ namespace Avalonia.Skia
             GlyphCount = typeface.GlyphCount;
 
             FontSimulations = fontSimulations;
-            
-            Weight = DetectWeight(typeface);
 
             var style = _os2Table != null ? GetFontStyle(_os2Table.FontStyle) : FontStyle.Normal;
 
@@ -111,6 +108,11 @@ namespace Avalonia.Skia
             FamilyName = _nameTable?.FontFamilyName((ushort)CultureInfo.InvariantCulture.LCID) ?? typeface.FamilyName;
 
             TypographicFamilyName = _nameTable?.GetNameById((ushort)CultureInfo.InvariantCulture.LCID, KnownNameIds.TypographicFamilyName) ?? FamilyName;
+
+            // Detect weight after name table is loaded so we can use TypographicFamilyName for variable fonts
+            var fontWeight = DetectWeight(typeface, FamilyName, TypographicFamilyName);
+            // When bold simulation is applied, report Bold weight regardless of font's actual weight
+            Weight = (fontSimulations & FontSimulations.Bold) != 0 ? FontWeight.Bold : fontWeight;
 
             if(_nameTable != null)
             {
@@ -381,36 +383,52 @@ namespace Avalonia.Skia
             }
         }
         
-        private static FontWeight DetectWeight(SKTypeface tf)
+        private FontWeight DetectWeight(SKTypeface tf, string familyName, string typographicFamilyName)
         {
-            // 1)  Use the numeric weight Skia gives us when it is useful.
-            //     SkTypeface.FontWeight returns 100-900 for “classic” TTF/OTF
-            //     faces, but always 400 for the named instances of
-            //     *variable* fonts (Segoe UI Variable Text/Bold/…).
+            // 1) Try OS/2 table first - most reliable for static fonts
+            if (_os2Table != null && _os2Table.WeightClass is >= 100 and <= 900 && _os2Table.WeightClass != 400)
+            {
+                return (FontWeight)_os2Table.WeightClass;
+            }
+
+            // 2) Try SKTypeface.FontWeight - works for static fonts
             int native = tf.FontWeight;
             if (native is >= 100 and <= 900 && native != 400)
-                return (FontWeight)native;  // cast is legal in Avalonia 11 :contentReference[oaicite:0]{index=0}
+            {
+                return (FontWeight)native;
+            }
+
+            // 3) For variable fonts, extract the weight suffix from the family name
+            //    e.g., "Segoe UI Variable Bold" - "Segoe UI Variable" = "Bold"
+            if (!string.IsNullOrEmpty(typographicFamilyName) && 
+                familyName.Length > typographicFamilyName.Length &&
+                familyName.StartsWith(typographicFamilyName, StringComparison.OrdinalIgnoreCase))
+            {
+                var suffix = familyName.Substring(typographicFamilyName.Length).Trim().ToLowerInvariant();
+                
+                var weight = suffix switch
+                {
+                    "thin" or "hairline" => FontWeight.Thin,
+                    "extralight" or "ultralight" => FontWeight.ExtraLight,
+                    "light" => FontWeight.Light,
+                    "semilight" => FontWeight.SemiLight,
+                    "regular" or "normal" or "text" => FontWeight.Normal,
+                    "medium" => FontWeight.Medium,
+                    "semibold" or "demibold" => FontWeight.SemiBold,
+                    "bold" => FontWeight.Bold,
+                    "extrabold" or "ultrabold" => FontWeight.ExtraBold,
+                    "black" or "heavy" => FontWeight.Black,
+                    "extrablack" or "ultrablack" => FontWeight.ExtraBlack,
+                    _ => (FontWeight?)null
+                };
+                
+                if (weight.HasValue)
+                {
+                    return weight.Value;
+                }
+            }
 
             return FontWeight.Normal;
-            // // 2)  Fallback: heuristics on the Style & FamilyName.
-            // //     Works for Segoe UI, Cascadia, Roboto Flex, etc.
-            // string name = (tf.FamilyName + " " + tf.FontStyle).ToLowerInvariant();
-            //
-            // return name switch
-            // {
-            //     var n when n.Contains("thin")                => FontWeight.Thin,
-            //     var n when n.Contains("extralight") ||
-            //                n.Contains("ultralight")          => FontWeight.ExtraLight,
-            //     var n when n.Contains("light")               => FontWeight.Light,
-            //     var n when n.Contains("semibold") ||
-            //                n.Contains("demibold")            => FontWeight.SemiBold,
-            //     var n when n.Contains("medium")              => FontWeight.Medium,
-            //     var n when n.Contains("bold")                => FontWeight.Bold,
-            //     var n when n.Contains("extrabold") ||
-            //                n.Contains("heavy") ||
-            //                n.Contains("black")               => FontWeight.ExtraBold,
-            //     _                                            => FontWeight.Normal
-            // };
         }
     }
 }

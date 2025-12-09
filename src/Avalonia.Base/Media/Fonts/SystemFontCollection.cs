@@ -30,42 +30,46 @@ namespace Avalonia.Media.Fonts
         {
             var typeface = new Typeface(familyName, style, weight, stretch).Normalize(out familyName);
 
-            if (base.TryGetGlyphTypeface(familyName, style, weight, stretch, out glyphTypeface))
-            {
-                return true;
-            }
-
+            // Use normalized values for cache lookup to ensure consistent cache keys
             style = typeface.Style;
-
             weight = typeface.Weight;
-
             stretch = typeface.Stretch;
 
             var key = new FontCollectionKey(style, weight, stretch);
 
-            //Check cache first to avoid unnecessary calls to the font manager
+            // Check cache first - this is the primary cache check
             if (_glyphTypefaceCache.TryGetValue(familyName, out var glyphTypefaces) && glyphTypefaces.TryGetValue(key, out glyphTypeface))
             {
                 return glyphTypeface != null;
             }
 
-            //Try to create the glyph typeface via system font manager
+            // Try base class (handles nearest match and synthetic creation)
+            if (base.TryGetGlyphTypeface(familyName, style, weight, stretch, out glyphTypeface))
+            {
+                // Base class succeeded - cache under requested name to avoid future leaks
+                // This is critical when the returned typeface's FamilyName differs from requested
+                TryAddGlyphTypeface(familyName, key, glyphTypeface);
+                return true;
+            }
+
+            // Not in cache, create via platform
             if (!_platformImpl.TryCreateGlyphTypeface(familyName, style, weight, stretch, out glyphTypeface))
             {
-                //Add null to cache to avoid future calls
+                // Add null to cache to avoid future calls
                 TryAddGlyphTypeface(familyName, key, null);
-
                 return false;
             }
 
-            //Add to cache
-            if (!TryAddGlyphTypeface(glyphTypeface))
-            {
-                return false;
-            }
+            // Add to cache under the REQUESTED key first (most important for cache hits)
+            // This prevents memory leaks when the returned typeface's FamilyName
+            // differs from what was requested (e.g., "Segoe UI Variable Text" returns 
+            // a typeface with FamilyName="Segoe UI Variable")
+            TryAddGlyphTypeface(familyName, key, glyphTypeface);
 
-            //Requested glyph typeface should be in cache now
-            return base.TryGetGlyphTypeface(familyName, style, weight, stretch, out glyphTypeface);
+            // Also add under the glyph typeface's actual properties for other lookups
+            TryAddGlyphTypeface(glyphTypeface);
+
+            return true;
         }
 
         public override bool TryGetFamilyTypefaces(string familyName, [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)
