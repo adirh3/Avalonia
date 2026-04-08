@@ -1,5 +1,11 @@
 <Project>
   <PropertyGroup Condition="$([MSBuild]::VersionGreaterThanOrEquals($(NETCoreSdkVersion), '7.0'))">
     <DefineConstants>$(DefineConstants);NET7SDK</DefineConstants>
-  </PropertyGroup>  
+  </PropertyGroup>
+
+  <!-- When built as a submodule: replace DataGrid's Avalonia PackageReference with ProjectReference -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Avalonia.Controls.DataGrid'">
+    <PackageReference Remove="Avalonia" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)packages\Avalonia\Avalonia.csproj" />
+  </ItemGroup>
 </Project>
