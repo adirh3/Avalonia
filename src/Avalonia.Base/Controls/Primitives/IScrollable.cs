@@ -23,11 +23,23 @@ namespace Avalonia.Controls.Primitives
         /// <summary>
         /// Gets a value indicating whether the content can be scrolled horizontally.
         /// </summary>
-        bool CanHorizontallyScroll { get; }
+        /// <remarks>
+        /// A default implementation is provided so that types compiled against earlier Avalonia
+        /// versions (where this member only existed on ILogicalScrollable) remain loadable. Such
+        /// controls expose their real value through the ILogicalScrollable slot, which is what the
+        /// scrolling infrastructure consumes.
+        /// </remarks>
+        bool CanHorizontallyScroll => false;
 
         /// <summary>
-        /// Gets a value indicating whether the content can be scrolled horizontally.
+        /// Gets a value indicating whether the content can be scrolled vertically.
         /// </summary>
-        bool CanVerticallyScroll { get; }
+        /// <remarks>
+        /// A default implementation is provided so that types compiled against earlier Avalonia
+        /// versions (where this member only existed on ILogicalScrollable) remain loadable. Such
+        /// controls expose their real value through the ILogicalScrollable slot, which is what the
+        /// scrolling infrastructure consumes.
+        /// </remarks>
+        bool CanVerticallyScroll => false;
     }
 }
