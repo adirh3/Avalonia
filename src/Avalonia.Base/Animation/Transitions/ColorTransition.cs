@@ -9,7 +9,7 @@ namespace Avalonia.Animation
     /// </summary>
     public class ColorTransition : Transition<Color>
     {
-        internal override IObservable<Color> DoTransition(IObservable<double> progress, Color oldValue, Color newValue)
+        public override IObservable<Color> DoTransition(IObservable<double> progress, Color oldValue, Color newValue)
             => AnimatorDrivenTransition<Color, ColorAnimator>.Transition(Easing, progress, oldValue, newValue);
     }
 }

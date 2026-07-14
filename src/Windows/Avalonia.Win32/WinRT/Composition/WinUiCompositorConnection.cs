@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -79,6 +79,7 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
                 });
                 connect = new WinUiCompositorConnection();
                 AvaloniaLocator.CurrentMutable.Bind<IWindowsSurfaceFactory>().ToConstant(connect);
+                AvaloniaLocator.CurrentMutable.Bind<IRenderTimer>().ToConstant(connect);
                 AvaloniaLocator.CurrentMutable.Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(connect));
                 tcs.SetResult(true);
 
@@ -129,8 +130,8 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
 
             _currentCommit?.Dispose();
             _currentCommit = null;
-            _parent._tick?.Invoke(_st.Elapsed);
-            // Always schedule a commit so the current frame's work reaches DWM.
+            var tick = _parent._tick;
+            tick?.Invoke(_st.Elapsed);
             ScheduleNextCommit();
             _commitCompleted = true;
         }
@@ -273,5 +274,12 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
     }
 
     public bool RequiresNoRedirectionBitmap => true;
-    public IPlatformRenderSurface CreateSurface(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info) => new WinUiCompositedWindowSurface(_shared, info);
+
+    public IPlatformRenderSurface CreateSurface(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info)
+    {
+        if (info is not IWinUiCompositionWindowInfo compositionInfo)
+            throw new InvalidOperationException($"{nameof(WinUiCompositedWindowSurface)} requires {nameof(IWinUiCompositionWindowInfo)}.");
+
+        return new WinUiCompositedWindowSurface(_shared, info, compositionInfo);
+    }
 }

@@ -12,7 +12,7 @@ namespace Avalonia.Utilities
     /// Must be a reference type to avoid issues with copying value types and must be disposable
     /// to ensure the item is cleaned up when the refcount reaches 0.
     /// </typeparam>
-    internal interface IRef<out T> : IDisposable where T : class
+    public interface IRef<out T> : IDisposable where T : class
     {
         /// <summary>
         /// The item that is being ref-counted.

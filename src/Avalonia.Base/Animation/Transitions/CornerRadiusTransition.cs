@@ -8,7 +8,7 @@ namespace Avalonia.Animation
     /// </summary>  
     public class CornerRadiusTransition : Transition<CornerRadius>
     {
-        internal override IObservable<CornerRadius> DoTransition(IObservable<double> progress, CornerRadius oldValue,
+        public override IObservable<CornerRadius> DoTransition(IObservable<double> progress, CornerRadius oldValue,
             CornerRadius newValue) =>
             AnimatorDrivenTransition<CornerRadius, CornerRadiusAnimator>.Transition(Easing, progress, oldValue,
                 newValue);

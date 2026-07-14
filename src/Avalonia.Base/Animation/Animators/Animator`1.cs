@@ -9,7 +9,7 @@ namespace Avalonia.Animation.Animators
     /// <summary>
     /// Base class for <see cref="Animator{T}"/> objects
     /// </summary>
-    internal abstract class Animator<T> : AvaloniaList<AnimatorKeyFrame>, IAnimator
+    public abstract class Animator<T> : AvaloniaList<AnimatorKeyFrame>, IAnimator
     {
         /// <summary>
         /// Gets or sets the target property for the keyframe.

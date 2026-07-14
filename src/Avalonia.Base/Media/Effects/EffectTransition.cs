@@ -50,7 +50,7 @@ public class EffectTransition : Transition<IEffect?>
 
     }
 
-    internal override IObservable<IEffect?> DoTransition(IObservable<double> progress, IEffect? oldValue, IEffect? newValue)
+    public override IObservable<IEffect?> DoTransition(IObservable<double> progress, IEffect? oldValue, IEffect? newValue)
     {
         if ((oldValue != null || newValue != null)
             && (

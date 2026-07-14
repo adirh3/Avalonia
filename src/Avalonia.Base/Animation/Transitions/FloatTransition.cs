@@ -8,7 +8,7 @@ namespace Avalonia.Animation
     /// </summary>  
     public class FloatTransition : Transition<float>
     {
-        internal override IObservable<float> DoTransition(IObservable<double> progress, float oldValue, float newValue) => 
+        public override IObservable<float> DoTransition(IObservable<double> progress, float oldValue, float newValue) =>
             AnimatorDrivenTransition<float, FloatAnimator>.Transition(Easing, progress, oldValue, newValue);
     }
 }

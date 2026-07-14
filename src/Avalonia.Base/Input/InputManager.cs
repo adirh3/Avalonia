@@ -8,7 +8,7 @@ namespace Avalonia.Input
     /// Receives input from the windowing subsystem and dispatches it to interested parties
     /// for processing.
     /// </summary>
-    internal class InputManager : IInputManager, IDisposable
+    public class InputManager : IInputManager, IDisposable
     {
         private readonly LightweightSubject<RawInputEventArgs> _preProcess = new();
         private readonly LightweightSubject<RawInputEventArgs> _process = new();

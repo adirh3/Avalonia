@@ -25,7 +25,7 @@ public readonly record struct Vector3D(double X, double Y, double Z)
         }
     }
 
-    internal Vector3 ToVector3() => new Vector3((float)X, (float)Y, (float)Z);
+    public Vector3 ToVector3() => new Vector3((float)X, (float)Y, (float)Z);
 
     internal Vector3D(Vector3 v) : this(v.X, v.Y, v.Z)
     {

@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace Avalonia.Skia;
 
-partial class DrawingContextImpl
+public partial class DrawingContextImpl
 {
     
     public void PushEffect(Rect? effectClipRect, IEffect effect)

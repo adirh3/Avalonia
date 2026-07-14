@@ -23,6 +23,6 @@ public abstract class InterpolatingTransitionBase<T> : Transition<T>
     
     protected abstract T Interpolate(double progress, T from, T to);
     
-    internal override IObservable<T> DoTransition(IObservable<double> progress, T oldValue, T newValue) =>
+    public override IObservable<T> DoTransition(IObservable<double> progress, T oldValue, T newValue) =>
         new AnimatorTransitionObservable<T, Animator>(new Animator(this), progress, Easing, oldValue, newValue);
 }

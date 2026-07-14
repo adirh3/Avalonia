@@ -8,7 +8,7 @@ namespace Avalonia.Animation
     /// </summary>  
     public class RelativePointTransition : Transition<RelativePoint>
     {
-        internal override IObservable<RelativePoint> DoTransition(IObservable<double> progress, RelativePoint oldValue, RelativePoint newValue) =>
+        public override IObservable<RelativePoint> DoTransition(IObservable<double> progress, RelativePoint oldValue, RelativePoint newValue) =>
             AnimatorDrivenTransition<RelativePoint, RelativePointAnimator>.Transition(Easing, progress, oldValue, newValue);
     }
 }

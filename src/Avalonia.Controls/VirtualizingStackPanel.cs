@@ -1093,7 +1093,7 @@ namespace Avalonia.Controls
             return controlItem;
         }
 
-        private Control? GetRecycledElement(object? item, int index, object? recycleKey)
+        protected virtual Control? GetRecycledElement(object? item, int index, object? recycleKey)
         {
             Debug.Assert(ItemContainerGenerator is not null);
 
@@ -1208,7 +1208,7 @@ namespace Avalonia.Controls
             _scrollToIndex = -1;
         }
 
-        private void PushToRecyclePool(object recycleKey, Control element)
+        protected virtual void PushToRecyclePool(object recycleKey, Control element)
         {
             _recyclePool ??= new();
 

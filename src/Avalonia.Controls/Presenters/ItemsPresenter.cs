@@ -128,7 +128,7 @@ namespace Avalonia.Controls.Presenters
             _logicalScrollable?.GetControlInDirection(direction, from);
         void ILogicalScrollable.RaiseScrollInvalidated(EventArgs e) => _scrollInvalidated?.Invoke(this, e);
 
-        internal void ScrollIntoView(int index)
+        public void ScrollIntoView(int index)
         {
             if (index < 0)
                 return;

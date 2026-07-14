@@ -9,7 +9,7 @@ namespace Avalonia.Animation
     /// </summary>
     /// <typeparam name="T">Type of the transitioned value.</typeparam>
     /// <typeparam name="TAnimator">Type of the animator.</typeparam>
-    internal static class AnimatorDrivenTransition<T, TAnimator> where TAnimator : Animator<T>, new()
+    public static class AnimatorDrivenTransition<T, TAnimator> where TAnimator : Animator<T>, new()
     {
         private static readonly TAnimator s_animator = new TAnimator();
 

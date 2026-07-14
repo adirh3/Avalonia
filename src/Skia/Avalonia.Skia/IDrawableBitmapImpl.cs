@@ -6,7 +6,7 @@ namespace Avalonia.Skia
     /// <summary>
     /// Extended bitmap implementation that allows for drawing it's contents.
     /// </summary>
-    internal interface IDrawableBitmapImpl : IBitmapImpl
+    public interface IDrawableBitmapImpl : IBitmapImpl
     {
         /// <summary>
         /// Draw bitmap to a drawing context.

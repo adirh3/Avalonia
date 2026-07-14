@@ -76,7 +76,7 @@ namespace Avalonia.Rendering.Composition.Server
             
             Id = Interlocked.Increment(ref s_nextId);
         }
-        
+
         partial void OnIsEnabledChanged()
         {
             if (IsEnabled)
@@ -168,6 +168,8 @@ namespace Avalonia.Rendering.Composition.Server
                     }
 
                     _renderTarget = _compositor.CreateRenderTarget(_surfaces());
+                    _redrawRequested = true;
+                    _fullRedrawRequested = true;
                 }
             }
             catch (RenderTargetNotReadyException)
