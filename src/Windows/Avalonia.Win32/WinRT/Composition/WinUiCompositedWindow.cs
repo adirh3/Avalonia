@@ -133,6 +133,7 @@ internal class WinUiCompositedWindow : IDisposable
 
                 _currentVisual.SetIsVisible(1);
                 _containerChildren.InsertAtBottom(_currentVisual);
+                _scaling = double.NaN;
                 ResizeIfNeeded(
                     WindowInfo.Size,
                     WindowInfo.Scaling,
