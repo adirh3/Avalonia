@@ -13,7 +13,7 @@ internal interface IWinUiCompositionWindowInfo
 {
     WindowState WindowState { get; }
     float CompositionPadding { get; }
-    float CompositionCornerRadius { get; }
+    float? CompositionCornerRadius { get; }
     Vector3 ScaleTransform { get; }
     Vector3 CenterPoint { get; }
     float Opacity { get; }
@@ -28,6 +28,7 @@ internal class WinUiCompositedWindow : IDisposable
     private readonly ICompositionRoundedRectangleGeometry? _compositionRoundedRectangleGeometry;
     private readonly IVisualCollection _containerChildren;
     private readonly IVisual _visual;
+    private readonly float _defaultCornerRadius;
     private IVisual? _currentVisual;
     private Vector3 _scale = Vector3.One;
     private Vector3 _centerPoint = Vector3.Zero;
@@ -59,11 +60,13 @@ internal class WinUiCompositedWindow : IDisposable
 
     public WinUiCompositedWindow(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info,
         IWinUiCompositionWindowInfo compositionInfo,
-        WinUiCompositionShared shared)
+        WinUiCompositionShared shared,
+        float defaultCornerRadius)
     {
         WindowInfo = info;
         CompositionInfo = compositionInfo;
         _shared = shared;
+        _defaultCornerRadius = defaultCornerRadius;
         using var desktopTarget = shared.DesktopInterop.CreateDesktopWindowTarget(WindowInfo.Handle, 0);
         _target = desktopTarget.QueryInterface<ICompositionTarget>();
 
@@ -172,7 +175,7 @@ internal class WinUiCompositedWindow : IDisposable
 
     public void ResizeIfNeeded(PixelSize size, double infoScaling, WindowState infoWindowState,
         float infoCompositionPadding, Vector3 scaleTransform, Vector3 centerPoint, float opacity,
-        Vector3 infoOffset, float infoWindowCornerRadius)
+        Vector3 infoOffset, float? infoWindowCornerRadius)
     {
         if (_disposed)
             return;
@@ -180,16 +183,21 @@ internal class WinUiCompositedWindow : IDisposable
         {
             if (_disposed)
                 return;
-            centerPoint *= new Vector3((float)infoScaling);
+            var scaling = new Vector3((float)infoScaling);
+            centerPoint *= scaling;
+            infoOffset *= scaling;
+            var cornerRadius = infoWindowCornerRadius ?? _defaultCornerRadius;
             // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (_size != size || _scale != scaleTransform || _centerPoint != centerPoint || _opacity != opacity ||
-                infoOffset != _offset || infoWindowCornerRadius != _cornerRadius ||
+                infoOffset != _offset || cornerRadius != _cornerRadius ||
                 infoCompositionPadding != _compositionPadding || infoWindowState != _windowState ||
                 infoScaling != _scaling)
             {
                 _visual.SetSize(new Vector2(size.Width, size.Height));
 
-                float backdropPadding = infoWindowState == WindowState.Maximized ? 0 : infoCompositionPadding;
+                var suppressBackdropInsets =
+                    infoWindowState is WindowState.Maximized or WindowState.FullScreen;
+                float backdropPadding = suppressBackdropInsets ? 0 : infoCompositionPadding;
                 var offset = (float)Math.Ceiling(backdropPadding * infoScaling);
                 var sizeReduction = 2 * offset;
 
@@ -212,16 +220,16 @@ internal class WinUiCompositedWindow : IDisposable
                 _currentVisual?.SetOpacity(opacity);
 
                 _compositionRoundedRectangleGeometry?.SetCornerRadius(
-                    infoWindowState == WindowState.Maximized?
+                    suppressBackdropInsets ?
                         Vector2.Zero :
-                        new Vector2((float)(infoWindowCornerRadius * infoScaling),
-                            (float)(infoWindowCornerRadius * infoScaling)));
+                        new Vector2((float)(cornerRadius * infoScaling),
+                            (float)(cornerRadius * infoScaling)));
                 _size = size;
                 _scale = scaleTransform;
                 _centerPoint = centerPoint;
                 _opacity = opacity;
                 _offset = infoOffset;
-                _cornerRadius = infoWindowCornerRadius;
+                _cornerRadius = cornerRadius;
                 _compositionPadding = infoCompositionPadding;
                 _windowState = infoWindowState;
                 _scaling = infoScaling;
@@ -231,38 +239,20 @@ internal class WinUiCompositedWindow : IDisposable
 
     private IVisual? CreateMicaLightVisual()
     {
-        IVisual? micaLight = null;
-        var micaBrushLight = CreateMicaBackdropBrush(242, 0.6f);
-        if (micaBrushLight != null)
-        {
-            micaLight = CreateBlurVisual(micaBrushLight);
-        }
-
-        return micaLight;
+        using var micaBrushLight = CreateMicaBackdropBrush(242, 0.6f);
+        return micaBrushLight is null ? null : CreateBlurVisual(micaBrushLight);
     }
 
     private IVisual? CreateAcrylicVisual()
     {
-        var acrylicBlurBackdropBrush = CreateAcrylicBlurBackdropBrush();
-        if (acrylicBlurBackdropBrush != null)
-        {
-            return CreateBlurVisual(acrylicBlurBackdropBrush);
-        }
-
-        return null;
+        using var acrylicBlurBackdropBrush = CreateAcrylicBlurBackdropBrush();
+        return acrylicBlurBackdropBrush is null ? null : CreateBlurVisual(acrylicBlurBackdropBrush);
     }
 
     private IVisual? CreateMicaDarkVisual()
     {
-        IVisual? micaDark = null;
-        var micaBrushDark = CreateMicaBackdropBrush(32, 0.8f);
-
-        if (micaBrushDark != null)
-        {
-            micaDark = CreateBlurVisual(micaBrushDark);
-        }
-
-        return micaDark;
+        using var micaBrushDark = CreateMicaBackdropBrush(32, 0.8f);
+        return micaBrushDark is null ? null : CreateBlurVisual(micaBrushDark);
     }
 
 

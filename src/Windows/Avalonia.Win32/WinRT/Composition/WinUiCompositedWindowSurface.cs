@@ -33,7 +33,9 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public IDirect3D11TextureRenderTarget2 CreateRenderTarget(IPlatformGraphicsContext context, IntPtr d3dDevice)
         {
-            _window ??= new WinUiCompositedWindow(_info, _compositionInfo, _shared);
+            var defaultCornerRadius = AvaloniaLocator.Current.GetService<Win32PlatformOptions>()
+                ?.WinUICompositionBackdropCornerRadius ?? 0;
+            _window ??= new WinUiCompositedWindow(_info, _compositionInfo, _shared, defaultCornerRadius);
             _window.SetBlur(_blurEffect);
 
             return new WinUiCompositedWindowRenderTarget(context, _window, d3dDevice, _shared.Compositor);

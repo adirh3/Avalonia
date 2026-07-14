@@ -792,7 +792,9 @@ namespace Avalonia.Win32
                 compositionTransformVisual,
                 compositionTransformOffset,
                 ownerTopLevel?.CompositionPadding ?? 0,
-                ownerTopLevel?.CompositionCornerRadius ?? 0);
+                ownerTopLevel?.IsSet(TopLevel.CompositionCornerRadiusProperty) == true
+                    ? ownerTopLevel.CompositionCornerRadius
+                    : null);
         }
 
         public void Hide()
@@ -1674,7 +1676,7 @@ namespace Avalonia.Win32
 
         float IWinUiCompositionWindowInfo.CompositionPadding => _compositionSurfaceInfo.CompositionPadding;
 
-        float IWinUiCompositionWindowInfo.CompositionCornerRadius =>
+        float? IWinUiCompositionWindowInfo.CompositionCornerRadius =>
             _compositionSurfaceInfo.CompositionCornerRadius;
 
         IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle => Handle.Handle;
@@ -1749,13 +1751,13 @@ namespace Avalonia.Win32
         private sealed class CompositionSurfaceInfoSnapshot
         {
             public static CompositionSurfaceInfoSnapshot Default { get; } =
-                new(null, Vector3.Zero, 0, 0);
+                new(null, Vector3.Zero, 0, null);
 
             public CompositionSurfaceInfoSnapshot(
                 Visual? transformVisual,
                 Vector3 transformOffset,
                 float compositionPadding,
-                float compositionCornerRadius)
+                float? compositionCornerRadius)
             {
                 TransformVisual = transformVisual;
                 TransformOffset = transformOffset;
@@ -1766,7 +1768,7 @@ namespace Avalonia.Win32
             public Visual? TransformVisual { get; }
             public Vector3 TransformOffset { get; }
             public float CompositionPadding { get; }
-            public float CompositionCornerRadius { get; }
+            public float? CompositionCornerRadius { get; }
         }
 
         protected struct WindowProperties
