@@ -104,6 +104,34 @@ public class InputTests
     }
 
 #if NUNIT
+    [AvaloniaTest]
+#elif XUNIT
+    [AvaloniaFact]
+#endif
+    public void Legacy_Key_Helpers_Use_Empty_Physical_Key_Metadata()
+    {
+        KeyEventArgs? keyDown = null;
+        KeyEventArgs? keyUp = null;
+        var textBox = new TextBox();
+        textBox.AddHandler(InputElement.KeyDownEvent, (_, e) => keyDown = e, handledEventsToo: true);
+        textBox.AddHandler(InputElement.KeyUpEvent, (_, e) => keyUp = e, handledEventsToo: true);
+
+        _window.Content = textBox;
+        _window.Show();
+        AssertHelper.True(textBox.Focus());
+
+        _window.KeyPress(Key.A, RawInputModifiers.Control);
+        _window.KeyRelease(Key.A, RawInputModifiers.Control);
+
+        AssertHelper.NotNull(keyDown);
+        AssertHelper.NotNull(keyUp);
+        AssertHelper.Equal(Key.A, keyDown!.Key);
+        AssertHelper.Equal(Key.A, keyUp!.Key);
+        AssertHelper.Equal(PhysicalKey.None, keyDown.PhysicalKey);
+        AssertHelper.Equal(PhysicalKey.None, keyUp.PhysicalKey);
+    }
+
+#if NUNIT
     [TearDown]
     public void TearDown()
 #elif XUNIT

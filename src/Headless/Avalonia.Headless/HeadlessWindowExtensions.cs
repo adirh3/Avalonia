@@ -49,6 +49,12 @@ public static class HeadlessWindowExtensions
         RunJobsOnImpl(topLevel, w => w.KeyPress(key, modifiers, physicalKey, keySymbol));
 
     /// <summary>
+    /// Simulates keyboard press without physical-key metadata.
+    /// </summary>
+    public static void KeyPress(this TopLevel topLevel, Key key, RawInputModifiers modifiers) =>
+        KeyPress(topLevel, key, modifiers, PhysicalKey.None, null);
+
+    /// <summary>
     /// Simulates keyboard press on the headless window/toplevel, as if typed on a QWERTY keyboard.
     /// </summary>
     public static void KeyPressQwerty(this TopLevel topLevel, PhysicalKey physicalKey, RawInputModifiers modifiers) =>
@@ -60,6 +66,12 @@ public static class HeadlessWindowExtensions
     public static void KeyRelease(this TopLevel topLevel, Key key, RawInputModifiers modifiers, PhysicalKey physicalKey,
         string? keySymbol) =>
         RunJobsOnImpl(topLevel, w => w.KeyRelease(key, modifiers, physicalKey, keySymbol));
+
+    /// <summary>
+    /// Simulates keyboard release without physical-key metadata.
+    /// </summary>
+    public static void KeyRelease(this TopLevel topLevel, Key key, RawInputModifiers modifiers) =>
+        KeyRelease(topLevel, key, modifiers, PhysicalKey.None, null);
 
     /// <summary>
     /// Simulates keyboard release on the headless window/toplevel, as if typed on a QWERTY keyboard.
