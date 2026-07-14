@@ -15,7 +15,7 @@ namespace Avalonia.Input
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        internal static KeyboardDevice? Instance => AvaloniaLocator.Current.GetService<IKeyboardDevice>() as KeyboardDevice;
+        public static KeyboardDevice? Instance => AvaloniaLocator.Current.GetService<IKeyboardDevice>() as KeyboardDevice;
 
         public IInputManager? InputManager => AvaloniaLocator.Current.GetService<IInputManager>();
 

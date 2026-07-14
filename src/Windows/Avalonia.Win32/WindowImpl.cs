@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Avalonia.Collections.Pooled;
 using Avalonia.Controls;
@@ -34,7 +35,8 @@ namespace Avalonia.Win32
     /// <summary>
     /// Window implementation for Win32 platform.
     /// </summary>
-    internal partial class WindowImpl : IWindowImpl, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo, IWin32OptionsTopLevelImpl
+    internal partial class WindowImpl : IWindowImpl, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo,
+        IWin32OptionsTopLevelImpl, IWinUiCompositionWindowInfo
     {
         private static readonly List<WindowImpl> s_instances = new();
 
@@ -109,6 +111,8 @@ namespace Avalonia.Win32
         private WindowTransparencyLevel _transparencyLevel;
         private readonly WindowTransparencyLevel _defaultTransparencyLevel;
         private WindowCornerPreference _cornerPreference;
+        private CompositionSurfaceInfoSnapshot _compositionSurfaceInfo = CompositionSurfaceInfoSnapshot.Default;
+        private TopLevel? _compositionSurfaceTopLevel;
 
         private const int MaxPointerHistorySize = 512;
         private static readonly PooledList<RawPointerPoint> s_intermediatePointsPooledList = new();
@@ -648,6 +652,7 @@ namespace Avalonia.Win32
                 WindowState.Minimized => ShowWindowCommand.ShowMinNoActive,
                 WindowState.Maximized => ShowWindowCommand.ShowMaximized,
                 WindowState.Normal => ShowWindowCommand.ShowNoActivate,
+                WindowState.FullScreen => ShowWindowCommand.Show,
                 _ => throw new NotImplementedException(),
             };
 
@@ -664,6 +669,8 @@ namespace Avalonia.Win32
 
         public void Dispose()
         {
+            if (_compositionSurfaceTopLevel != null)
+                _compositionSurfaceTopLevel.PropertyChanged -= CompositionSurfaceTopLevelOnPropertyChanged;
             _inputPane?.Dispose();
             _inputPane = null;
             if (_hwnd != IntPtr.Zero)
@@ -733,7 +740,59 @@ namespace Avalonia.Win32
         public void SetInputRoot(IInputRoot inputRoot)
         {
             _owner = inputRoot;
+            UpdateCompositionSurfaceInfo();
+            Dispatcher.UIThread.Post(UpdateCompositionSurfaceInfo, DispatcherPriority.Loaded);
             CreateDropTarget(inputRoot);
+        }
+
+        private void CompositionSurfaceTopLevelOnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == TopLevel.CompositionPaddingProperty
+                || e.Property == TopLevel.CompositionCornerRadiusProperty
+                || e.Property == Visual.BoundsProperty)
+            {
+                UpdateCompositionSurfaceInfo();
+            }
+        }
+
+        private static TopLevel? ResolveOwnerTopLevel(Visual? ownerVisual) => ownerVisual switch
+        {
+            TopLevel topLevel => topLevel,
+            TopLevelHost host => host.VisualChildren.OfType<TopLevel>().FirstOrDefault(),
+            _ => null
+        };
+
+        private void UpdateCompositionSurfaceInfo()
+        {
+            Dispatcher.UIThread.VerifyAccess();
+
+            var ownerVisual = (_owner as PresentationSource)?.RootVisual as Visual ?? _owner as Visual;
+            var ownerTopLevel = ResolveOwnerTopLevel(ownerVisual);
+            var compositionTransformVisual = (Visual?)ownerTopLevel ?? ownerVisual;
+            var compositionTransformOffset = Vector3.Zero;
+
+            if (ownerTopLevel != null && !ReferenceEquals(ownerTopLevel, ownerVisual))
+            {
+                var topLevelBounds = ownerTopLevel.Bounds;
+                compositionTransformOffset = new Vector3((float)topLevelBounds.X, (float)topLevelBounds.Y, 0);
+            }
+
+            if (!ReferenceEquals(_compositionSurfaceTopLevel, ownerTopLevel))
+            {
+                if (_compositionSurfaceTopLevel != null)
+                    _compositionSurfaceTopLevel.PropertyChanged -= CompositionSurfaceTopLevelOnPropertyChanged;
+
+                _compositionSurfaceTopLevel = ownerTopLevel;
+
+                if (_compositionSurfaceTopLevel != null)
+                    _compositionSurfaceTopLevel.PropertyChanged += CompositionSurfaceTopLevelOnPropertyChanged;
+            }
+
+            _compositionSurfaceInfo = new CompositionSurfaceInfoSnapshot(
+                compositionTransformVisual,
+                compositionTransformOffset,
+                ownerTopLevel?.CompositionPadding ?? 0,
+                ownerTopLevel?.CompositionCornerRadius ?? 0);
         }
 
         public void Hide()
@@ -1595,7 +1654,28 @@ namespace Avalonia.Win32
             }
         }
 
+        Vector3 IWinUiCompositionWindowInfo.ScaleTransform
+            => _compositionSurfaceInfo.TransformVisual?.CurrentCompositionScale ?? Vector3.One;
+
+        Vector3 IWinUiCompositionWindowInfo.CenterPoint
+            => (_compositionSurfaceInfo.TransformVisual?.CurrentCompositionCenterPoint ?? Vector3.Zero)
+                + _compositionSurfaceInfo.TransformOffset;
+
+        Vector3 IWinUiCompositionWindowInfo.Offset
+            => (_compositionSurfaceInfo.TransformVisual?.CurrentOffset ?? Vector3.Zero)
+                - _compositionSurfaceInfo.TransformOffset;
+
+        float IWinUiCompositionWindowInfo.Opacity
+            => _compositionSurfaceInfo.TransformVisual?.CurrentCompositionOpacity ?? 1f;
+
         double EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Scaling => RenderScaling;
+
+        WindowState IWinUiCompositionWindowInfo.WindowState => _windowProperties.WindowState;
+
+        float IWinUiCompositionWindowInfo.CompositionPadding => _compositionSurfaceInfo.CompositionPadding;
+
+        float IWinUiCompositionWindowInfo.CompositionCornerRadius =>
+            _compositionSurfaceInfo.CompositionCornerRadius;
 
         IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle => Handle.Handle;
 
@@ -1664,6 +1744,29 @@ namespace Avalonia.Win32
             public WindowStyles Style { get; set; }
             public WindowStyles ExStyle { get; set; }
             public RECT WindowRect { get; set; }
+        }
+
+        private sealed class CompositionSurfaceInfoSnapshot
+        {
+            public static CompositionSurfaceInfoSnapshot Default { get; } =
+                new(null, Vector3.Zero, 0, 0);
+
+            public CompositionSurfaceInfoSnapshot(
+                Visual? transformVisual,
+                Vector3 transformOffset,
+                float compositionPadding,
+                float compositionCornerRadius)
+            {
+                TransformVisual = transformVisual;
+                TransformOffset = transformOffset;
+                CompositionPadding = compositionPadding;
+                CompositionCornerRadius = compositionCornerRadius;
+            }
+
+            public Visual? TransformVisual { get; }
+            public Vector3 TransformOffset { get; }
+            public float CompositionPadding { get; }
+            public float CompositionCornerRadius { get; }
         }
 
         protected struct WindowProperties
@@ -1743,4 +1846,3 @@ namespace Avalonia.Win32
         }
     }
 }
-

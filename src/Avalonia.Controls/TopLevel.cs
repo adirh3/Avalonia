@@ -51,6 +51,18 @@ namespace Avalonia.Controls
             AvaloniaProperty.RegisterDirect<TopLevel, Size>(nameof(ClientSize), o => o.ClientSize);
 
         /// <summary>
+        /// Defines the <see cref="CompositionPadding"/> property.
+        /// </summary>
+        public static readonly StyledProperty<float> CompositionPaddingProperty =
+            AvaloniaProperty.Register<TopLevel, float>(nameof(CompositionPadding));
+
+        /// <summary>
+        /// Defines the <see cref="CompositionCornerRadius"/> property.
+        /// </summary>
+        public static readonly StyledProperty<float> CompositionCornerRadiusProperty =
+            AvaloniaProperty.Register<TopLevel, float>(nameof(CompositionCornerRadius));
+
+        /// <summary>
         /// Defines the <see cref="FrameSize"/> property.
         /// </summary>
         public static readonly DirectProperty<TopLevel, Size?> FrameSizeProperty =
@@ -135,7 +147,7 @@ namespace Avalonia.Controls
         internal TopLevelHost TopLevelHost => _topLevelHost;
         internal new PresentationSource PresentationSource => _source;
         internal IInputRoot InputRoot => _source;
-        
+
         private protected VisualLayerManager? VisualLayerManager => _visualLayerManager;
 
         private protected void EnableVisualLayerManagerLayers()
@@ -221,16 +233,12 @@ namespace Avalonia.Controls
             _source.Renderer.CompositionTarget.TransparencyLevel =
                 ToCompositionTransparencyLevel(_actualTransparencyLevel);
 
-
             _accessKeyHandler = TryGetService<IAccessKeyHandler>(dependencyResolver);
             _inputManager = TryGetService<IInputManager>(dependencyResolver);
             _tooltipService = TryGetService<IToolTipService>(dependencyResolver);
             _keyboardNavigationHandler = TryGetService<IKeyboardNavigationHandler>(dependencyResolver);
             _globalStyles = TryGetService<IGlobalStyles>(dependencyResolver);
             _applicationThemeHost = TryGetService<IThemeVariantHost>(dependencyResolver);
-
-
-
 
             impl.Closed = HandleClosed;
             impl.Paint = HandlePaint;
@@ -329,6 +337,25 @@ namespace Avalonia.Controls
                 }
             });
         }
+
+        /// <summary>
+        /// Gets or sets the platform-composited backdrop padding.
+        /// </summary>
+        public float CompositionPadding
+        {
+            get { return GetValue(CompositionPaddingProperty); }
+            set { SetValue(CompositionPaddingProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the platform-composited backdrop corner radius.
+        /// </summary>
+        public float CompositionCornerRadius
+        {
+            get { return GetValue(CompositionCornerRadiusProperty); }
+            set { SetValue(CompositionCornerRadiusProperty, value); }
+        }
+
         /// <summary>
         /// Fired when the window is opened.
         /// </summary>
@@ -454,6 +481,7 @@ namespace Avalonia.Controls
             get => _source.HitTesterOverride;
             set => _source.HitTesterOverride = value;
         }
+
 
         /// <summary>
         /// Gets a value indicating whether the renderer should draw specific diagnostics.

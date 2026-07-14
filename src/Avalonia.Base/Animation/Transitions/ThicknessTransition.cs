@@ -8,7 +8,7 @@ namespace Avalonia.Animation
     /// </summary>  
     public class ThicknessTransition : Transition<Thickness>
     {
-        internal override IObservable<Thickness> DoTransition(IObservable<double> progress, Thickness oldValue, Thickness newValue) => 
+        public override IObservable<Thickness> DoTransition(IObservable<double> progress, Thickness oldValue, Thickness newValue) =>
             AnimatorDrivenTransition<Thickness, ThicknessAnimator>.Transition(Easing, progress, oldValue, newValue);
     }
 }

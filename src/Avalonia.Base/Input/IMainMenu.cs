@@ -6,7 +6,7 @@ namespace Avalonia.Input
     /// <summary>
     /// Defines the interface for a window's main menu.
     /// </summary>
-    internal interface IMainMenu
+    public interface IMainMenu
     {
         /// <summary>
         /// Gets a value indicating whether the menu is open.

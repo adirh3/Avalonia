@@ -16,7 +16,7 @@ namespace Avalonia.Skia
     /// <summary>
     /// Skia based drawing context.
     /// </summary>
-    internal partial class DrawingContextImpl : IDrawingContextImpl,
+    public partial class DrawingContextImpl : IDrawingContextImpl,
         IDrawingContextWithAcrylicLikeSupport,
         IDrawingContextImplWithEffects
     {
@@ -47,7 +47,7 @@ namespace Avalonia.Skia
         /// <summary>
         /// Context create info.
         /// </summary>
-        public struct CreateInfo
+        internal struct CreateInfo
         {
             /// <summary>
             /// Canvas to draw to.
@@ -182,7 +182,7 @@ namespace Avalonia.Skia
         /// </summary>
         /// <param name="createInfo">Create info.</param>
         /// <param name="disposables">Array of elements to dispose after drawing has finished.</param>
-        public DrawingContextImpl(CreateInfo createInfo, params IDisposable?[]? disposables)
+        internal DrawingContextImpl(CreateInfo createInfo, params IDisposable?[]? disposables)
         {
             Canvas = createInfo.Canvas ?? createInfo.Surface?.Canvas
                 ?? throw new ArgumentException("Invalid create info - no Canvas provided", nameof(createInfo));

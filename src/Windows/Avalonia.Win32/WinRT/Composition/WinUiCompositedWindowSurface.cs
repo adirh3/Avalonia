@@ -13,13 +13,17 @@ namespace Avalonia.Win32.WinRT.Composition
     {
         private readonly WinUiCompositionShared _shared;
         private readonly EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo _info;
+        private readonly IWinUiCompositionWindowInfo _compositionInfo;
         private WinUiCompositedWindow? _window;
         private BlurEffect _blurEffect;
 
-        public WinUiCompositedWindowSurface(WinUiCompositionShared shared, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info)
+        public WinUiCompositedWindowSurface(WinUiCompositionShared shared,
+            EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info,
+            IWinUiCompositionWindowInfo compositionInfo)
         {
             _shared = shared;
             _info = info;
+            _compositionInfo = compositionInfo;
         }
 
         IDirect3D11TextureRenderTarget IDirect3D11TexturePlatformSurface.CreateRenderTarget(IPlatformGraphicsContext context, IntPtr d3dDevice)
@@ -29,9 +33,7 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public IDirect3D11TextureRenderTarget2 CreateRenderTarget(IPlatformGraphicsContext context, IntPtr d3dDevice)
         {
-            var cornerRadius = AvaloniaLocator.Current.GetService<Win32PlatformOptions>()
-                ?.WinUICompositionBackdropCornerRadius;
-            _window ??= new WinUiCompositedWindow(_info, _shared, cornerRadius);
+            _window ??= new WinUiCompositedWindow(_info, _compositionInfo, _shared);
             _window.SetBlur(_blurEffect);
 
             return new WinUiCompositedWindowRenderTarget(context, _window, d3dDevice, _shared.Compositor);
@@ -170,7 +172,10 @@ namespace Avalonia.Win32.WinRT.Composition
 
                 var size = sceneInfo.Size;
                 var scale = sceneInfo.Scaling;
-                _window.ResizeIfNeeded(size);
+                var compositionInfo = _window.CompositionInfo;
+                _window.ResizeIfNeeded(size, scale, compositionInfo.WindowState, compositionInfo.CompositionPadding,
+                    compositionInfo.ScaleTransform, compositionInfo.CenterPoint, compositionInfo.Opacity,
+                    compositionInfo.Offset, compositionInfo.CompositionCornerRadius);
                 _window.SetSurface(_surface);
                 
                 void* pTexture;

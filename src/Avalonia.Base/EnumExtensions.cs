@@ -6,7 +6,7 @@ namespace Avalonia
     /// <summary>
     /// Provides extension methods for enums.
     /// </summary>
-    internal static class EnumExtensions
+    public static class EnumExtensions
     {
             
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

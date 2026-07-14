@@ -16,7 +16,7 @@ namespace Avalonia.Animation
         private static readonly GradientBrushAnimator s_gradientAnimator = new GradientBrushAnimator();
         private static readonly ISolidColorBrushAnimator s_solidColorBrushAnimator = new ISolidColorBrushAnimator();
 
-        internal override IObservable<IBrush?> DoTransition(IObservable<double> progress, IBrush? oldValue, IBrush? newValue)
+        public override IObservable<IBrush?> DoTransition(IObservable<double> progress, IBrush? oldValue, IBrush? newValue)
         {
             if (oldValue is null || newValue is null)
             {

@@ -677,7 +677,7 @@ namespace Avalonia.Controls
             return false;
         }
 
-        private void HandleWindowStateChanged(WindowState state)
+        protected virtual void HandleWindowStateChanged(WindowState state)
         {
             // Check if platform impl doesn't lie about get_WindowState being usable
             Debug.Assert(PlatformImpl is not { WindowStateGetterIsUsable: true } || PlatformImpl.WindowState == state);
