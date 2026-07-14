@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Fonts.Inter;
 using Avalonia.Logging;
 using Avalonia.Media;
@@ -558,6 +562,7 @@ namespace Avalonia.Skia.UnitTests.Media
                 Assert.True(fontManagerImpl.TryCreateGlyphTypeface(stream, FontSimulations.None, out var platformTypeface));
                 Assert.NotNull(platformTypeface);
                 Assert.Equal("TestFontNoCmap412", platformTypeface.FamilyName);
+                platformTypeface.Dispose();
             }
 
             void AssertCannotCreateGlyphTypeface()
@@ -665,6 +670,57 @@ namespace Avalonia.Skia.UnitTests.Media
             Assert.Equal(1, fontManagerImpl.RequestedFamilyCreateCount);
         }
 
+        [Fact]
+        public void TryGetGlyphTypeface_Should_Dispose_Unused_Nearest_Platform_Match()
+        {
+            var fontManagerImpl = new FamilyRemappingFontManagerImpl("NotInstalled", "Noto Mono");
+            using var app = UnitTestApplication.Start(
+                TestServices.MockPlatformRenderInterface.With(fontManagerImpl: fontManagerImpl));
+
+            Assert.True(FontManager.Current.TryGetGlyphTypeface(
+                new Typeface("NotInstalled", FontStyle.Normal, FontWeight.Normal),
+                out _));
+            Assert.True(FontManager.Current.TryGetGlyphTypeface(
+                new Typeface("NotInstalled", FontStyle.Normal, FontWeight.Bold),
+                out _));
+
+            Assert.Equal(3, fontManagerImpl.CreatedTypefaces.Count);
+            Assert.False(fontManagerImpl.CreatedTypefaces[0].IsDisposed);
+            Assert.True(fontManagerImpl.CreatedTypefaces[1].IsDisposed);
+            Assert.False(fontManagerImpl.CreatedTypefaces[2].IsDisposed);
+        }
+
+        [Fact]
+        public void Concurrent_Platform_Fallbacks_Should_Keep_One_Canonical_Typeface()
+        {
+            const int participantCount = 8;
+            using var fontManagerImpl = new ConcurrentFallbackFontManagerImpl(participantCount);
+            using var app = UnitTestApplication.Start(
+                TestServices.MockPlatformRenderInterface.With(fontManagerImpl: fontManagerImpl));
+
+            var fontManager = FontManager.Current;
+            _ = fontManager.SystemFonts;
+
+            var tasks = Enumerable.Range(0, participantCount)
+                .Select(index => Task.Run(() => fontManager.TryMatchCharacter(
+                    'A',
+                    FontStyle.Normal,
+                    FontWeight.Normal,
+                    FontStretch.Normal,
+                    null,
+                    CultureInfo.InvariantCulture,
+                    out _)))
+                .ToArray();
+
+            Assert.True(Task.WaitAll(tasks, TimeSpan.FromSeconds(15)));
+            Assert.All(tasks, task => Assert.True(task.Result));
+
+            var createdTypefaces = fontManagerImpl.CreatedTypefaces.ToArray();
+
+            Assert.Equal(participantCount, createdTypefaces.Length);
+            Assert.Equal(participantCount - 1, createdTypefaces.Count(x => x.IsDisposed));
+        }
+
         /// <summary>
         /// A font manager whose every by-name lookup resolves to a single matched font whose family name
         /// differs from the requested one.
@@ -673,6 +729,8 @@ namespace Avalonia.Skia.UnitTests.Media
             : IFontManagerImpl, IDisposable
         {
             public int RequestedFamilyCreateCount { get; private set; }
+
+            public List<TrackingPlatformTypeface> CreatedTypefaces { get; } = new();
 
             public string GetDefaultFontFamilyName() 
                 => matchedFamilyName;
@@ -690,7 +748,10 @@ namespace Avalonia.Skia.UnitTests.Media
                 if (string.Equals(familyName, requestedFamilyName, StringComparison.OrdinalIgnoreCase))
                     RequestedFamilyCreateCount++;
 
-                platformTypeface = new SkiaTypeface(CreateMatchedTypeface(), FontSimulations.None);
+                var trackingTypeface = new TrackingPlatformTypeface(
+                    new SkiaTypeface(CreateMatchedTypeface(), FontSimulations.None));
+                CreatedTypefaces.Add(trackingTypeface);
+                platformTypeface = trackingTypeface;
                 return true;
             }
 
@@ -699,7 +760,10 @@ namespace Avalonia.Skia.UnitTests.Media
                 FontSimulations fontSimulations,
                 [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
             {
-                platformTypeface = new SkiaTypeface(SKTypeface.FromStream(stream), fontSimulations);
+                var trackingTypeface = new TrackingPlatformTypeface(
+                    new SkiaTypeface(SKTypeface.FromStream(stream), fontSimulations));
+                CreatedTypefaces.Add(trackingTypeface);
+                platformTypeface = trackingTypeface;
                 return true;
             }
 
@@ -730,7 +794,7 @@ namespace Avalonia.Skia.UnitTests.Media
                 // so pick the one whose family name matches the substitute we want to return.
                 foreach (var fontAsset in FontFamilyLoader.LoadFontAssets(new Uri(s_fontUri)))
                 {
-                    var stream = assetLoader.Open(fontAsset);
+                    using var stream = assetLoader.Open(fontAsset);
                     var typeface = SKTypeface.FromStream(stream);
 
                     if (typeface is not null && 
@@ -748,6 +812,130 @@ namespace Avalonia.Skia.UnitTests.Media
             public void Dispose()
             {
             }
+        }
+
+        private sealed class ConcurrentFallbackFontManagerImpl : IFontManagerImpl, IDisposable
+        {
+            private readonly Barrier _barrier;
+            private readonly string _familyName = SKTypeface.Default.FamilyName;
+
+            public ConcurrentFallbackFontManagerImpl(int participantCount)
+            {
+                _barrier = new Barrier(participantCount);
+            }
+
+            public ConcurrentBag<TrackingPlatformTypeface> CreatedTypefaces { get; } = new();
+
+            public string GetDefaultFontFamilyName() => _familyName;
+
+            public string[] GetInstalledFontFamilyNames(bool checkForUpdates = false) => [_familyName];
+
+            public bool TryMatchCharacter(
+                int codepoint,
+                FontStyle fontStyle,
+                FontWeight fontWeight,
+                FontStretch fontStretch,
+                string? familyName,
+                CultureInfo? culture,
+                [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+            {
+                var skTypeface = SKTypeface.FromFamilyName(
+                    _familyName,
+                    new SKFontStyle(
+                        (int)fontWeight,
+                        (int)SKFontStyleWidth.Normal,
+                        SKFontStyleSlant.Upright));
+                var trackingTypeface = new TrackingPlatformTypeface(
+                    new SkiaTypeface(skTypeface, FontSimulations.None));
+
+                CreatedTypefaces.Add(trackingTypeface);
+                platformTypeface = trackingTypeface;
+
+                if (!_barrier.SignalAndWait(TimeSpan.FromSeconds(10)))
+                {
+                    throw new TimeoutException("Concurrent font fallback test did not reach the cache race.");
+                }
+
+                return true;
+            }
+
+            public bool TryCreateGlyphTypeface(
+                string familyName,
+                FontStyle style,
+                FontWeight weight,
+                FontStretch stretch,
+                [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+            {
+                platformTypeface = null;
+                return false;
+            }
+
+            public bool TryCreateGlyphTypeface(
+                Stream stream,
+                FontSimulations fontSimulations,
+                [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+            {
+                platformTypeface = null;
+                return false;
+            }
+
+            public bool TryGetFamilyTypefaces(
+                string familyName,
+                [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)
+            {
+                familyTypefaces = null;
+                return false;
+            }
+
+            public void Dispose() => _barrier.Dispose();
+        }
+
+        private sealed class TrackingPlatformTypeface : IPlatformTypeface
+        {
+            private readonly IPlatformTypeface _inner;
+
+            public TrackingPlatformTypeface(IPlatformTypeface inner)
+            {
+                _inner = inner;
+            }
+
+            public FontWeight Weight => _inner.Weight;
+
+            public FontStyle Style => _inner.Style;
+
+            public FontStretch Stretch => _inner.Stretch;
+
+            public string FamilyName => _inner.FamilyName;
+
+            public FontSimulations FontSimulations => _inner.FontSimulations;
+
+            public bool IsDisposed { get; private set; }
+
+            public void Dispose()
+            {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
+                IsDisposed = true;
+                _inner.Dispose();
+            }
+
+            public bool TryGetStream([NotNullWhen(true)] out Stream stream)
+            {
+                if (_inner.TryGetStream(out var innerStream))
+                {
+                    stream = innerStream;
+                    return true;
+                }
+
+                stream = null!;
+                return false;
+            }
+
+            public bool TryGetTable(OpenTypeTag tag, out ReadOnlyMemory<byte> table) =>
+                _inner.TryGetTable(tag, out table);
         }
     }
 }

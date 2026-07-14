@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using Avalonia.Logging;
 using Avalonia.Media.Fonts;
 using Avalonia.Media.Fonts.Tables;
@@ -50,6 +51,7 @@ namespace Avalonia.Media
         private volatile HashSet<OpenTypeTag>? _shapingScriptTags;
         private bool _shapingScriptTagsUnknown;
         private readonly object _shapingScriptTagsLock = new();
+        private readonly object _textShaperTypefaceLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphTypeface"/> class with the specified platform typeface and
@@ -285,6 +287,7 @@ namespace Avalonia.Media
                     fontSimulations,
                     ex);
 
+                typeface.Dispose();
                 return null;
             }
         }
@@ -637,16 +640,25 @@ namespace Avalonia.Media
         {
             get
             {
-                if (_textShaperTypeface != null)
+                if (Volatile.Read(ref _isDisposed))
                 {
-                    return _textShaperTypeface;
+                    throw new ObjectDisposedException(nameof(GlyphTypeface));
                 }
 
-                var textShaper = AvaloniaLocator.Current.GetRequiredService<ITextShaperImpl>();
+                var textShaperTypeface = Volatile.Read(ref _textShaperTypeface);
 
-                _textShaperTypeface = textShaper.CreateTypeface(this);
+                if (textShaperTypeface != null)
+                {
+                    return textShaperTypeface;
+                }
 
-                return _textShaperTypeface;
+                lock (_textShaperTypefaceLock)
+                {
+                    ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+                    return _textShaperTypeface ??=
+                        AvaloniaLocator.Current.GetRequiredService<ITextShaperImpl>().CreateTypeface(this);
+                }
             }
         }
 
@@ -957,18 +969,30 @@ namespace Avalonia.Media
 
         private void Dispose(bool disposing)
         {
-            if (_isDisposed)
-            {
-                return;
-            }
+            ITextShaperTypeface? textShaperTypeface = null;
 
-            _isDisposed = true;
+            lock (_textShaperTypefaceLock)
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                _isDisposed = true;
+
+                if (disposing)
+                {
+                    textShaperTypeface = _textShaperTypeface;
+                    _textShaperTypeface = null;
+                }
+            }
 
             if (!disposing)
             {
                 return;
             }
 
+            textShaperTypeface?.Dispose();
             PlatformTypeface.Dispose();
         }
     }

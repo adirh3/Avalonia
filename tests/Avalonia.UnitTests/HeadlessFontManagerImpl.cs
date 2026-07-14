@@ -50,9 +50,7 @@ namespace Avalonia.UnitTests
                     continue;
                 }
 
-                platformTypeface = glyphTypeface.PlatformTypeface;
-
-                return true;
+                return TryClonePlatformTypeface(glyphTypeface, out platformTypeface);
             }
 
             platformTypeface = null;
@@ -70,7 +68,7 @@ namespace Avalonia.UnitTests
         public bool TryCreateGlyphTypeface(string familyName, FontStyle style, FontWeight weight,
             FontStretch stretch, [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
         {
-            platformTypeface = null;
+            GlyphTypeface? nearestMatch = null;
 
             // Search through custom typefaces for matching family name and style
             foreach (var customTypeface in _customTypefaces)
@@ -91,20 +89,38 @@ namespace Avalonia.UnitTests
                 // Exact match - return immediately
                 if (styleMatches && weightMatches && stretchMatches)
                 {
-                    platformTypeface = glyphTypeface.PlatformTypeface;
-                    return true;
+                    return TryClonePlatformTypeface(glyphTypeface, out platformTypeface);
                 }
 
                 // If family matches but style doesn't, keep searching
                 // but remember first family match as fallback
-                if (platformTypeface == null)
-                {
-                    platformTypeface = glyphTypeface.PlatformTypeface;
-                }
+                nearestMatch ??= glyphTypeface;
             }
 
-            // Return true if we found at least a family match (even if style doesn't match exactly)
-            return platformTypeface != null;
+            if (nearestMatch is not null)
+            {
+                return TryClonePlatformTypeface(nearestMatch, out platformTypeface);
+            }
+
+            platformTypeface = null;
+            return false;
+        }
+
+        private static bool TryClonePlatformTypeface(
+            GlyphTypeface glyphTypeface,
+            [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+        {
+            if (!glyphTypeface.PlatformTypeface.TryGetStream(out var stream))
+            {
+                platformTypeface = null;
+                return false;
+            }
+
+            using (stream)
+            {
+                platformTypeface = new HeadlessPlatformTypeface(stream, glyphTypeface.FamilyName);
+                return true;
+            }
         }
 
         public bool TryGetFamilyTypefaces(string familyName, [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)

@@ -6,6 +6,7 @@ using System.IO;
 using Avalonia.Media;
 using Avalonia.Media.Fonts;
 using Avalonia.Platform;
+using Moq;
 using Xunit;
 
 namespace Avalonia.Base.UnitTests.Media
@@ -297,12 +298,48 @@ namespace Avalonia.Base.UnitTests.Media
 
             using var stream = assetLoader.Open(new Uri(InterFontUri));
 
-            var typeface = new GlyphTypeface(new CustomPlatformTypeface(stream));
+            var platformTypeface = new CustomPlatformTypeface(stream);
+            var typeface = new GlyphTypeface(platformTypeface);
 
             typeface.Dispose();
+
+            Assert.True(platformTypeface.IsDisposed);
 
             // Should not throw on double dispose
             typeface.Dispose();
+        }
+
+        [Fact]
+        public void Should_Dispose_TextShaperTypeface()
+        {
+            var assetLoader = new StandardAssetLoader();
+
+            using var stream = assetLoader.Open(new Uri(InterFontUri));
+            using var scope = AvaloniaLocator.EnterScope();
+
+            var textShaperTypeface = new Mock<ITextShaperTypeface>();
+            var textShaper = new Mock<ITextShaperImpl>();
+            textShaper
+                .Setup(x => x.CreateTypeface(It.IsAny<GlyphTypeface>()))
+                .Returns(textShaperTypeface.Object);
+
+            AvaloniaLocator.CurrentMutable.Bind<ITextShaperImpl>().ToConstant(textShaper.Object);
+
+            var typeface = new GlyphTypeface(new CustomPlatformTypeface(stream));
+
+            _ = typeface.TextShaperTypeface;
+            typeface.Dispose();
+
+            textShaperTypeface.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void TryCreate_Should_Dispose_PlatformTypeface_On_Failure()
+        {
+            var platformTypeface = new InvalidPlatformTypeface();
+
+            Assert.Null(GlyphTypeface.TryCreate(platformTypeface));
+            Assert.True(platformTypeface.IsDisposed);
         }
 
         [Fact]
@@ -426,8 +463,16 @@ namespace Avalonia.Base.UnitTests.Media
 
             public FontSimulations FontSimulations => FontSimulations.None;
 
+            public bool IsDisposed { get; private set; }
+
             public void Dispose()
             {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
+                IsDisposed = true;
                 ((IDisposable)_fontMemory).Dispose();
             }
 
@@ -465,6 +510,35 @@ namespace Avalonia.Base.UnitTests.Media
             }
 
             public bool TryGetTable(OpenTypeTag tag, out ReadOnlyMemory<byte> table) => _fontMemory.TryGetTable(tag, out table);
+        }
+
+        private sealed class InvalidPlatformTypeface : IPlatformTypeface
+        {
+            public FontWeight Weight => FontWeight.Normal;
+
+            public FontStyle Style => FontStyle.Normal;
+
+            public FontStretch Stretch => FontStretch.Normal;
+
+            public string FamilyName => "Invalid";
+
+            public FontSimulations FontSimulations => FontSimulations.None;
+
+            public bool IsDisposed { get; private set; }
+
+            public void Dispose() => IsDisposed = true;
+
+            public bool TryGetStream([NotNullWhen(true)] out Stream stream)
+            {
+                stream = null!;
+                return false;
+            }
+
+            public bool TryGetTable(OpenTypeTag tag, out ReadOnlyMemory<byte> table)
+            {
+                table = default;
+                return false;
+            }
         }
     }
 }

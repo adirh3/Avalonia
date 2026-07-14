@@ -52,39 +52,34 @@ namespace Avalonia.Media.Fonts
                 return false;
             }
 
+            var platformFamilyName = platformTypeface.FamilyName;
+
             // The font manager didn't return a perfect match either. Find the nearest match ourselves.
             if (key != platformTypeface.ToFontCollectionKey() &&
                 TryGetGlyphTypeface(familyName, key, allowNearestMatch: true, out glyphTypeface))
             {
+                platformTypeface.Dispose();
                 return true;
             }
 
-            glyphTypeface = GlyphTypeface.TryCreate(platformTypeface);
-            if (glyphTypeface is null)
+            var createdGlyphTypeface = GlyphTypeface.TryCreate(platformTypeface);
+
+            if (createdGlyphTypeface is null ||
+                !TryAddCreatedGlyphTypeface(createdGlyphTypeface, key, out glyphTypeface, out _))
             {
                 return false;
             }
 
-            //Add to cache with platform typeface family name first
-            TryAddGlyphTypeface(platformTypeface.FamilyName, key, glyphTypeface);
-            
-            // Then the requested family name
-            if (familyName != platformTypeface.FamilyName)
-                TryAddGlyphTypeface(familyName, key, glyphTypeface);
+            TryAddGlyphTypeface(glyphTypeface);
 
-            //Add to cache
-            if (!TryAddGlyphTypeface(glyphTypeface))
+            if (!string.Equals(platformFamilyName, glyphTypeface.FamilyName, StringComparison.OrdinalIgnoreCase))
             {
-                // Another thread may have added an entry for this key while we were creating the glyph typeface.
-                // Re-check the cache and yield the existing glyph typeface if present.
-                if (_glyphTypefaceCache.TryGetValue(familyName, out var existingMap) && existingMap.TryGetValue(key, out var existingTypeface) && existingTypeface != null)
-                {
-                    glyphTypeface = existingTypeface;
+                TryAddGlyphTypeface(platformFamilyName, key, glyphTypeface);
+            }
 
-                    return true;
-                }
-
-                return false;
+            if (!string.Equals(familyName, glyphTypeface.FamilyName, StringComparison.OrdinalIgnoreCase))
+            {
+                TryAddGlyphTypeface(familyName, key, glyphTypeface);
             }
 
             //Requested glyph typeface should be in cache now
@@ -119,28 +114,31 @@ namespace Avalonia.Media.Fonts
                 return false;
             }
 
+            var platformFamilyName = platformTypeface.FamilyName;
             var platformKey = new FontCollectionKey(platformTypeface.Style, platformTypeface.Weight, platformTypeface.Stretch);
 
             // Check cache first to avoid creating a duplicate GlyphTypeface.
-            if (_glyphTypefaceCache.TryGetValue(platformTypeface.FamilyName, out var glyphTypefaces) &&
+            if (_glyphTypefaceCache.TryGetValue(platformFamilyName, out var glyphTypefaces) &&
                 glyphTypefaces.TryGetValue(platformKey, out var existing) &&
                 existing != null)
             {
+                platformTypeface.Dispose();
                 glyphTypeface = existing;
                 return true;
             }
 
-            glyphTypeface = GlyphTypeface.TryCreate(platformTypeface);
+            var createdGlyphTypeface = GlyphTypeface.TryCreate(platformTypeface);
 
-            if (glyphTypeface is null)
+            if (createdGlyphTypeface is null ||
+                !TryAddCreatedGlyphTypeface(createdGlyphTypeface, platformKey, out glyphTypeface, out _))
             {
                 return false;
             }
 
-            // Register in the cache so future lookups can short-circuit through TryMatchCharacter's
-            // Tier C without re-invoking the platform.
-            TryAddGlyphTypeface(platformTypeface.FamilyName, platformKey, glyphTypeface);
-            TryAddGlyphTypeface(glyphTypeface, platformKey);
+            if (!string.Equals(platformFamilyName, glyphTypeface.FamilyName, StringComparison.OrdinalIgnoreCase))
+            {
+                TryAddGlyphTypeface(platformFamilyName, platformKey, glyphTypeface);
+            }
 
             return true;
         }
