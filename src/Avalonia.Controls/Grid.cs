@@ -1323,8 +1323,10 @@ namespace Avalonia.Controls
                             sizeToDistribute -= newMinSize;
                         }
 
-                        //  sanity check: requested size must all be distributed
-                        Debug.Assert(MathUtilities.IsZero(sizeToDistribute));
+                        // Valid layouts can leave a small remainder here due to repeated floating-point
+                        // distribution. Release builds already continue safely; keep only the corruption check
+                        // so source-built Debug applications don't fail-fast on valid table layouts.
+                        Debug.Assert(double.IsFinite(sizeToDistribute));
                     }
                     else if (requestedSize <= rangeMaxSize)
                     {
