@@ -30,7 +30,10 @@ namespace Avalonia.Platform
         /// <param name="fontStretch">The font stretch.</param>
         /// <param name="familyName">The family name. This is optional and can be used as an initial hint for matching.</param>
         /// <param name="culture">The culture.</param>
-        /// <param name="platformTypeface">The matching platform typeface.</param>
+        /// <param name="platformTypeface">
+        /// The matching platform typeface. Ownership is transferred to the caller when this method returns
+        /// <see langword="true"/>.
+        /// </param>
         /// <returns>
         ///     <c>True</c>, if the <see cref="IFontManagerImpl"/> could match the character to specified parameters, <c>False</c> otherwise.
         /// </returns>
@@ -44,7 +47,10 @@ namespace Avalonia.Platform
         /// <param name="style">The font style.</param>
         /// <param name="weight">The font weiht.</param>
         /// <param name="stretch">The font stretch.</param>
-        /// <param name="platformTypeface">The created platform typeface</param>
+        /// <param name="platformTypeface">
+        /// The created platform typeface. Ownership is transferred to the caller when this method returns
+        /// <see langword="true"/>.
+        /// </param>
         /// <returns>
         ///     <c>True</c>, if the <see cref="IFontManagerImpl"/> could create the glyph typeface, <c>False</c> otherwise.
         /// </returns>
@@ -56,7 +62,10 @@ namespace Avalonia.Platform
         /// </summary>
         /// <param name="stream">A stream that holds the font's data.</param>
         /// <param name="fontSimulations">Specifies algorithmic style simulations.</param>
-        /// <param name=" platformTypeface">The created platform typeface</param>
+        /// <param name=" platformTypeface">
+        /// The created platform typeface. Ownership is transferred to the caller when this method returns
+        /// <see langword="true"/>.
+        /// </param>
         /// <returns>
         ///     <c>True</c>, if the <see cref="IFontManagerImpl"/> could create the glyph typeface, <c>False</c> otherwise.
         /// </returns>

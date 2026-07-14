@@ -82,10 +82,9 @@ namespace Avalonia.Skia.UnitTests.Media
         public bool TryMatchCharacter(int codepoint, FontStyle fontStyle, FontWeight fontWeight, FontStretch fontStretch,
             string? familyName, CultureInfo? culture, out IPlatformTypeface platformTypeface)
         {
-            if (SystemFonts.TryMatchCharacter(codepoint, fontStyle, fontWeight, fontStretch, familyName, culture, out var glyphTypeface))
+            if (SystemFonts.TryMatchCharacter(codepoint, fontStyle, fontWeight, fontStretch, familyName, culture, out var typeface) &&
+                TryClonePlatformTypeface(typeface.GlyphTypeface, out platformTypeface))
             {
-                platformTypeface = glyphTypeface.GlyphTypeface.PlatformTypeface;
-
                 return true;
             }
 
@@ -100,10 +99,9 @@ namespace Avalonia.Skia.UnitTests.Media
         public bool TryCreateGlyphTypeface(string familyName, FontStyle style, FontWeight weight,
             FontStretch stretch, [NotNullWhen(true)] out IPlatformTypeface platformTypeface)
         {
-            if (SystemFonts.TryGetGlyphTypeface(familyName, style, weight, stretch, out var glyphTypeface))
+            if (SystemFonts.TryGetGlyphTypeface(familyName, style, weight, stretch, out var glyphTypeface) &&
+                TryClonePlatformTypeface(glyphTypeface, out platformTypeface))
             {
-                platformTypeface = glyphTypeface.PlatformTypeface;
-
                 return true;
             }
 
@@ -113,6 +111,31 @@ namespace Avalonia.Skia.UnitTests.Media
             platformTypeface = new SkiaTypeface(skTypeface, FontSimulations.None);
 
             return true;
+        }
+
+        private static bool TryClonePlatformTypeface(
+            GlyphTypeface glyphTypeface,
+            [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+        {
+            if (!glyphTypeface.PlatformTypeface.TryGetStream(out var stream))
+            {
+                platformTypeface = null;
+                return false;
+            }
+
+            using (stream)
+            {
+                var skTypeface = SKTypeface.FromStream(stream);
+
+                if (skTypeface is null)
+                {
+                    platformTypeface = null;
+                    return false;
+                }
+
+                platformTypeface = new SkiaTypeface(skTypeface, glyphTypeface.FontSimulations);
+                return true;
+            }
         }
 
         public bool TryCreateGlyphTypeface(Stream stream, FontSimulations fontSimulations, [NotNullWhen(true)] out IPlatformTypeface platformTypeface)
