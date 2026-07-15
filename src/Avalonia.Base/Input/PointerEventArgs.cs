@@ -155,6 +155,19 @@ namespace Avalonia.Input
         /// Gets the state the pointer device had when this event occurred.
         /// </summary>
         public PointerPointProperties Properties => _properties;
+
+        internal PointerPressedEventArgs ToPointerPressedEventArgs()
+            => this as PointerPressedEventArgs
+               ?? new PointerPressedEventArgs(
+                   Source,
+                   Pointer,
+                   _eventPresentationSource?.RootVisual!,
+                   _presentationSourcePosition,
+                   Timestamp,
+                   _properties,
+                   KeyModifiers,
+                   clickCount: 1,
+                   platformInputEventCookie: PlatformInputEventCookie);
     }
 
     public enum MouseButton

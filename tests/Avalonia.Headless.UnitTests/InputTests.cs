@@ -110,8 +110,8 @@ public class InputTests
 #endif
     public void Legacy_Key_Helpers_Use_Empty_Physical_Key_Metadata()
     {
-        KeyEventArgs? keyDown = null;
-        KeyEventArgs? keyUp = null;
+        KeyEventArgs keyDown = null;
+        KeyEventArgs keyUp = null;
         var textBox = new TextBox();
         textBox.AddHandler(InputElement.KeyDownEvent, (_, e) => keyDown = e, handledEventsToo: true);
         textBox.AddHandler(InputElement.KeyUpEvent, (_, e) => keyUp = e, handledEventsToo: true);

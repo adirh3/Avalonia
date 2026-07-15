@@ -123,6 +123,29 @@ namespace Avalonia.Input
         }
 
         /// <summary>
+        /// Starts a dragging operation with a legacy <see cref="IDataObject"/>.
+        /// </summary>
+        [Obsolete($"Use {nameof(DoDragDropAsync)} instead.")]
+        public static Task<DragDropEffects> DoDragDrop(
+            PointerEventArgs triggerEvent,
+            IDataObject data,
+            DragDropEffects allowedEffects)
+            => DoDragDropAsync(triggerEvent, new DataObjectToDataTransferWrapper(data), allowedEffects);
+
+        /// <summary>
+        /// Starts a dragging operation using the legacy pointer-event contract.
+        /// </summary>
+        [Obsolete($"Use the overload accepting {nameof(PointerPressedEventArgs)} instead.")]
+        public static Task<DragDropEffects> DoDragDropAsync(
+            PointerEventArgs triggerEvent,
+            IDataTransfer dataTransfer,
+            DragDropEffects allowedEffects)
+        {
+            ArgumentNullException.ThrowIfNull(triggerEvent);
+            return DoDragDropAsync(triggerEvent.ToPointerPressedEventArgs(), dataTransfer, allowedEffects);
+        }
+
+        /// <summary>
         /// Starts a dragging operation with the given <see cref="IDataTransfer"/> and returns the applied drop effect from the target.
         /// <seealso cref="DataTransfer"/>
         /// </summary>

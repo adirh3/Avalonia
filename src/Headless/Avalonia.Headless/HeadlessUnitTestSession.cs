@@ -253,9 +253,11 @@ public sealed class HeadlessUnitTestSession : IDisposable, IAsyncDisposable
         var cancellationTokenSource = new CancellationTokenSource();
         var queue = new BlockingCollection<(Action, ExecutionContext?)>();
 
-        Task? task = null;
-        task = Task.Run(() =>
+        var dispatchTaskSource = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task task = Task.Run(() =>
         {
+            Task dispatchTask = dispatchTaskSource.Task.GetAwaiter().GetResult();
+
             try
             {
                 var appBuilder = AppBuilder.Configure(entryPointType);
@@ -272,8 +274,8 @@ public sealed class HeadlessUnitTestSession : IDisposable, IAsyncDisposable
                     appBuilder = appBuilder.UseHarfBuzz();
                 }
 
-                // ReSharper disable once AccessToModifiedClosure
-                tcs.SetResult(new HeadlessUnitTestSession(appBuilder, cancellationTokenSource, queue, task!, runIsolated));
+                tcs.SetResult(new HeadlessUnitTestSession(
+                    appBuilder, cancellationTokenSource, queue, dispatchTask, runIsolated));
             }
             catch (Exception e)
             {
@@ -300,6 +302,7 @@ public sealed class HeadlessUnitTestSession : IDisposable, IAsyncDisposable
                 }
             }
         });
+        dispatchTaskSource.SetResult(task);
 
         return tcs.Task.GetAwaiter().GetResult();
     }

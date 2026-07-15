@@ -691,7 +691,7 @@ namespace Avalonia.Skia.UnitTests.Media
         }
 
         [Fact]
-        public void Concurrent_Platform_Fallbacks_Should_Keep_One_Canonical_Typeface()
+        public async Task Concurrent_Platform_Fallbacks_Should_Keep_One_Canonical_Typeface()
         {
             const int participantCount = 8;
             using var fontManagerImpl = new ConcurrentFallbackFontManagerImpl(participantCount);
@@ -712,8 +712,12 @@ namespace Avalonia.Skia.UnitTests.Media
                     out _)))
                 .ToArray();
 
-            Assert.True(Task.WaitAll(tasks, TimeSpan.FromSeconds(15)));
-            Assert.All(tasks, task => Assert.True(task.Result));
+            Task<bool[]> allTasks = Task.WhenAll(tasks);
+            Task completedTask = await Task.WhenAny(
+                allTasks,
+                Task.Delay(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken));
+            Assert.Same(allTasks, completedTask);
+            Assert.All(await allTasks, Assert.True);
 
             var createdTypefaces = fontManagerImpl.CreatedTypefaces.ToArray();
 

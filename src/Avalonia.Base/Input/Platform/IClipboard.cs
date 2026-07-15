@@ -1,5 +1,8 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Metadata;
+using Avalonia.Platform.Storage;
 
 namespace Avalonia.Input.Platform
 {
@@ -9,10 +12,21 @@ namespace Avalonia.Input.Platform
     [NotClientImplementable]
     public interface IClipboard
     {
+        [Obsolete($"Use {nameof(ClipboardExtensions)}.{nameof(ClipboardExtensions.TryGetTextAsync)} instead.")]
+        Task<string?> GetTextAsync()
+            => ClipboardExtensions.TryGetTextAsync(this);
+
+        Task SetTextAsync(string? text)
+            => ClipboardExtensions.SetTextAsync(this, text);
+
         /// <summary>
         /// Clears any data from the system clipboard.
         /// </summary>
         Task ClearAsync();
+
+        [Obsolete($"Use {nameof(SetDataAsync)} instead.")]
+        Task SetDataObjectAsync(IDataObject data)
+            => SetDataAsync(new DataObjectToDataTransferWrapper(data));
 
         /// <summary>
         /// Places a data object on the clipboard.
@@ -38,6 +52,41 @@ namespace Avalonia.Input.Platform
         /// <remarks>This method is only supported on the Windows platform. This method will do nothing on other platforms.</remarks>
         Task FlushAsync();
 
+        [Obsolete($"Use {nameof(ClipboardExtensions.GetDataFormatsAsync)} instead.")]
+        async Task<string[]> GetFormatsAsync()
+        {
+            using var dataTransfer = await TryGetDataAsync();
+            return dataTransfer is null ? [] : dataTransfer.Formats.Select(DataFormats.ToString).ToArray();
+        }
+
+        [Obsolete($"Use {nameof(TryGetDataAsync)} instead.")]
+        async Task<object?> GetDataAsync(string format)
+        {
+            using var dataTransfer = await TryGetDataAsync();
+            if (dataTransfer is null)
+                return null;
+
+#pragma warning disable CS0618
+            if (format == DataFormats.Text)
+                return await dataTransfer.TryGetTextAsync().ConfigureAwait(false);
+
+            if (format == DataFormats.Files)
+                return await dataTransfer.TryGetFilesAsync().ConfigureAwait(false);
+
+            if (format == DataFormats.FileNames)
+            {
+                return (await dataTransfer.TryGetFilesAsync().ConfigureAwait(false))
+                    ?.Select(static file => file.TryGetLocalPath())
+                    .Where(static path => path is not null)
+                    .ToArray();
+            }
+#pragma warning restore CS0618
+
+            return await dataTransfer
+                .TryGetValueAsync(DataFormat.CreateBytesPlatformFormat(format))
+                .ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Retrieves data from the clipboard.
         /// </summary>
@@ -49,6 +98,13 @@ namespace Avalonia.Input.Platform
         /// </para>
         /// </remarks>
         Task<IAsyncDataTransfer?> TryGetDataAsync();
+
+        [Obsolete($"Use {nameof(TryGetInProcessDataAsync)} instead.")]
+        async Task<IDataObject?> TryGetInProcessDataObjectAsync()
+        {
+            var dataTransfer = await TryGetInProcessDataAsync().ConfigureAwait(false);
+            return (dataTransfer as DataObjectToDataTransferWrapper)?.DataObject;
+        }
 
         /// <summary>
         /// Retrieves the exact instance of a <see cref="IAsyncDataTransfer"/> previously placed on the clipboard
