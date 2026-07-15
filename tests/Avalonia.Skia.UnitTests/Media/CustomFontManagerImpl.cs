@@ -82,9 +82,11 @@ namespace Avalonia.Skia.UnitTests.Media
         public bool TryMatchCharacter(int codepoint, FontStyle fontStyle, FontWeight fontWeight, FontStretch fontStretch,
             string? familyName, CultureInfo? culture, out IPlatformTypeface platformTypeface)
         {
-            if (SystemFonts.TryMatchCharacter(codepoint, fontStyle, fontWeight, fontStretch, familyName, culture, out var typeface) &&
-                TryClonePlatformTypeface(typeface.GlyphTypeface, out platformTypeface))
+            if (SystemFonts.TryMatchCharacter(
+                    codepoint, fontStyle, fontWeight, fontStretch, familyName, culture, out var typeface) &&
+                TryClonePlatformTypeface(typeface.GlyphTypeface, out var clonedTypeface))
             {
+                platformTypeface = clonedTypeface;
                 return true;
             }
 
@@ -100,8 +102,9 @@ namespace Avalonia.Skia.UnitTests.Media
             FontStretch stretch, [NotNullWhen(true)] out IPlatformTypeface platformTypeface)
         {
             if (SystemFonts.TryGetGlyphTypeface(familyName, style, weight, stretch, out var glyphTypeface) &&
-                TryClonePlatformTypeface(glyphTypeface, out platformTypeface))
+                TryClonePlatformTypeface(glyphTypeface, out var clonedTypeface))
             {
+                platformTypeface = clonedTypeface;
                 return true;
             }
 

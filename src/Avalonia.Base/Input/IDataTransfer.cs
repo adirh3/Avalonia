@@ -8,7 +8,8 @@ namespace Avalonia.Input;
 /// </summary>
 /// <seealso cref="DataTransfer"/>
 /// <remarks>
-/// When an implementation of this interface is used as a drag source using <see cref="DragDrop.DoDragDropAsync"/>,
+/// When an implementation of this interface is used as a drag source using
+/// <see cref="DragDrop.DoDragDropAsync(PointerPressedEventArgs, IDataTransfer, DragDropEffects)"/>,
 /// it must NOT be disposed by the caller. The system will dispose of it automatically when the drag operation completes.
 /// </remarks>
 public interface IDataTransfer : IDisposable
