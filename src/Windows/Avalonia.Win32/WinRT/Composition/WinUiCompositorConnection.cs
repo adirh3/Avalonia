@@ -13,30 +13,68 @@ using MicroCom.Runtime;
 
 namespace Avalonia.Win32.WinRT.Composition;
 
-internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFactory
+internal class WinUiCompositorConnection : IRenderTimer, IRenderTimerWithImmediateTick, Win32.IWindowsSurfaceFactory
 {
+    private const uint ImmediateTickMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 1;
+    private static readonly TimeSpan MinimumImmediateTickInterval = TimeSpan.FromMilliseconds(8);
     private readonly WinUiCompositionShared _shared;
     private readonly AutoResetEvent _wakeEvent = new(false);
+    private IntPtr _messageWindow;
+    // A normal commit callback and the private wake message race to consume the same restart generation.
+    // This prevents a late private message from injecting an extra unpaced tick after DWM already woke the loop.
+    private int _immediateTickGeneration;
+    private int _pendingImmediateTickGeneration;
+    private int _queuedImmediateTickGeneration;
+    private int _delayedImmediateTickScheduled;
+    private long _lastServicedTickTimestamp;
     private volatile bool _stopped = true;
-    private volatile Action<TimeSpan>? _tick;
+    private TickRegistration? _tickRegistration;
+
+    private sealed class TickRegistration
+    {
+        public TickRegistration(Action<TimeSpan> tick, int generation)
+        {
+            Tick = tick;
+            Generation = generation;
+        }
+
+        public Action<TimeSpan> Tick { get; }
+        public int Generation { get; }
+    }
 
     public bool RunsInBackground => true;
 
     public Action<TimeSpan>? Tick
     {
-        get => _tick;
+        get => GetRunningTickRegistration()?.Tick;
         set
         {
             if (value != null)
             {
-                _tick = value;
+                if (!_stopped)
+                {
+                    var current = Volatile.Read(ref _tickRegistration);
+                    if (current != null)
+                        Volatile.Write(ref _tickRegistration, new TickRegistration(value, current.Generation));
+                    return;
+                }
+
+                int generation;
+                do
+                {
+                    generation = Interlocked.Increment(ref _immediateTickGeneration);
+                } while (generation == 0);
+                Volatile.Write(ref _pendingImmediateTickGeneration, generation);
+                Volatile.Write(ref _tickRegistration, new TickRegistration(value, generation));
                 _stopped = false;
                 _wakeEvent.Set();
+                PostPendingImmediateTick();
             }
             else
             {
                 _stopped = true;
-                _tick = null;
+                Volatile.Write(ref _tickRegistration, null);
+                Interlocked.Exchange(ref _pendingImmediateTickGeneration, 0);
             }
         }
     }
@@ -130,8 +168,12 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
 
             _currentCommit?.Dispose();
             _currentCommit = null;
-            var tick = _parent._tick;
-            tick?.Invoke(_st.Elapsed);
+            if (_parent.GetRunningTickRegistration() is { } registration)
+            {
+                _parent.TryConsumePendingImmediateTick(registration.Generation);
+                _parent.MarkTickServiced();
+                registration.Tick(_st.Elapsed);
+            }
             ScheduleNextCommit();
             _commitCompleted = true;
         }
@@ -198,6 +240,21 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
             lock (_parent._shared.SyncRoot)
                 ScheduleNextCommit();
         }
+
+        public void ImmediateTick(int generation)
+        {
+            lock (_parent._shared.SyncRoot)
+            {
+                var registration = _parent.GetRunningTickRegistration();
+                if (registration?.Generation == generation &&
+                    _parent.GetRemainingImmediateTickDelay() == TimeSpan.Zero &&
+                    _parent.TryConsumePendingImmediateTick(generation))
+                {
+                    _parent.MarkTickServiced();
+                    registration.Tick(_st.Elapsed);
+                }
+            }
+        }
     }
 
     private void RunLoop()
@@ -213,6 +270,14 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
 
         using var dw = new SimpleWindow((hwnd, msg, w, l) =>
         {
+            if (msg == ImmediateTickMessage)
+            {
+                var generation = unchecked((int)w.ToInt64());
+                handler.ImmediateTick(generation);
+                CompleteImmediateTickMessage(generation);
+                return IntPtr.Zero;
+            }
+
             if (msg == (uint)UnmanagedMethods.WindowsMessage.WM_TIMER)
             {
                 handler.WatchDog();
@@ -220,6 +285,8 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
             }
             return UnmanagedMethods.DefWindowProc(hwnd, msg, w, l);
         });
+        Interlocked.Exchange(ref _messageWindow, dw.Handle);
+        PostPendingImmediateTick();
         UnmanagedMethods.SetTimer(dw.Handle, IntPtr.Zero, watchDogIntervalInMs, null);
 
         // Warning: the completion callback (RunLoopHandler.Invoke) from ICompositor5.RequestCommitAsync()
@@ -239,6 +306,113 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
             Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
                 ?.Log(this, "Unmanaged error in {0}. Error Code: {1}", nameof(RunLoop), Marshal.GetLastWin32Error());
         }
+
+        Interlocked.Exchange(ref _messageWindow, IntPtr.Zero);
+        Interlocked.Exchange(ref _pendingImmediateTickGeneration, 0);
+        Interlocked.Exchange(ref _queuedImmediateTickGeneration, 0);
+        Interlocked.Exchange(ref _delayedImmediateTickScheduled, 0);
+    }
+
+    private TickRegistration? GetRunningTickRegistration()
+    {
+        if (_stopped)
+            return null;
+
+        return Volatile.Read(ref _tickRegistration);
+    }
+
+    private bool TryConsumePendingImmediateTick(int generation)
+    {
+        return generation != 0 &&
+               Interlocked.CompareExchange(ref _pendingImmediateTickGeneration, 0, generation) == generation;
+    }
+
+    private void MarkTickServiced()
+    {
+        Interlocked.Exchange(ref _lastServicedTickTimestamp, Stopwatch.GetTimestamp());
+    }
+
+    private TimeSpan GetRemainingImmediateTickDelay()
+    {
+        var lastTickTimestamp = Interlocked.Read(ref _lastServicedTickTimestamp);
+        if (lastTickTimestamp == 0)
+            return TimeSpan.Zero;
+
+        var elapsed = Stopwatch.GetElapsedTime(lastTickTimestamp);
+        return elapsed < MinimumImmediateTickInterval
+            ? MinimumImmediateTickInterval - elapsed
+            : TimeSpan.Zero;
+    }
+
+    private void CompleteImmediateTickMessage(int generation)
+    {
+        Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, 0, generation);
+
+        if (GetRunningTickRegistration() == null)
+        {
+            TryConsumePendingImmediateTick(generation);
+            return;
+        }
+
+        PostPendingImmediateTick();
+    }
+
+    public void RequestImmediateTick()
+    {
+        var registration = GetRunningTickRegistration();
+        if (registration == null)
+            return;
+
+        Interlocked.CompareExchange(
+            ref _pendingImmediateTickGeneration,
+            registration.Generation,
+            comparand: 0);
+
+        if (GetRunningTickRegistration()?.Generation != registration.Generation)
+        {
+            TryConsumePendingImmediateTick(registration.Generation);
+            return;
+        }
+
+        PostPendingImmediateTick();
+    }
+
+    private void PostPendingImmediateTick()
+    {
+        var generation = Volatile.Read(ref _pendingImmediateTickGeneration);
+        if (generation == 0)
+            return;
+
+        var delay = GetRemainingImmediateTickDelay();
+        if (delay > TimeSpan.Zero)
+        {
+            ScheduleDelayedImmediateTick(delay);
+            return;
+        }
+
+        var window = Interlocked.CompareExchange(ref _messageWindow, IntPtr.Zero, IntPtr.Zero);
+        if (window == IntPtr.Zero ||
+            Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, generation, 0) != 0)
+            return;
+
+        if (!UnmanagedMethods.PostMessage(window, ImmediateTickMessage, new IntPtr(generation), IntPtr.Zero))
+            Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, 0, generation);
+    }
+
+    private void ScheduleDelayedImmediateTick(TimeSpan delay)
+    {
+        if (Interlocked.CompareExchange(ref _delayedImmediateTickScheduled, 1, 0) != 0)
+            return;
+
+        var delayMilliseconds = Math.Max(1, (int)Math.Ceiling(delay.TotalMilliseconds));
+        _ = DelayAndPostPendingImmediateTickAsync(delayMilliseconds);
+    }
+
+    private async Task DelayAndPostPendingImmediateTickAsync(int delayMilliseconds)
+    {
+        await Task.Delay(delayMilliseconds).ConfigureAwait(false);
+        Interlocked.Exchange(ref _delayedImmediateTickScheduled, 0);
+        PostPendingImmediateTick();
     }
 
     public static bool IsSupported()
