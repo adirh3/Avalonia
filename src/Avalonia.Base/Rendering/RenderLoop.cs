@@ -32,13 +32,13 @@ namespace Avalonia.Rendering
     {
         private readonly List<IRenderLoopTask> _items = new List<IRenderLoopTask>();
         private readonly List<IRenderLoopTask> _itemsCopy = new List<IRenderLoopTask>();
-        private Action<TimeSpan> _tick;
         private readonly IRenderTimer _timer;
         private readonly object _timerLock = new();
         private int _inTick;
         private volatile bool _hasItems;
         private bool _running;
         private bool _wakeupPending;
+        private long _timerGeneration;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultRenderLoop"/> class.
@@ -47,7 +47,6 @@ namespace Avalonia.Rendering
         public DefaultRenderLoop(IRenderTimer timer)
         {
             _timer = timer;
-            _tick = TimerTick;
         }
 
         /// <inheritdoc/>
@@ -106,78 +105,83 @@ namespace Avalonia.Rendering
         /// <inheritdoc />
         public void Wakeup()
         {
+            var requestImmediateTick = false;
             lock (_timerLock)
             {
                 if (_hasItems && !_running)
                 {
                     _running = true;
-                    _timer.Tick = _tick;
+                    var generation = ++_timerGeneration;
+                    _timer.Tick = time => TimerTick(time, generation);
                 }
                 else
                 {
                     _wakeupPending = true;
+                    requestImmediateTick = _hasItems && Volatile.Read(ref _inTick) == 0;
                 }
             }
+
+            if (requestImmediateTick && _timer is IRenderTimerWithImmediateTick immediateTimer)
+                immediateTimer.RequestImmediateTick();
         }
 
-        private void TimerTick(TimeSpan time)
+        private void TimerTick(TimeSpan time, long generation)
         {
-            if (Interlocked.CompareExchange(ref _inTick, 1, 0) == 0)
+            lock (_timerLock)
             {
-                try
+                if (!_running ||
+                    generation != _timerGeneration ||
+                    Interlocked.CompareExchange(ref _inTick, 1, 0) != 0)
+                    return;
+
+                // Consume any pending wakeup — this tick will process its work.
+                // Only wakeups arriving during task execution will keep the timer running.
+                _wakeupPending = false;
+            }
+
+            try
+            {
+                lock (_items)
                 {
-                    // Consume any pending wakeup — this tick will process its work.
-                    // Only wakeups arriving during task execution will keep the timer running.
-                    // Also drop late ticks that arrive after the timer was stopped.
+                    _itemsCopy.Clear();
+                    _itemsCopy.AddRange(_items);
+                }
+
+                var wantsNextTick = false;
+                for (int i = 0; i < _itemsCopy.Count; i++)
+                {
+                    wantsNextTick |= _itemsCopy[i].Render();
+                }
+
+                _itemsCopy.Clear();
+
+                if (!wantsNextTick)
+                {
                     lock (_timerLock)
                     {
-                        if (!_running)
-                            return;
-                        _wakeupPending = false;
-                    }
-
-                    lock (_items)
-                    {
-                        _itemsCopy.Clear();
-                        _itemsCopy.AddRange(_items);
-                    }
-
-                    var wantsNextTick = false;
-                    for (int i = 0; i < _itemsCopy.Count; i++)
-                    {
-                        wantsNextTick |= _itemsCopy[i].Render();
-                    }
-                    
-                    _itemsCopy.Clear();
-
-                    if (!wantsNextTick)
-                    {
-                        lock (_timerLock)
+                        if (!_running || generation != _timerGeneration)
                         {
-                            if (!_running)
-                            {
-                                // Already stopped by Remove()
-                            }
-                            else if (_wakeupPending)
-                            {
-                                _wakeupPending = false;
-                            }
-                            else
-                            {
-                                _running = false;
-                                _timer.Tick = null;
-                            }
+                            // Already stopped or restarted while this tick was rendering.
+                        }
+                        else if (_wakeupPending)
+                        {
+                            _wakeupPending = false;
+                        }
+                        else
+                        {
+                            _running = false;
+                            _timer.Tick = null;
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this, "Exception in render loop: {Error}", ex);
-                }
-                finally
-                {
-                    Interlocked.Exchange(ref _inTick, 0);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this, "Exception in render loop: {Error}", ex);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _inTick, 0);
             }
         }
     }

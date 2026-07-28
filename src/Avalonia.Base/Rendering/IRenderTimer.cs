@@ -26,4 +26,15 @@ namespace Avalonia.Rendering
         /// </summary>
         bool RunsInBackground { get; }
     }
+
+    /// <summary>
+    /// Implemented by event-driven timers that can expedite newly queued work without restarting.
+    /// </summary>
+    internal interface IRenderTimerWithImmediateTick
+    {
+        /// <summary>
+        /// Requests one coalesced out-of-band tick. This method must not invoke the timer callback synchronously.
+        /// </summary>
+        void RequestImmediateTick();
+    }
 }
