@@ -33,18 +33,24 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public IDirect3D11TextureRenderTarget2 CreateRenderTarget(IPlatformGraphicsContext context, IntPtr d3dDevice)
         {
-            var defaultCornerRadius = AvaloniaLocator.Current.GetService<Win32PlatformOptions>()
-                ?.WinUICompositionBackdropCornerRadius ?? 0;
-            _window ??= new WinUiCompositedWindow(_info, _compositionInfo, _shared, defaultCornerRadius);
-            _window.SetBlur(_blurEffect);
+            lock (_shared.SyncRoot)
+            {
+                var defaultCornerRadius = AvaloniaLocator.Current.GetService<Win32PlatformOptions>()
+                    ?.WinUICompositionBackdropCornerRadius ?? 0;
+                _window ??= new WinUiCompositedWindow(_info, _compositionInfo, _shared, defaultCornerRadius);
+                _window.SetBlur(_blurEffect);
 
-            return new WinUiCompositedWindowRenderTarget(context, _window, d3dDevice, _shared.Compositor);
+                return new WinUiCompositedWindowRenderTarget(context, _window, d3dDevice, _shared.Compositor);
+            }
         }
 
         public void Dispose()
         {
-            _window?.Dispose();
-            _window = null;
+            lock (_shared.SyncRoot)
+            {
+                _window?.Dispose();
+                _window = null;
+            }
         }
 
         public bool IsBlurSupported(BlurEffect effect) => effect switch
@@ -109,6 +115,7 @@ namespace Avalonia.Win32.WinRT.Composition
 
         public void Dispose()
         {
+            using var transaction = _window.BeginTransaction();
             _surface?.Dispose();
             _surfaceInterop?.Dispose();
             _drawingSurface?.Dispose();

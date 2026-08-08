@@ -8,22 +8,9 @@ namespace Avalonia.Base.UnitTests.Rendering;
 public class RenderLoopTests
 {
     [Fact]
-    public void Wakeup_While_Running_Requests_Expedited_Tick_Without_Restarting_Timer()
-    {
-        var timer = new ImmediateRenderTimer();
-        var loop = RenderLoop.FromTimer(timer);
-
-        loop.Add(new RenderLoopTask());
-        loop.Wakeup();
-
-        Assert.Equal(1, timer.TimerStarts);
-        Assert.Equal(1, timer.ExpeditedTickRequests);
-    }
-
-    [Fact]
     public void Wakeup_After_Timer_Stops_Restarts_Event_Driven_Timer()
     {
-        var timer = new ImmediateRenderTimer();
+        var timer = new TestRenderTimer();
         var loop = RenderLoop.FromTimer(timer);
         var task = new RenderLoopTask();
 
@@ -35,13 +22,12 @@ public class RenderLoopTests
 
         Assert.NotNull(timer.Tick);
         Assert.Equal(2, timer.TimerStarts);
-        Assert.Equal(0, timer.ExpeditedTickRequests);
     }
 
     [Fact]
     public void Wakeup_During_Tick_Keeps_Timer_Running_For_Next_Paced_Tick()
     {
-        var timer = new ImmediateRenderTimer();
+        var timer = new TestRenderTimer();
         var loop = RenderLoop.FromTimer(timer);
         var task = new RenderLoopTask(() => loop.Wakeup());
 
@@ -50,7 +36,6 @@ public class RenderLoopTests
 
         Assert.NotNull(timer.Tick);
         Assert.Equal(1, timer.TimerStarts);
-        Assert.Equal(0, timer.ExpeditedTickRequests);
 
         timer.TriggerTick();
         Assert.Null(timer.Tick);
@@ -59,7 +44,7 @@ public class RenderLoopTests
     [Fact]
     public void Tick_From_Previous_Run_Is_Ignored_After_Restart()
     {
-        var timer = new ImmediateRenderTimer();
+        var timer = new TestRenderTimer();
         var loop = RenderLoop.FromTimer(timer);
         var task = new RenderLoopTask();
 
@@ -78,7 +63,7 @@ public class RenderLoopTests
     [Fact]
     public void Restart_During_Tick_Is_Not_Stopped_By_Previous_Run()
     {
-        var timer = new ImmediateRenderTimer();
+        var timer = new TestRenderTimer();
         var loop = RenderLoop.FromTimer(timer);
         RenderLoopTask? task = null;
         task = new RenderLoopTask(() =>
@@ -92,14 +77,13 @@ public class RenderLoopTests
 
         Assert.NotNull(timer.Tick);
         Assert.Equal(2, timer.TimerStarts);
-        Assert.Equal(0, timer.ExpeditedTickRequests);
 
         timer.TriggerTick();
         Assert.Equal(2, task.RenderCount);
         Assert.Null(timer.Tick);
     }
 
-    private sealed class ImmediateRenderTimer : IRenderTimer, IRenderTimerWithImmediateTick
+    private sealed class TestRenderTimer : IRenderTimer
     {
         private Action<TimeSpan>? _tick;
         private readonly List<Action<TimeSpan>> _ticks = new();
@@ -121,10 +105,6 @@ public class RenderLoopTests
         public bool RunsInBackground => true;
 
         public int TimerStarts { get; private set; }
-        public int ExpeditedTickRequests { get; private set; }
-
-        public void RequestImmediateTick() => ExpeditedTickRequests++;
-
         public void TriggerTick() => _tick?.Invoke(TimeSpan.Zero);
 
         public void TriggerTick(int index) => _ticks[index].Invoke(TimeSpan.Zero);

@@ -100,12 +100,9 @@ namespace Avalonia.Rendering
         /// <inheritdoc />
         public bool RunsInBackground => _timer.RunsInBackground;
 
-        internal IRenderTimer Timer => _timer;
-
         /// <inheritdoc />
         public void Wakeup()
         {
-            var requestImmediateTick = false;
             lock (_timerLock)
             {
                 if (_hasItems && !_running)
@@ -117,12 +114,8 @@ namespace Avalonia.Rendering
                 else
                 {
                     _wakeupPending = true;
-                    requestImmediateTick = _hasItems && Volatile.Read(ref _inTick) == 0;
                 }
             }
-
-            if (requestImmediateTick && _timer is IRenderTimerWithImmediateTick immediateTimer)
-                immediateTimer.RequestImmediateTick();
         }
 
         private void TimerTick(TimeSpan time, long generation)

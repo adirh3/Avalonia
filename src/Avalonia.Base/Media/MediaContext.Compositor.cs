@@ -47,8 +47,6 @@ partial class MediaContext
 
         if (_pendingCompositionBatches.Count == 0)
         {
-            _animationsAreWaitingForComposition = false;
-
             // Check if we have requested commits or active animations and schedule a new render pass 
             if (_requestedCommits.Count != 0 || _clock.HasSubscriptions)
                 ScheduleRender(false);
@@ -60,25 +58,22 @@ partial class MediaContext
     /// Triggers a composition commit if any batches are waiting to be sent,
     /// handles throttling
     /// </summary>
-    /// <returns>true if there are pending commits in-flight and there will be a "all-done" callback later</returns>
-    private bool CommitCompositorsWithThrottling()
+    private void CommitCompositorsWithThrottling()
     {
         Dispatcher.UIThread.VerifyAccess();
         // Check if we are still waiting for previous composition batches
         if (_pendingCompositionBatches.Count > 0)
         {
             // Previous commit isn't handled yet
-            return true;
+            return;
         }
         
         if (_requestedCommits.Count == 0)
             // Nothing to do, and there are no pending commits
-            return false;
+            return;
         
         foreach (var c in _requestedCommits.ToArray())
             CommitCompositor(c);
-        
-        return true;
     }
     
     /// <summary>

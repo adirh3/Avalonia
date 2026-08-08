@@ -11,11 +11,11 @@ namespace Avalonia.Media;
 
 internal partial class MediaContext : ICompositorScheduler
 {
+    private static readonly TimeSpan AnimationFallbackInterval = TimeSpan.FromMilliseconds(16);
     private DispatcherOperation? _nextRenderOp;
     private DispatcherOperation? _inputMarkerOp;
     private TimeSpan _inputMarkerAddedAt;
     private bool _isRendering;
-    private bool _animationsAreWaitingForComposition;
     private readonly double MaxSecondsWithoutInput;
     private readonly Action _render;
     private readonly Action _inputMarkerHandler;
@@ -32,7 +32,7 @@ internal partial class MediaContext : ICompositorScheduler
         // Since this timer is used to drive animations that didn't contribute to the previous frame at all
         // We can safely use 16ms interval until we fix our animation system to actually report the next expected 
         // frame
-        Interval = TimeSpan.FromMilliseconds(16)
+        Interval = AnimationFallbackInterval
     };
 
     private readonly Dictionary<object, TopLevelInfo> _topLevels = new();
@@ -134,8 +134,9 @@ internal partial class MediaContext : ICompositorScheduler
     private void RenderCore()
     {
         var now = _time.Elapsed;
-        if (!_animationsAreWaitingForComposition)
-            _clock.Pulse(now);
+        // Keep UI animation time advancing while the previous composition batch is in flight.
+        // Commit throttling still coalesces changes, but a delayed backend no longer freezes the animation clock.
+        _clock.Pulse(now);
 
         // Since new animations could be started during the layout and can affect layout/render
         // We are doing several iterations when it happens
@@ -154,8 +155,9 @@ internal partial class MediaContext : ICompositorScheduler
         
         if (_requestedCommits.Count > 0 || _clock.HasSubscriptions)
         {
-            _animationsAreWaitingForComposition = CommitCompositorsWithThrottling();
-            if (!_animationsAreWaitingForComposition && _clock.HasSubscriptions) 
+            CommitCompositorsWithThrottling();
+            if (_clock.HasSubscriptions)
+                // Continue producing animation state while pending commits coalesce to their latest values.
                 _animationsTimer.Start();
         }
     }
