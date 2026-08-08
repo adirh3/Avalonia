@@ -97,6 +97,27 @@ public enum Win32CompositionMode
 }
 
 /// <summary>
+/// Controls how the WinUI composition render loop is paced.
+/// </summary>
+public enum Win32CompositionFramePacing
+{
+    /// <summary>
+    /// Follow the Windows compositor's system-managed cadence.
+    /// </summary>
+    SystemManaged,
+
+    /// <summary>
+    /// Observe the physical display cadence instead of Windows' virtualized VBlank cadence.
+    /// </summary>
+    /// <remarks>
+    /// This changes DXGI VBlank behavior for the entire process, cannot be reverted until the
+    /// process exits, and may increase power consumption. It must be configured before graphics
+    /// initialization.
+    /// </remarks>
+    PhysicalRefreshRate
+}
+
+/// <summary>
 /// Platform-specific options which apply to Windows.
 /// </summary>
 public class Win32PlatformOptions
@@ -140,6 +161,12 @@ public class Win32PlatformOptions
     /// This can be useful when you need a rounded-corner blurred Windows 10 app, or borderless Windows 11 app.
     /// </summary>
     public float? WinUICompositionBackdropCornerRadius { get; set; }
+
+    /// <summary>
+    /// Gets or sets how the WinUI composition render loop is paced.
+    /// </summary>
+    public Win32CompositionFramePacing CompositionFramePacing { get; set; } =
+        Win32CompositionFramePacing.SystemManaged;
 
     /// <summary>
     /// Render directly on the UI thread instead of using a dedicated render thread.

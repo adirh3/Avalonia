@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,74 +13,20 @@ using MicroCom.Runtime;
 
 namespace Avalonia.Win32.WinRT.Composition;
 
-internal class WinUiCompositorConnection : IRenderTimer, IRenderTimerWithImmediateTick, Win32.IWindowsSurfaceFactory
+internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDisposable
 {
-    private const uint ImmediateTickMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 1;
-    private static readonly TimeSpan MinimumImmediateTickInterval = TimeSpan.FromMilliseconds(8);
+    private const uint ShutdownMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 1;
+    private const uint RenderTickMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 2;
+    private readonly IDispatcherQueueController _dispatcherQueueController;
     private readonly WinUiCompositionShared _shared;
-    private readonly AutoResetEvent _wakeEvent = new(false);
+    private Action? _pendingRenderTick;
     private IntPtr _messageWindow;
-    // A normal commit callback and the private wake message race to consume the same restart generation.
-    // This prevents a late private message from injecting an extra unpaced tick after DWM already woke the loop.
-    private int _immediateTickGeneration;
-    private int _pendingImmediateTickGeneration;
-    private int _queuedImmediateTickGeneration;
-    private int _delayedImmediateTickScheduled;
-    private long _lastServicedTickTimestamp;
-    private volatile bool _stopped = true;
-    private TickRegistration? _tickRegistration;
+    private int _renderTickMessagePosted;
+    private bool _disposed;
 
-    private sealed class TickRegistration
+    private WinUiCompositorConnection(IDispatcherQueueController dispatcherQueueController)
     {
-        public TickRegistration(Action<TimeSpan> tick, int generation)
-        {
-            Tick = tick;
-            Generation = generation;
-        }
-
-        public Action<TimeSpan> Tick { get; }
-        public int Generation { get; }
-    }
-
-    public bool RunsInBackground => true;
-
-    public Action<TimeSpan>? Tick
-    {
-        get => GetRunningTickRegistration()?.Tick;
-        set
-        {
-            if (value != null)
-            {
-                if (!_stopped)
-                {
-                    var current = Volatile.Read(ref _tickRegistration);
-                    if (current != null)
-                        Volatile.Write(ref _tickRegistration, new TickRegistration(value, current.Generation));
-                    return;
-                }
-
-                int generation;
-                do
-                {
-                    generation = Interlocked.Increment(ref _immediateTickGeneration);
-                } while (generation == 0);
-                Volatile.Write(ref _pendingImmediateTickGeneration, generation);
-                Volatile.Write(ref _tickRegistration, new TickRegistration(value, generation));
-                _stopped = false;
-                _wakeEvent.Set();
-                PostPendingImmediateTick();
-            }
-            else
-            {
-                _stopped = true;
-                Volatile.Write(ref _tickRegistration, null);
-                Interlocked.Exchange(ref _pendingImmediateTickGeneration, 0);
-            }
-        }
-    }
-
-    public WinUiCompositorConnection()
-    {
+        _dispatcherQueueController = dispatcherQueueController;
         using var compositor = NativeWinRTMethods.CreateInstance<ICompositor>("Windows.UI.Composition.Compositor");
         /*
         var levels = new[] { D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_11_1 };
@@ -103,316 +49,235 @@ internal class WinUiCompositorConnection : IRenderTimer, IRenderTimerWithImmedia
 
     private static bool TryCreateAndRegisterCore()
     {
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var th = new Thread(() =>
         {
-            WinUiCompositorConnection connect;
+            WinUiCompositorConnection? connect = null;
+            WinUiRenderTimer? renderTimer = null;
+            IDispatcherQueueController? dispatcherQueueController = null;
             try
             {
-                NativeWinRTMethods.CreateDispatcherQueueController(new NativeWinRTMethods.DispatcherQueueOptions
-                {
-                    apartmentType = NativeWinRTMethods.DISPATCHERQUEUE_THREAD_APARTMENTTYPE.DQTAT_COM_NONE,
-                    dwSize = Marshal.SizeOf<NativeWinRTMethods.DispatcherQueueOptions>(),
-                    threadType = NativeWinRTMethods.DISPATCHERQUEUE_THREAD_TYPE.DQTYPE_THREAD_CURRENT
-                });
-                connect = new WinUiCompositorConnection();
-                AvaloniaLocator.CurrentMutable.Bind<IWindowsSurfaceFactory>().ToConstant(connect);
-                AvaloniaLocator.CurrentMutable.Bind<IRenderTimer>().ToConstant(connect);
-                AvaloniaLocator.CurrentMutable.Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(connect));
-                tcs.SetResult(true);
+                var controllerPointer = NativeWinRTMethods.CreateDispatcherQueueController(
+                    new NativeWinRTMethods.DispatcherQueueOptions
+                    {
+                        apartmentType = NativeWinRTMethods.DISPATCHERQUEUE_THREAD_APARTMENTTYPE.DQTAT_COM_NONE,
+                        dwSize = Marshal.SizeOf<NativeWinRTMethods.DispatcherQueueOptions>(),
+                        threadType = NativeWinRTMethods.DISPATCHERQUEUE_THREAD_TYPE.DQTYPE_THREAD_CURRENT
+                    });
+                dispatcherQueueController =
+                    MicroComRuntime.CreateProxyFor<IDispatcherQueueController>(controllerPointer, true);
+                connect = new WinUiCompositorConnection(dispatcherQueueController);
+                dispatcherQueueController = null;
+                renderTimer = new WinUiRenderTimer(60, connect.QueueRenderTick);
 
+                connect.RunLoop(() =>
+                {
+                    AvaloniaLocator.CurrentMutable.Bind<IWindowsSurfaceFactory>().ToConstant(connect);
+                    AvaloniaLocator.CurrentMutable.Bind<IRenderTimer>().ToConstant(renderTimer);
+                    AvaloniaLocator.CurrentMutable.Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(renderTimer));
+                    tcs.SetResult(true);
+                });
             }
             catch (Exception e)
             {
-                tcs.SetException(e);
-                return;
+                if (!tcs.TrySetException(e))
+                {
+                    Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
+                        ?.Log(null, "WinUI composition loop failed: {0}", e);
+                }
             }
-
-            connect.RunLoop();
+            finally
+            {
+                renderTimer?.Dispose();
+                connect?.Dispose();
+                if (dispatcherQueueController != null)
+                {
+                    try
+                    {
+                        ShutdownDispatcherQueue(dispatcherQueueController);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
+                            ?.Log(null, "Unable to shut down the unowned WinUI DispatcherQueue cleanly: {0}", e);
+                    }
+                    finally
+                    {
+                        dispatcherQueueController.Dispose();
+                    }
+                }
+            }
         })
         {
             IsBackground = true,
-            Name = "DwmRenderTimerLoop"
+            Name = "WinUICompositionLoop"
         };
         th.SetApartmentState(ApartmentState.STA);
         th.Start();
         return tcs.Task.Result;
     }
 
-    private class RunLoopHandler : CallbackBase, IAsyncActionCompletedHandler
+    private sealed class DispatcherQueueShutdownHandler : CallbackBase, IAsyncActionCompletedHandler
     {
-        private readonly WinUiCompositorConnection _parent;
-        private readonly Stopwatch _st = Stopwatch.StartNew();
-        private TimeSpan? _commitDueAt;
-        private IAsyncAction? _currentCommit;
-        private bool _commitCompleted;
+        private readonly EventWaitHandle _completed;
 
-        public RunLoopHandler(WinUiCompositorConnection parent)
+        public DispatcherQueueShutdownHandler(EventWaitHandle completed)
         {
-            _parent = parent;
+            _completed = completed;
         }
 
-        public void Invoke(IAsyncAction? asyncInfo, AsyncStatus asyncStatus)
-        {
-            lock (_parent._shared.SyncRoot)
-            {
-                if (_currentCommit == null || _currentCommit.GetNativeIntPtr() != asyncInfo.GetNativeIntPtr())
-                    return;
-                OnCommitCompleted();
-            }
-        }
-
-        private void OnCommitCompleted()
-        {
-            Debug.Assert(Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should be held");
-
-            _currentCommit?.Dispose();
-            _currentCommit = null;
-            if (_parent.GetRunningTickRegistration() is { } registration)
-            {
-                _parent.TryConsumePendingImmediateTick(registration.Generation);
-                _parent.MarkTickServiced();
-                registration.Tick(_st.Elapsed);
-            }
-            ScheduleNextCommit();
-            _commitCompleted = true;
-        }
-
-        // This method should be called outside the shared lock, as it might wait for a long time.
-        public void OnAfterMessageWithoutLock()
-        {
-            Debug.Assert(!Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should NOT be held");
-
-            if (!_commitCompleted)
-                return;
-
-            _commitCompleted = false;
-
-            if (_parent._stopped)
-            {
-                _parent._wakeEvent.WaitOne();
-                // Reset the expected commit callback time since we've paused
-                // the render loop due to app being idle
-                _commitDueAt = _st.Elapsed + TimeSpan.FromSeconds(1);
-            }
-        }
-
-        private void ScheduleNextCommit()
-        {
-            Debug.Assert(Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should be held");
-
-            _commitDueAt = _st.Elapsed + TimeSpan.FromSeconds(1);
-            _currentCommit = _parent._shared.Compositor5.RequestCommitAsync();
-            _currentCommit.SetCompleted(this);
-        }
-
-        public void WatchDog()
-        {
-            lock (_parent._shared.SyncRoot)
-            {
-                // This is a workaround for a nasty WinUI composition API bug that prevents
-                // RequestCommitAsync to ever complete after D3D device loss event with some systems
-                // (A notable example is after pause/resume in Parallels Desktop)
-                // We check if we haven't got a commit completion callback for a second
-                // And forcefully trigger the next one, which makes the entire thing to unstuck
-
-                if (_st.Elapsed > _commitDueAt && _currentCommit != null)
-                {
-                    Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this,
-                        "windows::UI::Composition::ICompositor5.RequestCommitAsync timed out, force-triggering next tick");
-                    try
-                    {
-                        _currentCommit?.GetResults();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this,
-                            "ICompositor5::RequestCommitAsync failed: {HR}, {ERR}", e.HResult, e.ToString());
-                    }
-
-                    OnCommitCompleted();
-                }
-            }
-        }
-
-        public void Start()
-        {
-            lock (_parent._shared.SyncRoot)
-                ScheduleNextCommit();
-        }
-
-        public void ImmediateTick(int generation)
-        {
-            lock (_parent._shared.SyncRoot)
-            {
-                var registration = _parent.GetRunningTickRegistration();
-                if (registration?.Generation == generation &&
-                    _parent.GetRemainingImmediateTickDelay() == TimeSpan.Zero &&
-                    _parent.TryConsumePendingImmediateTick(generation))
-                {
-                    _parent.MarkTickServiced();
-                    registration.Tick(_st.Elapsed);
-                }
-            }
-        }
+        public void Invoke(IAsyncAction? asyncInfo, AsyncStatus asyncStatus) => _completed.Set();
     }
 
-    private void RunLoop()
+    private void RunLoop(Action ready)
     {
-        var cts = new CancellationTokenSource();
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-            cts.Cancel();
-
-        var handler = new RunLoopHandler(this);
-        handler.Start();
-
-        const int watchDogIntervalInMs = 1000;
-
         using var dw = new SimpleWindow((hwnd, msg, w, l) =>
         {
-            if (msg == ImmediateTickMessage)
+            if (msg == RenderTickMessage)
             {
-                var generation = unchecked((int)w.ToInt64());
-                handler.ImmediateTick(generation);
-                CompleteImmediateTickMessage(generation);
+                DispatchRenderTick();
                 return IntPtr.Zero;
             }
 
-            if (msg == (uint)UnmanagedMethods.WindowsMessage.WM_TIMER)
+            if (msg == ShutdownMessage)
             {
-                handler.WatchDog();
-                UnmanagedMethods.SetTimer(hwnd, IntPtr.Zero, watchDogIntervalInMs, null);
+                PostQuitMessage(0);
+                return IntPtr.Zero;
             }
+
             return UnmanagedMethods.DefWindowProc(hwnd, msg, w, l);
         });
-        Interlocked.Exchange(ref _messageWindow, dw.Handle);
-        PostPendingImmediateTick();
-        UnmanagedMethods.SetTimer(dw.Handle, IntPtr.Zero, watchDogIntervalInMs, null);
+        Volatile.Write(ref _messageWindow, dw.Handle);
+        EventHandler processExitHandler = (_, _) =>
+            UnmanagedMethods.PostMessage(dw.Handle, ShutdownMessage, IntPtr.Zero, IntPtr.Zero);
+        AppDomain.CurrentDomain.ProcessExit += processExitHandler;
 
-        // Warning: the completion callback (RunLoopHandler.Invoke) from ICompositor5.RequestCommitAsync()
-        // is called in DispatchMessage() on Windows 10, but in GetMessage() on Windows 11!
-        // Be careful when changing the scope of the shared lock.
-
-        var result = 0;
-        while (!cts.IsCancellationRequested
-               && (result = UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
+        try
         {
-            UnmanagedMethods.DispatchMessage(ref msg);
-            handler.OnAfterMessageWithoutLock();
-        }
+            ready();
 
-        if (result < 0)
+            var result = 0;
+            while ((result = UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
+                UnmanagedMethods.DispatchMessage(ref msg);
+
+            if (result < 0)
+            {
+                Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
+                    ?.Log(this, "Unmanaged error in {0}. Error Code: {1}", nameof(RunLoop), Marshal.GetLastWin32Error());
+            }
+        }
+        finally
         {
-            Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
-                ?.Log(this, "Unmanaged error in {0}. Error Code: {1}", nameof(RunLoop), Marshal.GetLastWin32Error());
+            AppDomain.CurrentDomain.ProcessExit -= processExitHandler;
+            Volatile.Write(ref _messageWindow, IntPtr.Zero);
+            Interlocked.Exchange(ref _pendingRenderTick, null);
+            Interlocked.Exchange(ref _renderTickMessagePosted, 0);
         }
-
-        Interlocked.Exchange(ref _messageWindow, IntPtr.Zero);
-        Interlocked.Exchange(ref _pendingImmediateTickGeneration, 0);
-        Interlocked.Exchange(ref _queuedImmediateTickGeneration, 0);
-        Interlocked.Exchange(ref _delayedImmediateTickScheduled, 0);
     }
 
-    private TickRegistration? GetRunningTickRegistration()
+    private void QueueRenderTick(Action renderTick)
     {
-        if (_stopped)
-            return null;
-
-        return Volatile.Read(ref _tickRegistration);
+        Volatile.Write(ref _pendingRenderTick, renderTick);
+        PostRenderTickMessage();
     }
 
-    private bool TryConsumePendingImmediateTick(int generation)
+    private void PostRenderTickMessage()
     {
-        return generation != 0 &&
-               Interlocked.CompareExchange(ref _pendingImmediateTickGeneration, 0, generation) == generation;
-    }
-
-    private void MarkTickServiced()
-    {
-        Interlocked.Exchange(ref _lastServicedTickTimestamp, Stopwatch.GetTimestamp());
-    }
-
-    private TimeSpan GetRemainingImmediateTickDelay()
-    {
-        var lastTickTimestamp = Interlocked.Read(ref _lastServicedTickTimestamp);
-        if (lastTickTimestamp == 0)
-            return TimeSpan.Zero;
-
-        var elapsed = Stopwatch.GetElapsedTime(lastTickTimestamp);
-        return elapsed < MinimumImmediateTickInterval
-            ? MinimumImmediateTickInterval - elapsed
-            : TimeSpan.Zero;
-    }
-
-    private void CompleteImmediateTickMessage(int generation)
-    {
-        Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, 0, generation);
-
-        if (GetRunningTickRegistration() == null)
-        {
-            TryConsumePendingImmediateTick(generation);
-            return;
-        }
-
-        PostPendingImmediateTick();
-    }
-
-    public void RequestImmediateTick()
-    {
-        var registration = GetRunningTickRegistration();
-        if (registration == null)
-            return;
-
-        Interlocked.CompareExchange(
-            ref _pendingImmediateTickGeneration,
-            registration.Generation,
-            comparand: 0);
-
-        if (GetRunningTickRegistration()?.Generation != registration.Generation)
-        {
-            TryConsumePendingImmediateTick(registration.Generation);
-            return;
-        }
-
-        PostPendingImmediateTick();
-    }
-
-    private void PostPendingImmediateTick()
-    {
-        var generation = Volatile.Read(ref _pendingImmediateTickGeneration);
-        if (generation == 0)
-            return;
-
-        var delay = GetRemainingImmediateTickDelay();
-        if (delay > TimeSpan.Zero)
-        {
-            ScheduleDelayedImmediateTick(delay);
-            return;
-        }
-
-        var window = Interlocked.CompareExchange(ref _messageWindow, IntPtr.Zero, IntPtr.Zero);
+        IntPtr window = Volatile.Read(ref _messageWindow);
         if (window == IntPtr.Zero ||
-            Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, generation, 0) != 0)
+            Interlocked.CompareExchange(ref _renderTickMessagePosted, 1, 0) != 0)
+        {
             return;
+        }
 
-        if (!UnmanagedMethods.PostMessage(window, ImmediateTickMessage, new IntPtr(generation), IntPtr.Zero))
-            Interlocked.CompareExchange(ref _queuedImmediateTickGeneration, 0, generation);
+        if (!UnmanagedMethods.PostMessage(window, RenderTickMessage, IntPtr.Zero, IntPtr.Zero))
+            Interlocked.Exchange(ref _renderTickMessagePosted, 0);
     }
 
-    private void ScheduleDelayedImmediateTick(TimeSpan delay)
+    private void DispatchRenderTick()
     {
-        if (Interlocked.CompareExchange(ref _delayedImmediateTickScheduled, 1, 0) != 0)
-            return;
+        Action? renderTick = Interlocked.Exchange(ref _pendingRenderTick, null);
+        renderTick?.Invoke();
 
-        var delayMilliseconds = Math.Max(1, (int)Math.Ceiling(delay.TotalMilliseconds));
-        _ = DelayAndPostPendingImmediateTickAsync(delayMilliseconds);
+        Interlocked.Exchange(ref _renderTickMessagePosted, 0);
+        if (Volatile.Read(ref _pendingRenderTick) != null)
+            PostRenderTickMessage();
     }
 
-    private async Task DelayAndPostPendingImmediateTickAsync(int delayMilliseconds)
+    [DllImport("user32.dll")]
+    private static extern void PostQuitMessage(int exitCode);
+
+    public void Dispose()
     {
-        await Task.Delay(delayMilliseconds).ConfigureAwait(false);
-        Interlocked.Exchange(ref _delayedImmediateTickScheduled, 0);
-        PostPendingImmediateTick();
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        try
+        {
+            _shared.Dispose();
+        }
+        finally
+        {
+            try
+            {
+                ShutdownDispatcherQueue(_dispatcherQueueController);
+            }
+            catch (Exception e)
+            {
+                Logger.TryGet(LogEventLevel.Error, "WinUIComposition")
+                    ?.Log(this, "Unable to shut down the WinUI DispatcherQueue cleanly: {0}", e);
+            }
+            finally
+            {
+                _dispatcherQueueController.Dispose();
+            }
+        }
+    }
+
+    private static void ShutdownDispatcherQueue(IDispatcherQueueController dispatcherQueueController)
+    {
+        const uint removeMessage = 0x0001;
+        using var completed = new ManualResetEvent(false);
+        using var completionHandler = new DispatcherQueueShutdownHandler(completed);
+        using var operation = dispatcherQueueController.ShutdownQueueAsync();
+        operation.SetCompleted(completionHandler);
+
+        var completedSafeHandle = completed.SafeWaitHandle;
+        bool completedHandleRef = false;
+        try
+        {
+            completedSafeHandle.DangerousAddRef(ref completedHandleRef);
+            IntPtr[] waitHandles = [completedSafeHandle.DangerousGetHandle()];
+            while (!completed.WaitOne(0))
+            {
+                int waitResult = UnmanagedMethods.MsgWaitForMultipleObjectsEx(
+                    waitHandles.Length,
+                    waitHandles,
+                    Timeout.Infinite,
+                    UnmanagedMethods.QueueStatusFlags.QS_ALLINPUT,
+                    UnmanagedMethods.MsgWaitForMultipleObjectsFlags.MWMO_INPUTAVAILABLE);
+                if (waitResult == 0)
+                    break;
+
+                while (UnmanagedMethods.PeekMessage(
+                           out var message,
+                           IntPtr.Zero,
+                           0,
+                           0,
+                           removeMessage))
+                {
+                    UnmanagedMethods.DispatchMessage(ref message);
+                }
+            }
+
+            operation.GetResults();
+        }
+        finally
+        {
+            if (completedHandleRef)
+                completedSafeHandle.DangerousRelease();
+        }
     }
 
     public static bool IsSupported()
