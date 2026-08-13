@@ -19,6 +19,7 @@ namespace Avalonia.Win32
             triggerEvent.Pointer.Capture(null);
             
             using var dataObject = new DataTransferToOleDataObjectWrapper(dataTransfer);
+            dataObject.SetAsyncMode(dataTransfer.Contains(DataFormat.File));
             using var src = new OleDragSource();
             var allowed = OleDropTarget.ConvertDropEffect(allowedEffects);
             
@@ -27,8 +28,8 @@ namespace Avalonia.Win32
 
             UnmanagedMethods.DoDragDrop(objPtr, srcPtr, (int)allowed, out var finalEffect);
             
-            // Force releasing of internal wrapper to avoid memory leak, if drop target keeps com reference.
-            dataObject.ReleaseDataTransfer();
+            // Async shell targets keep using the data object after DoDragDrop returns.
+            dataObject.ReleaseDataTransferIfNotInOperation();
 
             return Task.FromResult(OleDropTarget.ConvertDropEffect((Win32Com.DropEffect)finalEffect));
         }
