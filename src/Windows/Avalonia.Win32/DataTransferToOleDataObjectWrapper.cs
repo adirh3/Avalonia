@@ -17,8 +17,13 @@ namespace Avalonia.Win32;
 /// </summary>
 /// <param name="dataTransfer">The wrapped data transfer instance.</param>
 internal class DataTransferToOleDataObjectWrapper(IDataTransfer dataTransfer)
-    : CallbackBase, Win32Com.IDataObject
+    : CallbackBase, Win32Com.IDataObject, Win32Com.IDataObjectAsyncCapability
 {
+    private readonly object _sync = new();
+    private IDataTransfer? _dataTransfer = dataTransfer;
+    private bool _isAsyncMode;
+    private bool _isInOperation;
+
     private class FormatEnumerator : CallbackBase, Win32Com.IEnumFORMATETC
     {
         private readonly FORMATETC[] _formats;
@@ -77,7 +82,14 @@ internal class DataTransferToOleDataObjectWrapper(IDataTransfer dataTransfer)
         }
     }
 
-    public IDataTransfer? DataTransfer { get; private set; } = dataTransfer;
+    public IDataTransfer? DataTransfer
+    {
+        get
+        {
+            lock (_sync)
+                return _dataTransfer;
+        }
+    }
 
     public bool IsDisposed
         => DataTransfer is null;
@@ -86,6 +98,58 @@ internal class DataTransferToOleDataObjectWrapper(IDataTransfer dataTransfer)
         => field ??= CalcFormatIds();
 
     public event Action? OnDestroyed;
+
+    public void SetAsyncMode(bool enabled)
+    {
+        lock (_sync)
+            _isAsyncMode = enabled;
+    }
+
+    void Win32Com.IDataObjectAsyncCapability.SetAsyncMode(int fDoOpAsync)
+        => SetAsyncMode(fDoOpAsync != 0);
+
+    int Win32Com.IDataObjectAsyncCapability.AsyncMode
+    {
+        get
+        {
+            lock (_sync)
+                return _isAsyncMode ? 1 : 0;
+        }
+    }
+
+    unsafe void Win32Com.IDataObjectAsyncCapability.StartOperation(void* pbcReserved)
+    {
+        lock (_sync)
+        {
+            if (_isAsyncMode && _dataTransfer is not null)
+                _isInOperation = true;
+        }
+    }
+
+    int Win32Com.IDataObjectAsyncCapability.InOperation()
+    {
+        lock (_sync)
+            return _isInOperation ? 1 : 0;
+    }
+
+    unsafe void Win32Com.IDataObjectAsyncCapability.EndOperation(
+        int hResult,
+        void* pbcReserved,
+        int dwEffects)
+    {
+        IDataTransfer? dataTransferToDispose;
+        lock (_sync)
+        {
+            if (!_isInOperation)
+                return;
+
+            _isInOperation = false;
+            dataTransferToDispose = _dataTransfer;
+            _dataTransfer = null;
+        }
+
+        dataTransferToDispose?.Dispose();
+    }
 
     unsafe int Win32Com.IDataObject.DAdvise(FORMATETC* pFormatetc, int advf, void* adviseSink)
         => (int)HRESULT.S_OK;
@@ -213,13 +277,40 @@ internal class DataTransferToOleDataObjectWrapper(IDataTransfer dataTransfer)
 
     protected override void Destroyed()
     {
-        OnDestroyed?.Invoke();
-        ReleaseDataTransfer();
+        try
+        {
+            OnDestroyed?.Invoke();
+        }
+        finally
+        {
+            ReleaseDataTransfer();
+        }
     }
 
-    public void ReleaseDataTransfer()
+    public void ReleaseDataTransferIfNotInOperation()
     {
-        DataTransfer?.Dispose();
-        DataTransfer = null;
+        IDataTransfer? dataTransferToDispose;
+        lock (_sync)
+        {
+            if (_isInOperation)
+                return;
+
+            dataTransferToDispose = _dataTransfer;
+            _dataTransfer = null;
+        }
+
+        dataTransferToDispose?.Dispose();
+    }
+
+    private void ReleaseDataTransfer()
+    {
+        IDataTransfer? dataTransferToDispose;
+        lock (_sync)
+        {
+            dataTransferToDispose = _dataTransfer;
+            _dataTransfer = null;
+        }
+
+        dataTransferToDispose?.Dispose();
     }
 }
