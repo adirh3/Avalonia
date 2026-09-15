@@ -102,6 +102,37 @@ namespace Avalonia.Controls.UnitTests
         }
 
         [Fact]
+        public void SelectionForeground_Should_Preserve_New_Inlines_Before_Measure()
+        {
+            using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
+            var target = new SelectableTextBlock
+            {
+                Text = "initial",
+                SelectionForegroundBrush = Brushes.Red
+            };
+            target.Measure(new Size(1000, 1000));
+            target.Arrange(new Rect(0, 0, 1000, 1000));
+
+            target.Inlines = new InlineCollection
+            {
+                new Run("Bold") { FontWeight = FontWeight.Bold },
+                new Run("Italic") { FontStyle = FontStyle.Italic }
+            };
+            target.SelectionStart = 0;
+            target.SelectionEnd = 10;
+
+            var runs = target.TextLayout.TextLines
+                .SelectMany(line => line.TextRuns)
+                .OfType<ShapedTextRun>()
+                .ToArray();
+
+            Assert.Equal(2, runs.Length);
+            Assert.Equal(FontWeight.Bold, runs[0].Properties.Typeface.Weight);
+            Assert.Equal(FontStyle.Italic, runs[1].Properties.Typeface.Style);
+            Assert.All(runs, run => Assert.Same(target.SelectionForegroundBrush, run.Properties.ForegroundBrush));
+        }
+
+        [Fact]
         public void SelectionForeground_Should_Not_Reset_Run_Typeface_And_Style()
         {
             using (UnitTestApplication.Start(TestServices.MockPlatformRenderInterface))

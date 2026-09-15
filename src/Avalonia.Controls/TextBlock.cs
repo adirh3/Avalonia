@@ -687,11 +687,12 @@ namespace Avalonia.Controls
 
             ITextSource textSource;
 
-            if (HasComplexContent)
-            {
-                EnsureTextRuns();
+            EnsureTextRuns();
 
-                textSource = new InlinesTextSource(_textRuns!);
+            // Derived controls can supply runs without populating Inlines.
+            if (_textRuns != null)
+            {
+                textSource = new InlinesTextSource(_textRuns);
             }
             else
             {

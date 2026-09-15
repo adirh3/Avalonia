@@ -508,10 +508,8 @@ namespace Avalonia.Media.Fonts
             }
 
             // A synthetic for this key may already be cached under the source family, reached
-            // through another of its names or by another thread. Building a second one copies the
-            // whole font file through TryGetStream, then loses the slot below to the instance
-            // already there, so nothing caches it, nothing disposes it, and its native typeface is
-            // never released.
+            // through another of its names or by another thread. Reuse it before copying and
+            // parsing the font again; the ownership helper still handles concurrent creations.
             if (glyphTypefaces.TryGetValue(key, out var cachedGlyphTypeface) &&
                 cachedGlyphTypeface is not null &&
                 cachedGlyphTypeface.FontSimulations == fontSimulations)

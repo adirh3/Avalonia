@@ -1,8 +1,10 @@
-﻿using Avalonia.Controls.Documents;
+﻿using System.Linq;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
 using Avalonia.UnitTests;
 using Xunit;
 
@@ -805,6 +807,61 @@ namespace Avalonia.Controls.UnitTests
             expected.Measure(new Size(1000, 1000));
 
             Assert.Equal(expected.DesiredSize, target.DesiredSize);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Derived_Text_Runs_Should_Be_Used_Without_Inlines(bool selectable)
+        {
+            using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
+
+            TextBlock target = selectable ? new CustomRunSelectableTextBlock() : new CustomRunTextBlock();
+            target.Text = "fallback";
+            target.Measure(new Size(1000, 1000));
+
+            Assert.False(target.HasComplexContent);
+            Assert.Equal("custom", GetRenderedText(target));
+
+            target.Arrange(new Rect(target.DesiredSize));
+
+            Assert.Equal("custom", GetRenderedText(target));
+            Assert.Equal(FontWeight.ExtraBold, target.TextLayout.TextLines[0].TextRuns[0].Properties!.Typeface.Weight);
+
+            target.FontSize = 24;
+            target.Measure(new Size(1000, 1000));
+
+            Assert.Equal("custom", GetRenderedText(target));
+            Assert.Equal(24, target.TextLayout.TextLines[0].TextRuns[0].Properties!.FontRenderingEmSize);
+        }
+
+        private static string GetRenderedText(TextBlock target) =>
+            string.Concat(target.TextLayout.TextLines.SelectMany(line => line.TextRuns).Select(run => run.Text.ToString()));
+
+        private static TextRun[] CreateCustomTextRuns(TextBlock target) =>
+        [
+            new TextCharacters("custom",
+                new GenericTextRunProperties(
+                    new Typeface(target.FontFamily, target.FontStyle, FontWeight.ExtraBold, target.FontStretch),
+                    target.FontSize, foregroundBrush: target.Foreground))
+        ];
+
+        private class CustomRunTextBlock : TextBlock
+        {
+            protected override TextLayout CreateTextLayout(string? text)
+            {
+                _textRuns = CreateCustomTextRuns(this);
+                return base.CreateTextLayout(text);
+            }
+        }
+
+        private class CustomRunSelectableTextBlock : SelectableTextBlock
+        {
+            protected override TextLayout CreateTextLayout(string? text)
+            {
+                _textRuns = CreateCustomTextRuns(this);
+                return base.CreateTextLayout(text);
+            }
         }
 
         private class TestTextBlock : TextBlock

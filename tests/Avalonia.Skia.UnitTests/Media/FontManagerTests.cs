@@ -724,6 +724,35 @@ namespace Avalonia.Skia.UnitTests.Media
             Assert.False(fontManagerImpl.CreatedTypefaces[2].IsDisposed);
         }
 
+        [Theory]
+        [InlineData(FontStyle.Normal, FontWeight.Bold)]
+        [InlineData(FontStyle.Normal, FontWeight.ExtraBold)]
+        [InlineData(FontStyle.Italic, FontWeight.Normal)]
+        [InlineData(FontStyle.Italic, FontWeight.ExtraBold)]
+        public void TryGetGlyphTypeface_Should_Cache_Synthetic_Typeface_Under_Requested_Alias(
+            FontStyle style, FontWeight weight)
+        {
+            using var fontManagerImpl = new FamilyRemappingFontManagerImpl("NotInstalled", "Noto Mono");
+            using var app = UnitTestApplication.Start(
+                TestServices.MockPlatformRenderInterface.With(fontManagerImpl: fontManagerImpl));
+
+            Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface("NotInstalled"), out _));
+
+            var requested = new Typeface("NotInstalled", style, weight);
+            Assert.True(FontManager.Current.TryGetGlyphTypeface(requested, out var first));
+            var requestedFamilyCreateCount = fontManagerImpl.RequestedFamilyCreateCount;
+            var createdTypefaceCount = fontManagerImpl.CreatedTypefaces.Count;
+
+            for (var i = 0; i < 10; i++)
+            {
+                Assert.True(FontManager.Current.TryGetGlyphTypeface(requested, out var repeated));
+                Assert.Same(first, repeated);
+            }
+
+            Assert.Equal(requestedFamilyCreateCount, fontManagerImpl.RequestedFamilyCreateCount);
+            Assert.Equal(createdTypefaceCount, fontManagerImpl.CreatedTypefaces.Count);
+        }
+
         [Fact]
         public async Task Concurrent_Platform_Fallbacks_Should_Keep_One_Canonical_Typeface()
         {

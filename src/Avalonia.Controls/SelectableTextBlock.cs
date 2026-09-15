@@ -269,11 +269,11 @@ namespace Avalonia.Controls
 
             ITextSource textSource;
 
-            if (HasComplexContent)
-            {
-                EnsureTextRuns();
+            EnsureTextRuns();
 
-                textSource = new InlinesTextSource(_textRuns!, textStyleOverrides);
+            if (_textRuns != null)
+            {
+                textSource = new InlinesTextSource(_textRuns, textStyleOverrides);
             }
             else
             {
