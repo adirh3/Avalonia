@@ -6,6 +6,7 @@ namespace Avalonia.Win32.WinRT.Composition;
 internal class WinUiCompositionShared : IDisposable
 {
     public ICompositor Compositor { get; }
+    public ICompositor5 Compositor5 { get; }
     public ICompositorDesktopInterop DesktopInterop { get; }
     public object SyncRoot { get; } = new();
 
@@ -16,12 +17,14 @@ internal class WinUiCompositionShared : IDisposable
     public WinUiCompositionShared(ICompositor compositor)
     {
         Compositor = compositor.CloneReference();
+        Compositor5 = compositor.QueryInterface<ICompositor5>();
         DesktopInterop = compositor.QueryInterface<ICompositorDesktopInterop>();
     }
     
     public void Dispose()
     {
         DesktopInterop.Dispose();
+        Compositor5.Dispose();
         Compositor.Dispose();
     }
 }

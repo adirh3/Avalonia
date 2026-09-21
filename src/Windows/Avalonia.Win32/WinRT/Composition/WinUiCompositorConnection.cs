@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,16 +14,38 @@ using MicroCom.Runtime;
 
 namespace Avalonia.Win32.WinRT.Composition;
 
-internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDisposable
+internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFactory, IDisposable
 {
     private const uint ShutdownMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 1;
-    private const uint RenderTickMessage = (uint)UnmanagedMethods.WindowsMessage.WM_APP + 2;
     private readonly IDispatcherQueueController _dispatcherQueueController;
     private readonly WinUiCompositionShared _shared;
-    private Action? _pendingRenderTick;
+    private readonly AutoResetEvent _wakeEvent = new(false);
+    private readonly object _lifecycleLock = new();
+    private volatile bool _stopped = true;
+    private volatile bool _shutdownRequested;
+    private volatile Action<TimeSpan>? _tick;
     private IntPtr _messageWindow;
-    private int _renderTickMessagePosted;
     private bool _disposed;
+
+    public bool RunsInBackground => true;
+
+    public Action<TimeSpan>? Tick
+    {
+        get => _tick;
+        set
+        {
+            lock (_lifecycleLock)
+            {
+                if (_disposed || _shutdownRequested)
+                    return;
+
+                _tick = value;
+                _stopped = value == null;
+                if (value != null)
+                    _wakeEvent.Set();
+            }
+        }
+    }
 
     private WinUiCompositorConnection(IDispatcherQueueController dispatcherQueueController)
     {
@@ -53,7 +76,6 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
         var th = new Thread(() =>
         {
             WinUiCompositorConnection? connect = null;
-            WinUiRenderTimer? renderTimer = null;
             IDispatcherQueueController? dispatcherQueueController = null;
             try
             {
@@ -68,13 +90,11 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
                     MicroComRuntime.CreateProxyFor<IDispatcherQueueController>(controllerPointer, true);
                 connect = new WinUiCompositorConnection(dispatcherQueueController);
                 dispatcherQueueController = null;
-                renderTimer = new WinUiRenderTimer(60, connect.QueueRenderTick);
-
                 connect.RunLoop(() =>
                 {
                     AvaloniaLocator.CurrentMutable.Bind<IWindowsSurfaceFactory>().ToConstant(connect);
-                    AvaloniaLocator.CurrentMutable.Bind<IRenderTimer>().ToConstant(renderTimer);
-                    AvaloniaLocator.CurrentMutable.Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(renderTimer));
+                    AvaloniaLocator.CurrentMutable.Bind<IRenderTimer>().ToConstant(connect);
+                    AvaloniaLocator.CurrentMutable.Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(connect));
                     tcs.SetResult(true);
                 });
             }
@@ -88,7 +108,6 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
             }
             finally
             {
-                renderTimer?.Dispose();
                 connect?.Dispose();
                 if (dispatcherQueueController != null)
                 {
@@ -129,13 +148,121 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
         public void Invoke(IAsyncAction? asyncInfo, AsyncStatus asyncStatus) => _completed.Set();
     }
 
+    private sealed class RunLoopHandler : CallbackBase, IAsyncActionCompletedHandler
+    {
+        private readonly WinUiCompositorConnection _parent;
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+        private TimeSpan? _commitDueAt;
+        private IAsyncAction? _currentCommit;
+        private bool _commitCompleted;
+
+        public RunLoopHandler(WinUiCompositorConnection parent)
+        {
+            _parent = parent;
+        }
+
+        public void Invoke(IAsyncAction? asyncInfo, AsyncStatus asyncStatus)
+        {
+            lock (_parent._shared.SyncRoot)
+            {
+                if (_parent._shutdownRequested || _currentCommit == null ||
+                    _currentCommit.GetNativeIntPtr() != asyncInfo.GetNativeIntPtr())
+                    return;
+
+                OnCommitCompleted();
+            }
+        }
+
+        private void OnCommitCompleted()
+        {
+            Debug.Assert(Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should be held");
+
+            _currentCommit?.Dispose();
+            _currentCommit = null;
+            _parent._tick?.Invoke(_stopwatch.Elapsed);
+            // Commit the final frame even when rendering has just become idle.
+            ScheduleNextCommit();
+            _commitCompleted = true;
+        }
+
+        public void OnAfterMessageWithoutLock()
+        {
+            Debug.Assert(!Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should NOT be held");
+
+            if (!_commitCompleted)
+                return;
+
+            _commitCompleted = false;
+            if (_parent._stopped && !_parent._shutdownRequested)
+            {
+                _parent._wakeEvent.WaitOne();
+                _commitDueAt = _stopwatch.Elapsed + TimeSpan.FromSeconds(1);
+            }
+        }
+
+        private void ScheduleNextCommit()
+        {
+            Debug.Assert(Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should be held");
+            if (_parent._shutdownRequested)
+                return;
+
+            _commitDueAt = _stopwatch.Elapsed + TimeSpan.FromSeconds(1);
+            _currentCommit = _parent._shared.Compositor5.RequestCommitAsync();
+            _currentCommit.SetCompleted(this);
+        }
+
+        public void WatchDog()
+        {
+            lock (_parent._shared.SyncRoot)
+            {
+                // Upstream's recovery for a commit callback lost after graphics-device loss.
+                if (!_parent._shutdownRequested && _stopwatch.Elapsed > _commitDueAt &&
+                    _currentCommit != null)
+                {
+                    Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this,
+                        "windows::UI::Composition::ICompositor5.RequestCommitAsync timed out, force-triggering next tick");
+                    try
+                    {
+                        _currentCommit.GetResults();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.TryGet(LogEventLevel.Error, LogArea.Visual)?.Log(this,
+                            "ICompositor5::RequestCommitAsync failed: {HR}, {ERR}", e.HResult, e.ToString());
+                    }
+
+                    OnCommitCompleted();
+                }
+            }
+        }
+
+        public void Start()
+        {
+            lock (_parent._shared.SyncRoot)
+                ScheduleNextCommit();
+        }
+
+        public void Stop()
+        {
+            lock (_parent._shared.SyncRoot)
+            {
+                _currentCommit?.Dispose();
+                _currentCommit = null;
+            }
+        }
+    }
+
     private void RunLoop(Action ready)
     {
+        const uint watchDogIntervalInMs = 1000;
+        using var handler = new RunLoopHandler(this);
+        var watchDogTimer = IntPtr.Zero;
         using var dw = new SimpleWindow((hwnd, msg, w, l) =>
         {
-            if (msg == RenderTickMessage)
+            if (msg == (uint)UnmanagedMethods.WindowsMessage.WM_TIMER && w == watchDogTimer)
             {
-                DispatchRenderTick();
+                handler.WatchDog();
+                UnmanagedMethods.SetTimer(hwnd, watchDogTimer, watchDogIntervalInMs, null);
                 return IntPtr.Zero;
             }
 
@@ -148,17 +275,26 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
             return UnmanagedMethods.DefWindowProc(hwnd, msg, w, l);
         });
         Volatile.Write(ref _messageWindow, dw.Handle);
-        EventHandler processExitHandler = (_, _) =>
-            UnmanagedMethods.PostMessage(dw.Handle, ShutdownMessage, IntPtr.Zero, IntPtr.Zero);
+        EventHandler processExitHandler = (_, _) => RequestShutdown();
         AppDomain.CurrentDomain.ProcessExit += processExitHandler;
 
         try
         {
+            watchDogTimer = UnmanagedMethods.SetTimer(dw.Handle, IntPtr.Zero, watchDogIntervalInMs, null);
+            if (watchDogTimer == IntPtr.Zero)
+                throw new Win32Exception("Unable to create the WinUI composition watchdog timer.");
+
+            handler.Start();
             ready();
 
+            // Commit callbacks can run inside GetMessage on Windows 11. Never hold SyncRoot here.
             var result = 0;
-            while ((result = UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
+            while (!_shutdownRequested &&
+                   (result = UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
+            {
                 UnmanagedMethods.DispatchMessage(ref msg);
+                handler.OnAfterMessageWithoutLock();
+            }
 
             if (result < 0)
             {
@@ -169,39 +305,33 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
         finally
         {
             AppDomain.CurrentDomain.ProcessExit -= processExitHandler;
+            _shutdownRequested = true;
+            handler.Stop();
+            if (watchDogTimer != IntPtr.Zero)
+                UnmanagedMethods.KillTimer(dw.Handle, watchDogTimer);
             Volatile.Write(ref _messageWindow, IntPtr.Zero);
-            Interlocked.Exchange(ref _pendingRenderTick, null);
-            Interlocked.Exchange(ref _renderTickMessagePosted, 0);
         }
     }
 
-    private void QueueRenderTick(Action renderTick)
+    private void RequestShutdown()
     {
-        Volatile.Write(ref _pendingRenderTick, renderTick);
-        PostRenderTickMessage();
-    }
-
-    private void PostRenderTickMessage()
-    {
-        IntPtr window = Volatile.Read(ref _messageWindow);
-        if (window == IntPtr.Zero ||
-            Interlocked.CompareExchange(ref _renderTickMessagePosted, 1, 0) != 0)
+        lock (_lifecycleLock)
         {
-            return;
+            if (_disposed || _shutdownRequested)
+                return;
+
+            _shutdownRequested = true;
+            _wakeEvent.Set();
         }
 
-        if (!UnmanagedMethods.PostMessage(window, RenderTickMessage, IntPtr.Zero, IntPtr.Zero))
-            Interlocked.Exchange(ref _renderTickMessagePosted, 0);
-    }
-
-    private void DispatchRenderTick()
-    {
-        Action? renderTick = Interlocked.Exchange(ref _pendingRenderTick, null);
-        renderTick?.Invoke();
-
-        Interlocked.Exchange(ref _renderTickMessagePosted, 0);
-        if (Volatile.Read(ref _pendingRenderTick) != null)
-            PostRenderTickMessage();
+        IntPtr window = Volatile.Read(ref _messageWindow);
+        if (window != IntPtr.Zero &&
+            !UnmanagedMethods.PostMessage(window, ShutdownMessage, IntPtr.Zero, IntPtr.Zero))
+        {
+            int error = Marshal.GetLastWin32Error();
+            Logger.TryGet(LogEventLevel.Warning, "WinUIComposition")
+                ?.Log(this, "Unable to signal WinUI composition shutdown. Error Code: {0}", error);
+        }
     }
 
     [DllImport("user32.dll")]
@@ -209,10 +339,17 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
 
     public void Dispose()
     {
-        if (_disposed)
-            return;
+        lock (_lifecycleLock)
+        {
+            if (_disposed)
+                return;
 
-        _disposed = true;
+            _disposed = true;
+            _shutdownRequested = true;
+            _stopped = true;
+            _tick = null;
+            _wakeEvent.Set();
+        }
         try
         {
             _shared.Dispose();
@@ -231,6 +368,7 @@ internal class WinUiCompositorConnection : Win32.IWindowsSurfaceFactory, IDispos
             finally
             {
                 _dispatcherQueueController.Dispose();
+                _wakeEvent.Dispose();
             }
         }
     }

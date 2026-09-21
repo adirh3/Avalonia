@@ -9,7 +9,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Platform;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
-using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Rendering;
@@ -17,7 +16,6 @@ using Avalonia.Rendering.Composition;
 using Avalonia.Threading;
 using Avalonia.Utilities;
 using Avalonia.Win32.Input;
-using Microsoft.Win32.SafeHandles;
 using static Avalonia.Win32.Interop.UnmanagedMethods;
 
 namespace Avalonia
@@ -48,27 +46,6 @@ namespace Avalonia.Win32
         private WndProc? _wndProcDelegate;
         private IntPtr _hwnd;
         private Win32DispatcherImpl _dispatcher;
-        private const uint WmPowerBroadcast = 0x0218;
-        private const uint WmWtsSessionChange = 0x02B1;
-        private const int RpcInvalidBinding = 1702;
-        private const uint Synchronize = 0x00100000;
-
-        [DllImport("dxgi.dll")]
-        private static extern int DXGIDisableVBlankVirtualization();
-
-        [DllImport("wtsapi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool WTSRegisterSessionNotification(IntPtr window, uint flags);
-
-        [DllImport("kernel32.dll", EntryPoint = "OpenEventW", CharSet = CharSet.Unicode,
-            SetLastError = true)]
-        private static extern SafeWaitHandle OpenEvent(
-            uint desiredAccess,
-            [MarshalAs(UnmanagedType.Bool)] bool inheritHandle,
-            string name);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern uint WaitForSingleObject(SafeWaitHandle handle, uint milliseconds);
 
         public Win32Platform()
         {
@@ -150,7 +127,6 @@ namespace Avalonia.Win32
             }
             else
             {
-                ConfigureFramePacing(options);
                 platformGraphics = Win32GlManager.Initialize();   
             }
             
@@ -222,16 +198,6 @@ namespace Avalonia.Win32
                 }
             }
 
-            if (msg == (uint)WindowsMessage.WM_DISPLAYCHANGE)
-            {
-                Screen?.OnChanged();
-                UpdateTimerFps();
-                RefreshRenderClock();
-            }
-
-            if (msg is WmPowerBroadcast or WmWtsSessionChange)
-                RefreshRenderClock();
-
             if (msg == (uint)WindowsMessage.WM_TIMER)
             {
                 if (wParam == (IntPtr)TIMERID_DISPATCHER)
@@ -246,49 +212,8 @@ namespace Avalonia.Win32
         internal static void UpdateTimerFps()
         {
             var maxDisplayFrequency = Math.Max(60, Instance.Screen?.AllScreens?.Max(s => (s as WinScreen)?.Frequency) ?? 0);
-            if (AvaloniaLocator.Current.GetService<IRenderTimer>() is { } renderTimer)
-            {
-                if (renderTimer is WinRT.Composition.WinUiRenderTimer winUiRenderTimer)
-                    winUiRenderTimer.DisplayFps = maxDisplayFrequency;
-                else if (renderTimer is SleepLoopRenderTimer sleepLoopRenderTimer)
-                    sleepLoopRenderTimer.DesiredFps = maxDisplayFrequency;
-            }
-        }
-
-        private static void RefreshRenderClock()
-        {
-            if (AvaloniaLocator.Current.GetService<IRenderTimer>() is
-                WinRT.Composition.WinUiRenderTimer winUiRenderTimer)
-            {
-                winUiRenderTimer.RequestClockRefresh();
-            }
-        }
-
-        private static void ConfigureFramePacing(Win32PlatformOptions options)
-        {
-            if (options.CompositionFramePacing != Win32CompositionFramePacing.PhysicalRefreshRate ||
-                WindowsVersion.Build < 22502)
-            {
-                return;
-            }
-
-            try
-            {
-                int result = DXGIDisableVBlankVirtualization();
-                if (result < 0)
-                {
-                    Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(
-                        null,
-                        "Unable to disable DXGI VBlank virtualization: 0x{0:X8}",
-                        result);
-                }
-            }
-            catch (EntryPointNotFoundException)
-            {
-                Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(
-                    null,
-                    "DXGI VBlank virtualization cannot be disabled on this Windows version");
-            }
+            if (AvaloniaLocator.Current.GetService<IRenderTimer>() is SleepLoopRenderTimer sleepLoopRenderTimer)
+                sleepLoopRenderTimer.DesiredFps = maxDisplayFrequency;
         }
 
         private void CreateMessageWindow()
@@ -319,61 +244,6 @@ namespace Avalonia.Win32
             }
 
             TrayIconImpl.ChangeWindowMessageFilter(_hwnd);
-            RegisterSessionNotifications(_hwnd);
-        }
-
-        private static void RegisterSessionNotifications(IntPtr window)
-        {
-            if (WTSRegisterSessionNotification(window, 0))
-                return;
-
-            int error = Marshal.GetLastWin32Error();
-            if (error != RpcInvalidBinding)
-            {
-                Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(
-                    null,
-                    "Unable to register for Windows session notifications: {0}",
-                    new Win32Exception(error));
-                return;
-            }
-
-            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
-            {
-                try
-                {
-                    var terminalServicesReady = false;
-                    for (var attempt = 0; attempt < 60 && !terminalServicesReady; attempt++)
-                    {
-                        using SafeWaitHandle readyEvent = OpenEvent(
-                            Synchronize,
-                            inheritHandle: false,
-                            @"Global\TermSrvReadyEvent");
-                        if (!readyEvent.IsInvalid)
-                        {
-                            terminalServicesReady =
-                                WaitForSingleObject(readyEvent, uint.MaxValue) == 0;
-                            break;
-                        }
-
-                        System.Threading.Thread.Sleep(1000);
-                    }
-
-                    if (!terminalServicesReady || WTSRegisterSessionNotification(window, 0))
-                        return;
-
-                    Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(
-                        null,
-                        "Unable to register for Windows session notifications after Terminal Services became ready: {0}",
-                        new Win32Exception(Marshal.GetLastWin32Error()));
-                }
-                catch (Exception e)
-                {
-                    Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(
-                        null,
-                        "Unable to wait for Windows Terminal Services initialization: {0}",
-                        e);
-                }
-            });
         }
 
         public ITrayIconImpl CreateTrayIcon()
